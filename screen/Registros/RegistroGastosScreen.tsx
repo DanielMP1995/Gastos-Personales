@@ -20,11 +20,11 @@ export default function RegistroGastosScreen({ navigation }: any) {
         <View style={styles.container}>
 
             <StatusBar
-                barStyle="light-content"
-                backgroundColor="#08111F"
+                barStyle="dark-content"
+                backgroundColor="#F8FAFC"
             />
 
-            {/* DECORACIÓN SUPERIOR */}
+            {/* DECORACIÓN SUPERIOR CLARA */}
             <View style={styles.decorCircleOne} />
             <View style={styles.decorCircleTwo} />
 
@@ -34,11 +34,12 @@ export default function RegistroGastosScreen({ navigation }: any) {
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
+                    activeOpacity={0.8}
                 >
                     <Ionicons
                         name="arrow-back"
                         size={22}
-                        color="#E2E8F0"
+                        color="#1E293B"
                     />
                 </TouchableOpacity>
 
@@ -56,7 +57,7 @@ export default function RegistroGastosScreen({ navigation }: any) {
                     <Ionicons
                         name="wallet-outline"
                         size={24}
-                        color="#38BDF8"
+                        color="#059669"
                     />
                 </View>
 
@@ -89,8 +90,8 @@ export default function RegistroGastosScreen({ navigation }: any) {
                     <View style={styles.iconContainerRapido}>
                         <Ionicons
                             name="flash"
-                            size={30}
-                            color="#FFFFFF"
+                            size={26}
+                            color="#059669"
                         />
                     </View>
 
@@ -123,8 +124,8 @@ export default function RegistroGastosScreen({ navigation }: any) {
 
                             <Ionicons
                                 name="arrow-forward-circle"
-                                size={24}
-                                color="#FFFFFF"
+                                size={22}
+                                color="#059669"
                             />
 
                         </View>
@@ -146,8 +147,8 @@ export default function RegistroGastosScreen({ navigation }: any) {
                     <View style={styles.iconContainerNormal}>
                         <Ionicons
                             name="create-outline"
-                            size={30}
-                            color="#38BDF8"
+                            size={26}
+                            color="#0284C7"
                         />
                     </View>
 
@@ -170,8 +171,8 @@ export default function RegistroGastosScreen({ navigation }: any) {
 
                             <Ionicons
                                 name="arrow-forward-circle"
-                                size={24}
-                                color="#38BDF8"
+                                size={22}
+                                color="#0284C7"
                             />
 
                         </View>
@@ -190,7 +191,7 @@ export default function RegistroGastosScreen({ navigation }: any) {
                     <Ionicons
                         name="bulb-outline"
                         size={19}
-                        color="#FBBF24"
+                        color="#D97706"
                     />
                 </View>
 
@@ -220,7 +221,7 @@ export default function RegistroGastosScreen({ navigation }: any) {
                 <Ionicons
                     name="chevron-back"
                     size={19}
-                    color="#94A3B8"
+                    color="#64748B"
                 />
 
                 <Text style={styles.btnRegresarText}>
@@ -238,9 +239,9 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: '#08111F',
-        paddingHorizontal: 22,
-        paddingTop: 45,
+        backgroundColor: '#F8FAFC',
+        paddingHorizontal: 20,
+        paddingTop: 20,
         paddingBottom: 25,
         overflow: 'hidden',
     },
@@ -251,13 +252,13 @@ const styles = StyleSheet.create({
 
     decorCircleOne: {
         position: 'absolute',
-        width: 230,
-        height: 230,
-        borderRadius: 115,
-        backgroundColor: '#0C2438',
-        top: -120,
-        right: -90,
-        opacity: 0.7,
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        backgroundColor: '#ECFDF5',
+        top: -100,
+        right: -80,
+        opacity: 0.8,
     },
 
     decorCircleTwo: {
@@ -265,10 +266,10 @@ const styles = StyleSheet.create({
         width: 180,
         height: 180,
         borderRadius: 90,
-        backgroundColor: '#172554',
-        bottom: -90,
-        left: -100,
-        opacity: 0.45,
+        backgroundColor: '#F1F5F9',
+        bottom: -70,
+        left: -90,
+        opacity: 0.6,
     },
 
     /* =========================================
@@ -278,20 +279,25 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 25,
+        marginBottom: 20,
         zIndex: 2,
     },
 
     backButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        backgroundColor: '#111D2E',
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#24344A',
+        borderColor: '#E2E8F0',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 13,
+        marginRight: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 2,
     },
 
     headerTextContainer: {
@@ -299,26 +305,26 @@ const styles = StyleSheet.create({
     },
 
     headerSmall: {
-        color: '#38BDF8',
+        color: '#059669',
         fontSize: 10,
         fontWeight: '800',
-        letterSpacing: 2,
+        letterSpacing: 1.5,
         marginBottom: 2,
     },
 
     titulo: {
-        color: '#F8FAFC',
-        fontSize: 23,
-        fontWeight: '800',
+        color: '#1E293B',
+        fontSize: 20,
+        fontWeight: 'bold',
     },
 
     headerIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        backgroundColor: '#0E2A40',
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#ECFDF5',
         borderWidth: 1,
-        borderColor: '#164E63',
+        borderColor: '#A7F3D0',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -328,22 +334,22 @@ const styles = StyleSheet.create({
     ========================================= */
 
     introContainer: {
-        marginBottom: 22,
+        marginBottom: 20,
     },
 
     subtitulo: {
-        color: '#94A3B8',
-        fontSize: 14,
-        lineHeight: 21,
+        color: '#64748B',
+        fontSize: 13,
+        lineHeight: 18,
         maxWidth: 340,
     },
 
     line: {
-        width: 45,
+        width: 40,
         height: 3,
         borderRadius: 10,
-        backgroundColor: '#38BDF8',
-        marginTop: 15,
+        backgroundColor: '#059669',
+        marginTop: 12,
     },
 
     /* =========================================
@@ -351,7 +357,7 @@ const styles = StyleSheet.create({
     ========================================= */
 
     optionsContainer: {
-        gap: 15,
+        gap: 14,
     },
 
     /* =========================================
@@ -359,32 +365,34 @@ const styles = StyleSheet.create({
     ========================================= */
 
     cardRapido: {
-        backgroundColor: '#EA580C',
-        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 18,
         padding: 18,
         flexDirection: 'row',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
 
-        shadowColor: '#EA580C',
+        shadowColor: '#059669',
         shadowOffset: {
             width: 0,
-            height: 8,
+            height: 4,
         },
-        shadowOpacity: 0.28,
-        shadowRadius: 12,
-        elevation: 7,
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
 
     iconContainerRapido: {
-        width: 58,
-        height: 58,
-        borderRadius: 17,
-        backgroundColor: 'rgba(255,255,255,0.16)',
+        width: 52,
+        height: 52,
+        borderRadius: 15,
+        backgroundColor: '#ECFDF5',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.25)',
+        borderColor: '#A7F3D0',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 15,
+        marginRight: 14,
     },
 
     /* =========================================
@@ -392,35 +400,34 @@ const styles = StyleSheet.create({
     ========================================= */
 
     cardNormal: {
-        backgroundColor: '#111D2E',
-        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 18,
         padding: 18,
         flexDirection: 'row',
         alignItems: 'center',
-
         borderWidth: 1,
-        borderColor: '#24344A',
+        borderColor: '#E2E8F0',
 
-        shadowColor: '#000000',
+        shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 5,
+            height: 2,
         },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        elevation: 2,
     },
 
     iconContainerNormal: {
-        width: 58,
-        height: 58,
-        borderRadius: 17,
-        backgroundColor: '#0E2A40',
+        width: 52,
+        height: 52,
+        borderRadius: 15,
+        backgroundColor: '#F0F9FF',
         borderWidth: 1,
-        borderColor: '#164E63',
+        borderColor: '#BAE6FD',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 15,
+        marginRight: 14,
     },
 
     /* =========================================
@@ -439,43 +446,45 @@ const styles = StyleSheet.create({
     },
 
     cardTitle: {
-        color: '#FFFFFF',
-        fontSize: 17,
-        fontWeight: '800',
+        color: '#1E293B',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 
     cardTitleNormal: {
-        color: '#F8FAFC',
-        fontSize: 17,
-        fontWeight: '800',
+        color: '#1E293B',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 
     recommendedBadge: {
-        backgroundColor: 'rgba(255,255,255,0.18)',
-        paddingHorizontal: 7,
-        paddingVertical: 3,
+        backgroundColor: '#ECFDF5',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
         borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
     },
 
     recommendedText: {
-        color: '#FFFFFF',
+        color: '#059669',
         fontSize: 8,
-        fontWeight: '900',
-        letterSpacing: 0.7,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
     },
 
     cardSub: {
-        color: '#FFEDD5',
+        color: '#64748B',
         fontSize: 12,
-        lineHeight: 18,
-        marginTop: 5,
+        lineHeight: 16,
+        marginTop: 4,
     },
 
     cardSubNormal: {
-        color: '#94A3B8',
+        color: '#64748B',
         fontSize: 12,
-        lineHeight: 18,
-        marginTop: 5,
+        lineHeight: 16,
+        marginTop: 4,
     },
 
     cardFooter: {
@@ -486,14 +495,16 @@ const styles = StyleSheet.create({
     },
 
     cardFooterText: {
-        color: '#FED7AA',
-        fontSize: 9,
+        color: '#059669',
+        fontSize: 10,
+        fontWeight: '500',
         flex: 1,
     },
 
     cardFooterTextNormal: {
-        color: '#64748B',
-        fontSize: 9,
+        color: '#0284C7',
+        fontSize: 10,
+        fontWeight: '500',
         flex: 1,
     },
 
@@ -504,21 +515,21 @@ const styles = StyleSheet.create({
     tipContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#101C2D',
+        backgroundColor: '#FEF3C7',
         borderRadius: 16,
         padding: 14,
-        marginTop: 22,
+        marginTop: 20,
         borderWidth: 1,
-        borderColor: '#25364B',
+        borderColor: '#FDE68A',
     },
 
     tipIcon: {
-        width: 38,
-        height: 38,
-        borderRadius: 12,
-        backgroundColor: '#29200D',
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: '#FEF9C3',
         borderWidth: 1,
-        borderColor: '#5A4210',
+        borderColor: '#FDE68A',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
@@ -529,15 +540,15 @@ const styles = StyleSheet.create({
     },
 
     tipTitle: {
-        color: '#FBBF24',
+        color: '#B45309',
         fontSize: 12,
-        fontWeight: '800',
+        fontWeight: 'bold',
         marginBottom: 2,
     },
 
     tipText: {
-        color: '#94A3B8',
-        fontSize: 10,
+        color: '#78350F',
+        fontSize: 11,
         lineHeight: 15,
     },
 
@@ -547,21 +558,21 @@ const styles = StyleSheet.create({
 
     btnRegresar: {
         marginTop: 'auto',
-        height: 50,
-        backgroundColor: '#111D2E',
-        borderRadius: 15,
+        height: 48,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: '#24344A',
+        borderColor: '#E2E8F0',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
     },
 
     btnRegresarText: {
-        color: '#94A3B8',
-        fontSize: 14,
-        fontWeight: '700',
-        marginLeft: 5,
+        color: '#64748B',
+        fontSize: 13,
+        fontWeight: '600',
+        marginLeft: 6,
     },
 
-});
+});  //pantalla /registros/pantalla de gastos adentro de esto esta gastos rapidos y detallados

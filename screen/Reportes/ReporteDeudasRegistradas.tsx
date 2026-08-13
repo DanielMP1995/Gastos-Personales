@@ -2,16 +2,16 @@ import {
     StyleSheet,
     Text,
     View,
-    ScrollView,
+    FlatList,
     TouchableOpacity,
     Alert,
     Modal,
     TextInput,
-    Platform
 } from 'react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { db, auth } from '../../firebase/FirebaseConfig';
 import { ref, onValue, remove, update } from 'firebase/database';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ReporteDeudasRegistradas({ navigation }: any) {
     const [tipoVista, setTipoVista] = useState<'deudas' | 'fijos'>('deudas');
@@ -175,7 +175,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
      */
     const obtenerPagosAsociados = (deuda: any) => {
         return movimientos.filter((mov) => {
-            // Primera prioridad: deudaId
             if (mov.deudaId && mov.deudaId === deuda.id) {
                 return true;
             }
@@ -203,18 +202,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
     /*
      * ============================================================
      * PROCESAR DEUDAS
-     *
-     * IMPORTANTE:
-     *
-     * tipo === 'tarjeta'
-     *      NO es deuda.
-     *      Es solamente el cupo de la tarjeta.
-     *
-     * tipo === 'consumoTarjeta'
-     *      SÍ es deuda.
-     *
-     * tipo === 'deuda'
-     *      SÍ es deuda.
      * ============================================================
      */
     const deudasProcesadas = useMemo(() => {
@@ -232,15 +219,9 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                 item.tipo !== 'consumoTarjeta'
         );
 
-        /*
-         * --------------------------------------------------------
-         * TARJETAS
-         * --------------------------------------------------------
-         */
         const tarjetasProcesadas = tarjetas.map((tarjeta) => {
             const cupoTotal = Number(tarjeta.cupoTotal) || 0;
 
-            // Todos los consumos pertenecientes a esta tarjeta
             const consumos = consumosTarjeta.filter(
                 (consumo) => consumo.tarjetaId === tarjeta.id
             );
@@ -251,11 +232,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                 0
             );
 
-            /*
-             * Pagos de consumos de esta tarjeta.
-             *
-             * Se buscan por tarjetaId/deudaId cuando exista.
-             */
             const pagosTarjeta = movimientos.filter((mov) => {
                 if (
                     mov.deudaId &&
@@ -304,27 +280,16 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
 
             return {
                 ...tarjeta,
-
                 tipo: 'tarjeta',
-
                 cupoTotal,
                 totalConsumido,
                 totalPagado,
                 montoRestante: deudaPendiente,
                 cupoDisponible,
-
                 consumos
             };
         });
 
-        /*
-         * --------------------------------------------------------
-         * CONSUMOS DE TARJETA QUE NO TIENEN TARJETA ASOCIADA
-         *
-         * Esto evita que un consumo antiguo desaparezca del reporte
-         * si por alguna razón su tarjeta fue eliminada.
-         * --------------------------------------------------------
-         */
         const consumosSinTarjeta = consumosTarjeta
             .filter(
                 (consumo) =>
@@ -355,11 +320,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                 };
             });
 
-        /*
-         * --------------------------------------------------------
-         * DEUDAS NORMALES
-         * --------------------------------------------------------
-         */
         const normalesProcesadas = deudasNormales.map((deuda) => {
             const pagosAsociados =
                 obtenerPagosAsociados(deuda);
@@ -385,10 +345,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
             };
         });
 
-        /*
-         * Las tarjetas aparecen como registros informativos,
-         * pero NO como deuda para el total.
-         */
         return [
             ...tarjetasProcesadas,
             ...consumosSinTarjeta,
@@ -450,11 +406,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
         });
     }, [gastosFijos, movimientos]);
 
-    /*
-     * ============================================================
-     * CATEGORÍAS
-     * ============================================================
-     */
     const categoriasDeudas = [
         'Todas',
         'Tarjeta de Crédito',
@@ -483,11 +434,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
             ? categoriasDeudas
             : categoriasFijos;
 
-    /*
-     * ============================================================
-     * FILTRADO
-     * ============================================================
-     */
     const itemsFiltrados =
         categoriaFiltro === 'Todas'
             ? listaActual
@@ -513,18 +459,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                 return catItem === catFiltro;
             });
 
-    /*
-     * ============================================================
-     * TOTAL PENDIENTE
-     *
-     * MUY IMPORTANTE:
-     * Las tarjetas (tipo tarjeta) NO se suman.
-     *
-     * Solamente se suman:
-     * - consumoTarjeta
-     * - deuda normal
-     * ============================================================
-     */
     const totalFiltrado = itemsFiltrados.reduce(
         (acc, item) => {
             if (item.tipo === 'tarjeta') {
@@ -539,11 +473,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
         0
     );
 
-    /*
-     * ============================================================
-     * ELIMINAR
-     * ============================================================
-     */
     const eliminarItem = (
         id: string,
         nombre: string
@@ -591,18 +520,9 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
         );
     };
 
-    /*
-     * ============================================================
-     * ABRIR EDICIÓN
-     * ============================================================
-     */
     const abrirEdicion = (item: any) => {
         setItemSeleccionado(item);
 
-        /*
-         * Si es tarjeta:
-         * editar cupoTotal, NO monto.
-         */
         if (item.tipo === 'tarjeta') {
             setNuevoMonto(
                 Number(item.cupoTotal || 0).toString()
@@ -633,11 +553,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
         setModalVisible(true);
     };
 
-    /*
-     * ============================================================
-     * GUARDAR EDICIÓN
-     * ============================================================
-     */
     const guardarEdicion = () => {
         if (!idPareja || !itemSeleccionado) {
             return;
@@ -663,11 +578,6 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
 
         let datosActualizados: any = {};
 
-        /*
-         * TARJETA
-         *
-         * Aquí actualizamos únicamente cupoTotal.
-         */
         if (
             tipoVista === 'deudas' &&
             itemSeleccionado.tipo === 'tarjeta'
@@ -675,14 +585,7 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
             datosActualizados = {
                 cupoTotal: parseFloat(nuevoMonto)
             };
-        }
-
-        /*
-         * CONSUMO DE TARJETA
-         *
-         * Aquí actualizamos monto.
-         */
-        else if (
+        } else if (
             tipoVista === 'deudas' &&
             itemSeleccionado.tipo === 'consumoTarjeta'
         ) {
@@ -691,12 +594,7 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                 fechaMaxPago:
                     nuevaFechaPago || 'N/A'
             };
-        }
-
-        /*
-         * DEUDAS NORMALES
-         */
-        else if (tipoVista === 'deudas') {
+        } else if (tipoVista === 'deudas') {
             datosActualizados = {
                 monto: parseFloat(nuevoMonto),
                 cuotaPagar:
@@ -704,12 +602,7 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                 fechaMaxPago:
                     nuevaFechaPago || 'N/A'
             };
-        }
-
-        /*
-         * GASTOS FIJOS
-         */
-        else {
+        } else {
             datosActualizados = {
                 monto: parseFloat(nuevoMonto),
                 nombre:
@@ -738,916 +631,528 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
             });
     };
 
-    /*
-     * ============================================================
-     * RENDER
-     * ============================================================
-     */
-    return (
-        <View style={styles.rootContainer}>
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.container}
-                showsVerticalScrollIndicator={true}
-            >
-                <Text style={styles.titulo}>
-                    Reporte General
-                </Text>
+    const renderItem = ({ item }: { item: any }) => {
+        const nombreEntidad =
+            tipoVista === 'deudas'
+                ? item.tipo === 'tarjeta'
+                    ? `${item.entidad || 'Banco'} ${item.marcaTarjeta ? `(${item.marcaTarjeta})` : ''}`
+                    : item.tipo === 'consumoTarjeta'
+                        ? `${item.tarjetaBanco || 'Tarjeta'} ${item.tarjetaMarca ? `(${item.tarjetaMarca})` : ''}`
+                        : `${item.entidad || 'Deuda'}`
+                : item.nombre || 'Gasto Fijo';
 
-                <Text style={styles.subtitulo}>
-                    Consulta y administra tus compromisos financieros
-                </Text>
-
-                {/* SELECTOR DE VISTA */}
-                <View style={styles.tipoVistaContainer}>
-                    <TouchableOpacity
-                        style={[
-                            styles.tipoVistaBtn,
-                            tipoVista === 'deudas' &&
-                            styles.tipoVistaBtnActive
-                        ]}
-                        onPress={() => {
-                            setTipoVista('deudas');
-                            setCategoriaFiltro('Todas');
-                        }}
-                    >
-                        <Text
-                            style={[
-                                styles.tipoVistaText,
-                                tipoVista === 'deudas' &&
-                                styles.tipoVistaTextActive
-                            ]}
-                        >
-                            💳 Deudas
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.tipoVistaBtn,
-                            tipoVista === 'fijos' &&
-                            styles.tipoVistaBtnActive
-                        ]}
-                        onPress={() => {
-                            setTipoVista('fijos');
-                            setCategoriaFiltro('Todas');
-                        }}
-                    >
-                        <Text
-                            style={[
-                                styles.tipoVistaText,
-                                tipoVista === 'fijos' &&
-                                styles.tipoVistaTextActive
-                            ]}
-                        >
-                            ⚡ Gastos Fijos
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* FILTROS */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.filterScroll}
-                >
-                    {categoriasDisponibles.map((cat) => (
+        return (
+            <View style={styles.cardDeuda}>
+                <View style={styles.cardHeaderRow}>
+                    <View style={styles.badgeCategoria}>
+                        <Text style={styles.badgeText}>{item.categoria || 'General'}</Text>
+                    </View>
+                    <View style={styles.cardActions}>
                         <TouchableOpacity
-                            key={cat}
-                            style={[
-                                styles.filterChip,
-                                categoriaFiltro === cat &&
-                                styles.filterChipSelected
-                            ]}
-                            onPress={() =>
-                                setCategoriaFiltro(cat)
-                            }
+                            style={styles.actionIconBtn}
+                            onPress={() => abrirEdicion(item)}
                         >
-                            <Text
-                                style={[
-                                    styles.filterText,
-                                    categoriaFiltro === cat &&
-                                    styles.filterTextSelected
-                                ]}
-                            >
-                                {cat}
-                            </Text>
+                            <Ionicons name="pencil" size={13} color="#059669" />
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
-                {/* RESUMEN */}
-                <View style={styles.resumenCard}>
-                    <Text style={styles.resumenTitle}>
-                        Total Pendiente en {categoriaFiltro}{' '}
-                        (
-                        {tipoVista === 'deudas'
-                            ? 'Deudas'
-                            : 'Gastos Fijos'}
-                        )
-                    </Text>
-
-                    <Text style={styles.resumenAmount}>
-                        ${totalFiltrado.toFixed(2)}
-                    </Text>
-
-                    <Text style={styles.resumenSub}>
-                        {itemsFiltrados.length}{' '}
-                        {itemsFiltrados.length === 1
-                            ? 'registro encontrado'
-                            : 'registros encontrados'}
-                    </Text>
+                        <TouchableOpacity
+                            style={[styles.actionIconBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.2)' }]}
+                            onPress={() => eliminarItem(item.id, nombreEntidad)}
+                        >
+                            <Ionicons name="trash-outline" size={13} color="#EF4444" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
-                {/* LISTA */}
-                {loading ? (
-                    <Text style={styles.emptyText}>
-                        Cargando registros...
-                    </Text>
-                ) : itemsFiltrados.length === 0 ? (
-                    <Text style={styles.emptyText}>
-                        No hay registros en esta categoría.
-                    </Text>
-                ) : (
-                    itemsFiltrados.map((item) => (
-                        <View
-                            key={item.id}
-                            style={styles.cardDeuda}
-                        >
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.cardCategoria}>
-                                    {item.categoria}
-                                </Text>
+                <Text style={styles.cardEntidad}>{nombreEntidad}</Text>
 
-                                <Text style={styles.cardEntidad}>
-                                    {tipoVista === 'deudas'
-                                        ? item.tipo === 'tarjeta'
-                                            ? `${item.entidad || 'Banco'} ${item.marcaTarjeta
-                                                ? `(${item.marcaTarjeta})`
-                                                : ''
-                                            }`
-                                            : item.tipo === 'consumoTarjeta'
-                                                ? `${item.tarjetaBanco || 'Tarjeta'} ${item.tarjetaMarca
-                                                    ? `(${item.tarjetaMarca})`
-                                                    : ''
-                                                }`
-                                                : `${item.entidad || ''}`
-                                        : item.nombre || 'Gasto Fijo'}
-                                </Text>
-
-                                {/* ================================
-                                    TARJETA
-                                   ================================ */}
-                                {tipoVista === 'deudas' &&
-                                    item.tipo === 'tarjeta' && (
-                                        <>
-                                            <Text style={styles.cardDetalle}>
-                                                💳 Cupo total:{' '}
-                                                <Text style={styles.textBold}>
-                                                    $
-                                                    {item.cupoTotal.toFixed(
-                                                        2
-                                                    )}
-                                                </Text>
-                                            </Text>
-
-                                            <Text style={styles.cardDetalle}>
-                                                💰 Consumido:{' '}
-                                                <Text style={styles.textBold}>
-                                                    $
-                                                    {item.totalConsumido.toFixed(
-                                                        2
-                                                    )}
-                                                </Text>
-                                            </Text>
-
-                                            <Text style={styles.cardDetalle}>
-                                                💵 Pagado:{' '}
-                                                <Text
-                                                    style={{
-                                                        color: '#4ADE80'
-                                                    }}
-                                                >
-                                                    $
-                                                    {item.totalPagado.toFixed(
-                                                        2
-                                                    )}
-                                                </Text>
-                                            </Text>
-
-                                            <Text style={styles.cardDetalle}>
-                                                🔴 Deuda pendiente:{' '}
-                                                <Text
-                                                    style={styles.textBold}
-                                                >
-                                                    $
-                                                    {item.montoRestante.toFixed(
-                                                        2
-                                                    )}
-                                                </Text>
-                                            </Text>
-
-                                            <Text style={styles.cardDetalle}>
-                                                🟢 Cupo disponible:{' '}
-                                                <Text
-                                                    style={{
-                                                        color: '#4ADE80',
-                                                        fontWeight: '700'
-                                                    }}
-                                                >
-                                                    $
-                                                    {item.cupoDisponible.toFixed(
-                                                        2
-                                                    )}
-                                                </Text>
-                                            </Text>
-
-                                            <Text style={styles.cardDetalle}>
-                                                📅 Caducidad:{' '}
-                                                {item.fechaCaducidad ||
-                                                    'N/A'}
-                                            </Text>
-                                        </>
-                                    )}
-
-                                {/* ================================
-                                    CONSUMO DE TARJETA
-                                   ================================ */}
-                                {tipoVista === 'deudas' &&
-                                    item.tipo === 'consumoTarjeta' && (
-                                        <>
-                                            <Text style={styles.cardDetalle}>
-                                                🛒 Consumo:{' '}
-                                                <Text
-                                                    style={styles.textBold}
-                                                >
-                                                    $
-                                                    {Number(
-                                                        item.monto || 0
-                                                    ).toFixed(2)}
-                                                </Text>
-                                            </Text>
-
-                                            {item.descripcion &&
-                                                item.descripcion !==
-                                                'N/A' && (
-                                                    <Text
-                                                        style={
-                                                            styles.cardDetalle
-                                                        }
-                                                    >
-                                                        Descripción:{' '}
-                                                        {
-                                                            item.descripcion
-                                                        }
-                                                    </Text>
-                                                )}
-
-                                            <Text style={styles.cardDetalle}>
-                                                Total Pagado:{' '}
-                                                <Text
-                                                    style={{
-                                                        color: '#4ADE80'
-                                                    }}
-                                                >
-                                                    $
-                                                    {Number(
-                                                        item.totalPagado || 0
-                                                    ).toFixed(2)}
-                                                </Text>
-                                            </Text>
-
-                                            <Text style={styles.cardDetalle}>
-                                                Deuda pendiente:{' '}
-                                                <Text
-                                                    style={
-                                                        styles.textBold
-                                                    }
-                                                >
-                                                    $
-                                                    {Number(
-                                                        item.montoRestante ||
-                                                        0
-                                                    ).toFixed(2)}
-                                                </Text>
-                                            </Text>
-
-                                            {item.diferido && (
-                                                <Text
-                                                    style={
-                                                        styles.cardDetalle
-                                                    }
-                                                >
-                                                    📆 Diferido a{' '}
-                                                    {item.numeroCuotas ||
-                                                        1}{' '}
-                                                    cuotas
-                                                </Text>
-                                            )}
-
-                                            <Text style={styles.cardDetalle}>
-                                                Pago máx:{' '}
-                                                {item.fechaMaxPago ||
-                                                    'N/A'}
-                                            </Text>
-                                        </>
-                                    )}
-
-                                {/* ================================
-                                    DEUDA NORMAL
-                                   ================================ */}
-                                {tipoVista === 'deudas' &&
-                                    item.tipo !== 'tarjeta' &&
-                                    item.tipo !== 'consumoTarjeta' && (
-                                        <>
-                                            <Text style={styles.cardDetalle}>
-                                                Monto Inicial:{' '}
-                                                $
-                                                {Number(
-                                                    item.monto || 0
-                                                ).toFixed(2)}
-                                            </Text>
-
-                                            <Text style={styles.cardDetalle}>
-                                                Total Pagado:{' '}
-                                                <Text
-                                                    style={{
-                                                        color: '#4ADE80'
-                                                    }}
-                                                >
-                                                    $
-                                                    {Number(
-                                                        item.totalPagado ||
-                                                        0
-                                                    ).toFixed(2)}
-                                                </Text>
-                                            </Text>
-
-                                            <Text style={styles.cardDetalle}>
-                                                Saldo Pendiente:{' '}
-                                                <Text
-                                                    style={
-                                                        styles.textBold
-                                                    }
-                                                >
-                                                    $
-                                                    {Number(
-                                                        item.montoRestante ||
-                                                        0
-                                                    ).toFixed(2)}
-                                                </Text>
-                                            </Text>
-
-                                            {item.cuotaPagar > 0 && (
-                                                <Text
-                                                    style={
-                                                        styles.cardDetalle
-                                                    }
-                                                >
-                                                    Cuota mensual: $
-                                                    {Number(
-                                                        item.cuotaPagar
-                                                    ).toFixed(2)}
-                                                </Text>
-                                            )}
-
-                                            <Text style={styles.cardDetalle}>
-                                                Pago máx:{' '}
-                                                {item.fechaMaxPago ||
-                                                    'N/A'}
-                                            </Text>
-                                        </>
-                                    )}
-
-                                {/* ================================
-                                    GASTO FIJO
-                                   ================================ */}
-                                {tipoVista === 'fijos' && (
-                                    <>
-                                        <Text style={styles.cardDetalle}>
-                                            Monto Asignado: $
-                                            {Number(
-                                                item.monto || 0
-                                            ).toFixed(2)}
-                                        </Text>
-
-                                        <Text style={styles.cardDetalle}>
-                                            Total Pagado:{' '}
-                                            <Text
-                                                style={{
-                                                    color: '#4ADE80'
-                                                }}
-                                            >
-                                                $
-                                                {Number(
-                                                    item.totalPagado ||
-                                                    0
-                                                ).toFixed(2)}
-                                            </Text>
-                                        </Text>
-
-                                        <Text style={styles.cardDetalle}>
-                                            Saldo Pendiente:{' '}
-                                            <Text
-                                                style={
-                                                    styles.textBold
-                                                }
-                                            >
-                                                $
-                                                {Number(
-                                                    item.montoRestante ||
-                                                    0
-                                                ).toFixed(2)}
-                                            </Text>
-                                        </Text>
-                                    </>
-                                )}
-
-                                <Text style={styles.cardAuthor}>
-                                    Registrado por:{' '}
-                                    {item.autor || 'Usuario'}
-                                </Text>
-                            </View>
-
-                            {/* BOTONES */}
-                            <View style={styles.actionContainer}>
-                                <TouchableOpacity
-                                    style={styles.editButton}
-                                    onPress={() =>
-                                        abrirEdicion(item)
-                                    }
-                                >
-                                    <Text style={styles.actionIcon}>
-                                        ✏️
-                                    </Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.deleteButton}
-                                    onPress={() =>
-                                        eliminarItem(
-                                            item.id,
-                                            item.entidad ||
-                                            item.tarjetaBanco ||
-                                            item.nombre ||
-                                            'Registro'
-                                        )
-                                    }
-                                >
-                                    <Text style={styles.actionIcon}>
-                                        🗑️
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
+                {tipoVista === 'deudas' && item.tipo === 'tarjeta' ? (
+                    <View style={styles.gridInfo}>
+                        <View style={styles.infoBox}>
+                            <Text style={styles.infoLabel}>Cupo Total</Text>
+                            <Text style={styles.infoValue}>${(item.cupoTotal || 0).toFixed(2)}</Text>
                         </View>
-                    ))
-                )}
-
-                {/* MODAL */}
-                <Modal
-                    animationType="slide"
-                    transparent={true}
-                    visible={modalVisible}
-                    onRequestClose={() =>
-                        setModalVisible(false)
-                    }
-                >
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContent}>
-                            <Text style={styles.modalTitle}>
-                                {itemSeleccionado?.tipo ===
-                                    'tarjeta'
-                                    ? 'Editar Tarjeta'
-                                    : itemSeleccionado?.tipo ===
-                                        'consumoTarjeta'
-                                        ? 'Editar Consumo'
-                                        : tipoVista === 'deudas'
-                                            ? 'Editar Deuda'
-                                            : 'Editar Gasto Fijo'}
-                            </Text>
-
-                            <Text style={styles.modalSubtitle}>
-                                {itemSeleccionado?.categoria} -{' '}
-                                {itemSeleccionado?.entidad ||
-                                    itemSeleccionado?.tarjetaBanco ||
-                                    itemSeleccionado?.nombre ||
-                                    ''}
-                            </Text>
-
-                            {tipoVista === 'fijos' && (
-                                <>
-                                    <Text style={styles.labelModal}>
-                                        Nombre del Gasto Fijo
-                                    </Text>
-
-                                    <TextInput
-                                        style={styles.inputModal}
-                                        value={nuevoNombre}
-                                        onChangeText={
-                                            setNuevoNombre
-                                        }
-                                        placeholderTextColor="#64748B"
-                                    />
-                                </>
-                            )}
-
-                            <Text style={styles.labelModal}>
-                                {itemSeleccionado?.tipo ===
-                                    'tarjeta'
-                                    ? 'Cupo Total ($)'
-                                    : itemSeleccionado?.tipo ===
-                                        'consumoTarjeta'
-                                        ? 'Monto del Consumo ($)'
-                                        : 'Monto ($)'}
-                            </Text>
-
-                            <TextInput
-                                style={styles.inputModal}
-                                keyboardType="numeric"
-                                value={nuevoMonto}
-                                onChangeText={
-                                    setNuevoMonto
-                                }
-                                placeholderTextColor="#64748B"
-                            />
-
-                            {tipoVista === 'deudas' &&
-                                itemSeleccionado?.tipo !==
-                                'tarjeta' &&
-                                itemSeleccionado?.tipo !==
-                                'consumoTarjeta' && (
-                                    <>
-                                        <Text style={styles.labelModal}>
-                                            Cuota a pagar ($)
-                                        </Text>
-
-                                        <TextInput
-                                            style={styles.inputModal}
-                                            keyboardType="numeric"
-                                            value={nuevaCuota}
-                                            onChangeText={
-                                                setNuevaCuota
-                                            }
-                                            placeholderTextColor="#64748B"
-                                        />
-                                    </>
-                                )}
-
-                            {tipoVista === 'deudas' &&
-                                itemSeleccionado?.tipo !==
-                                'tarjeta' && (
-                                    <>
-                                        <Text style={styles.labelModal}>
-                                            Fecha máxima de pago
-                                        </Text>
-
-                                        <TextInput
-                                            style={styles.inputModal}
-                                            value={
-                                                nuevaFechaPago
-                                            }
-                                            onChangeText={
-                                                setNuevaFechaPago
-                                            }
-                                            placeholderTextColor="#64748B"
-                                        />
-                                    </>
-                                )}
-
-                            <View style={styles.modalButtonsRow}>
-                                <TouchableOpacity
-                                    style={styles.modalCancelBtn}
-                                    onPress={() =>
-                                        setModalVisible(false)
-                                    }
-                                >
-                                    <Text
-                                        style={
-                                            styles.modalCancelText
-                                        }
-                                    >
-                                        Cancelar
-                                    </Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.modalSaveBtn}
-                                    onPress={
-                                        guardarEdicion
-                                    }
-                                >
-                                    <Text
-                                        style={
-                                            styles.modalSaveText
-                                        }
-                                    >
-                                        Guardar
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
+                        <View style={styles.infoBox}>
+                            <Text style={styles.infoLabel}>Consumido</Text>
+                            <Text style={styles.infoValue}>${(item.totalConsumido || 0).toFixed(2)}</Text>
+                        </View>
+                        <View style={styles.infoBox}>
+                            <Text style={styles.infoLabel}>Pagado</Text>
+                            <Text style={[styles.infoValue, { color: '#059669' }]}>${(item.totalPagado || 0).toFixed(2)}</Text>
+                        </View>
+                        <View style={styles.infoBox}>
+                            <Text style={styles.infoLabel}>Disponible</Text>
+                            <Text style={[styles.infoValue, { color: '#059669' }]}>${(item.cupoDisponible || 0).toFixed(2)}</Text>
                         </View>
                     </View>
-                </Modal>
-            </ScrollView>
+                ) : (
+                    <View style={styles.gridInfoSimple}>
+                        <View style={styles.infoBox}>
+                            <Text style={styles.infoLabel}>Monto / Pendiente</Text>
+                            <Text style={[styles.infoValue, { color: '#EF4444' }]}>
+                                ${(item.montoRestante !== undefined ? item.montoRestante : item.monto || 0).toFixed(2)}
+                            </Text>
+                        </View>
+                        {item.cuotaPagar ? (
+                            <View style={styles.infoBox}>
+                                <Text style={styles.infoLabel}>Cuota</Text>
+                                <Text style={styles.infoValue}>${item.cuotaPagar.toFixed(2)}</Text>
+                            </View>
+                        ) : null}
+                        <View style={styles.infoBox}>
+                            <Text style={styles.infoLabel}>Vencimiento</Text>
+                            <Text style={[styles.infoValue, { fontSize: 11 }]}>{item.fechaMaxPago || item.fechaCaducidad || 'N/A'}</Text>
+                        </View>
+                    </View>
+                )}
+
+                {item.autor && (
+                    <Text style={styles.cardAutor}>Registrado por: {item.autor}</Text>
+                )}
+            </View>
+        );
+    };
+
+    const renderHeader = () => (
+        <View>
+            <Text style={styles.titulo}>Reporte General</Text>
+            <Text style={styles.subtitulo}>Consulta y administra tus compromisos financieros</Text>
+
+            {/* SELECTOR DE VISTA */}
+            <View style={styles.tipoVistaContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.tipoVistaBtn,
+                        tipoVista === 'deudas' && styles.tipoVistaBtnActive
+                    ]}
+                    onPress={() => {
+                        setTipoVista('deudas');
+                        setCategoriaFiltro('Todas');
+                    }}
+                >
+                    <Ionicons name="card-outline" size={15} color={tipoVista === 'deudas' ? '#FFFFFF' : '#64748B'} style={{ marginRight: 6 }} />
+                    <Text style={[styles.tipoVistaText, tipoVista === 'deudas' && styles.tipoVistaTextActive]}>
+                        Deudas
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.tipoVistaBtn,
+                        tipoVista === 'fijos' && styles.tipoVistaBtnActive
+                    ]}
+                    onPress={() => {
+                        setTipoVista('fijos');
+                        setCategoriaFiltro('Todas');
+                    }}
+                >
+                    <Ionicons name="flash-outline" size={15} color={tipoVista === 'fijos' ? '#FFFFFF' : '#64748B'} style={{ marginRight: 6 }} />
+                    <Text style={[styles.tipoVistaText, tipoVista === 'fijos' && styles.tipoVistaTextActive]}>
+                        Gastos Fijos
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* FILTROS CHIPS */}
+            <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={categoriasDisponibles}
+                keyExtractor={(item) => item}
+                contentContainerStyle={styles.filterScroll}
+                renderItem={({ item: cat }) => (
+                    <TouchableOpacity
+                        style={[
+                            styles.filterChip,
+                            categoriaFiltro === cat && styles.filterChipSelected
+                        ]}
+                        onPress={() => setCategoriaFiltro(cat)}
+                    >
+                        <Text
+                            style={[
+                                styles.filterText,
+                                categoriaFiltro === cat && styles.filterTextSelected
+                            ]}
+                        >
+                            {cat}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            />
+
+            {/* RESUMEN */}
+            <View style={styles.resumenCard}>
+                <Text style={styles.resumenTitle}>
+                    Total Pendiente: {categoriaFiltro}
+                </Text>
+                <Text style={styles.resumenAmount}>
+                    ${totalFiltrado.toFixed(2)}
+                </Text>
+                <Text style={styles.resumenSub}>
+                    {itemsFiltrados.length} {itemsFiltrados.length === 1 ? 'registro encontrado' : 'registros encontrados'}
+                </Text>
+            </View>
+        </View>
+    );
+
+    return (
+        <View style={styles.rootContainer}>
+            <FlatList
+                data={itemsFiltrados}
+                keyExtractor={(item) => item.id}
+                renderItem={renderItem}
+                ListHeaderComponent={renderHeader}
+                contentContainerStyle={styles.container}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                    loading ? (
+                        <Text style={styles.emptyText}>Cargando registros...</Text>
+                    ) : (
+                        <Text style={styles.emptyText}>No hay registros en esta categoría.</Text>
+                    )
+                }
+            />
+
+            {/* MODAL DE EDICIÓN */}
+            <Modal
+                visible={modalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Editar Registro</Text>
+
+                        {tipoVista === 'fijos' && (
+                            <>
+                                <Text style={styles.modalLabel}>Nombre del Gasto</Text>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    value={nuevoNombre}
+                                    onChangeText={setNuevoNombre}
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </>
+                        )}
+
+                        <Text style={styles.modalLabel}>
+                            {tipoVista === 'deudas' && itemSeleccionado?.tipo === 'tarjeta' ? 'Cupo Total' : 'Monto / Saldo'}
+                        </Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            keyboardType="numeric"
+                            value={nuevoMonto}
+                            onChangeText={setNuevoMonto}
+                            placeholder="0.00"
+                            placeholderTextColor="#94A3B8"
+                        />
+
+                        {tipoVista === 'deudas' && itemSeleccionado?.tipo !== 'tarjeta' && (
+                            <>
+                                <Text style={styles.modalLabel}>Cuota a Pagar</Text>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    keyboardType="numeric"
+                                    value={nuevaCuota}
+                                    onChangeText={setNuevaCuota}
+                                    placeholder="0.00"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                                <Text style={styles.modalLabel}>Fecha de Vencimiento</Text>
+                                <TextInput
+                                    style={styles.modalInput}
+                                    value={nuevaFechaPago}
+                                    onChangeText={setNuevaFechaPago}
+                                    placeholder="DD/MM/YYYY"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </>
+                        )}
+
+                        <View style={styles.modalButtonsRow}>
+                            <TouchableOpacity
+                                style={styles.modalBtnCancel}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={styles.modalBtnCancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.modalBtnSave}
+                                onPress={guardarEdicion}
+                            >
+                                <Text style={styles.modalBtnSaveText}>Guardar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
 
-/*
- * ================================================================
- * ESTILOS
- * ================================================================
- */
-
 const styles = StyleSheet.create({
     rootContainer: {
         flex: 1,
-        backgroundColor: '#0F172A',
-        ...Platform.select({
-            web: {
-                height: '100vh' as any,
-                overflow: 'hidden' as any
-            },
-            default: {}
-        })
+        backgroundColor: '#F8FAFC',
     },
-
-    scrollView: {
-        flex: 1,
-        backgroundColor: '#0F172A'
-    },
-
     container: {
-        flexGrow: 1,
-        paddingHorizontal: 25,
-        paddingTop: 40,
-        paddingBottom: 100
+        paddingHorizontal: 16,
+        paddingTop: 20,
+        paddingBottom: 40,
     },
-
     titulo: {
-        textAlign: 'center',
-        fontSize: 24,
-        fontWeight: '700',
-        color: '#38BDF8',
-        marginBottom: 6
+        color: '#1E293B',
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 2,
     },
-
     subtitulo: {
-        textAlign: 'center',
-        fontSize: 14,
-        color: '#94A3B8',
-        marginBottom: 16
+        color: '#64748B',
+        fontSize: 12,
+        marginBottom: 14,
     },
-
     tipoVistaContainer: {
         flexDirection: 'row',
-        backgroundColor: '#1E293B',
+        backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 4,
-        marginBottom: 16,
+        marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#334155'
+        borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 2,
+        elevation: 1,
     },
-
     tipoVistaBtn: {
         flex: 1,
-        paddingVertical: 10,
-        alignItems: 'center',
-        borderRadius: 8
-    },
-
-    tipoVistaBtnActive: {
-        backgroundColor: '#38BDF8'
-    },
-
-    tipoVistaText: {
-        color: '#94A3B8',
-        fontWeight: '600',
-        fontSize: 13
-    },
-
-    tipoVistaTextActive: {
-        color: '#0F172A',
-        fontWeight: 'bold'
-    },
-
-    filterScroll: {
         flexDirection: 'row',
-        marginBottom: 20
-    },
-
-    filterChip: {
-        backgroundColor: '#1E293B',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#334155',
-        marginRight: 10,
-        height: 40
-    },
-
-    filterChipSelected: {
-        backgroundColor: '#1D4ED8',
-        borderColor: '#60A5FA'
-    },
-
-    filterText: {
-        color: '#94A3B8',
-        fontSize: 13,
-        fontWeight: '600'
-    },
-
-    filterTextSelected: {
-        color: '#FFFFFF'
-    },
-
-    resumenCard: {
-        backgroundColor: '#1E293B',
-        borderRadius: 14,
-        padding: 16,
+        paddingVertical: 9,
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#334155',
-        marginBottom: 20
+        justifyContent: 'center',
+        borderRadius: 9,
     },
-
-    resumenTitle: {
-        color: '#94A3B8',
-        fontSize: 13,
-        marginBottom: 4,
-        textAlign: 'center'
+    tipoVistaBtnActive: {
+        backgroundColor: '#059669',
     },
-
-    resumenAmount: {
-        color: '#EA580C',
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 2
-    },
-
-    resumenSub: {
+    tipoVistaText: {
         color: '#64748B',
-        fontSize: 11
+        fontSize: 12,
+        fontWeight: '600',
     },
-
+    tipoVistaTextActive: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+    },
+    filterScroll: {
+        paddingVertical: 2,
+        marginBottom: 12,
+    },
+    filterChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        marginRight: 6,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    filterChipSelected: {
+        backgroundColor: '#059669',
+        borderColor: '#059669',
+    },
+    filterText: {
+        color: '#64748B',
+        fontSize: 11,
+        fontWeight: '500',
+    },
+    filterTextSelected: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+    },
+    resumenCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        padding: 14,
+        marginBottom: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    resumenTitle: {
+        color: '#64748B',
+        fontSize: 11,
+        marginBottom: 2,
+    },
+    resumenAmount: {
+        color: '#059669',
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 2,
+    },
+    resumenSub: {
+        color: '#94A3B8',
+        fontSize: 10,
+    },
+    cardDeuda: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        padding: 12,
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    cardHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    badgeCategoria: {
+        backgroundColor: '#ECFDF5',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+    },
+    badgeText: {
+        color: '#059669',
+        fontSize: 10,
+        fontWeight: '600',
+    },
+    cardActions: {
+        flexDirection: 'row',
+    },
+    actionIconBtn: {
+        width: 26,
+        height: 26,
+        borderRadius: 6,
+        backgroundColor: '#F1F5F9',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 6,
+    },
+    cardEntidad: {
+        color: '#1E293B',
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    gridInfo: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+        paddingTop: 6,
+    },
+    gridInfoSimple: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+        paddingTop: 6,
+    },
+    infoBox: {
+        width: '23%',
+        alignItems: 'flex-start',
+    },
+    infoLabel: {
+        color: '#64748B',
+        fontSize: 9,
+        marginBottom: 1,
+    },
+    infoValue: {
+        color: '#1E293B',
+        fontSize: 11,
+        fontWeight: 'bold',
+    },
+    cardAutor: {
+        color: '#94A3B8',
+        fontSize: 9,
+        marginTop: 6,
+        textAlign: 'right',
+    },
     emptyText: {
         color: '#64748B',
         textAlign: 'center',
-        marginTop: 20,
-        fontSize: 14
+        marginTop: 30,
+        fontSize: 12,
     },
-
-    cardDeuda: {
-        backgroundColor: '#1E293B',
-        borderRadius: 12,
-        padding: 16,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#334155'
-    },
-
-    cardCategoria: {
-        color: '#38BDF8',
-        fontSize: 11,
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        marginBottom: 2
-    },
-
-    cardEntidad: {
-        color: '#F8FAFC',
-        fontSize: 16,
-        fontWeight: '700',
-        marginBottom: 6
-    },
-
-    cardDetalle: {
-        color: '#94A3B8',
-        fontSize: 13,
-        marginBottom: 2
-    },
-
-    textBold: {
-        color: '#F8FAFC',
-        fontWeight: '600'
-    },
-
-    cardAuthor: {
-        color: '#64748B',
-        fontSize: 11,
-        marginTop: 6
-    },
-
-    actionContainer: {
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        height: '100%',
-        paddingLeft: 10
-    },
-
-    editButton: {
-        backgroundColor: '#1E3A8A',
-        padding: 8,
-        borderRadius: 8,
-        marginBottom: 8
-    },
-
-    deleteButton: {
-        backgroundColor: '#7F1D1D',
-        padding: 8,
-        borderRadius: 8
-    },
-
-    actionIcon: {
-        fontSize: 14
-    },
-
     modalOverlay: {
         flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)'
+        padding: 20,
     },
-
     modalContent: {
-        backgroundColor: '#1E293B',
-        width: '85%',
+        backgroundColor: '#FFFFFF',
         borderRadius: 16,
-        padding: 22,
+        padding: 20,
         borderWidth: 1,
-        borderColor: '#334155'
+        borderColor: '#E2E8F0',
     },
-
     modalTitle: {
-        color: '#F8FAFC',
-        fontSize: 20,
-        fontWeight: '700',
-        textAlign: 'center',
-        marginBottom: 4
+        color: '#1E293B',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 12,
     },
-
-    modalSubtitle: {
-        color: '#38BDF8',
-        fontSize: 13,
-        textAlign: 'center',
-        marginBottom: 20
+    modalLabel: {
+        color: '#64748B',
+        fontSize: 11,
+        marginBottom: 3,
     },
-
-    labelModal: {
-        color: '#F8FAFC',
-        fontSize: 13,
-        fontWeight: '600',
-        marginBottom: 6
-    },
-
-    inputModal: {
-        backgroundColor: '#0F172A',
+    modalInput: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 9,
+        color: '#1E293B',
+        fontSize: 12,
+        marginBottom: 10,
         borderWidth: 1,
-        borderColor: '#334155',
-        borderRadius: 10,
-        padding: 12,
-        color: '#F8FAFC',
-        fontSize: 15,
-        marginBottom: 14
+        borderColor: '#E2E8F0',
     },
-
     modalButtonsRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 10
+        justifyContent: 'flex-end',
+        marginTop: 8,
     },
-
-    modalCancelBtn: {
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: '#64748B',
-        borderRadius: 10,
-        paddingVertical: 12,
-        flex: 1,
-        marginRight: 8,
-        alignItems: 'center'
+    modalBtnCancel: {
+        paddingVertical: 9,
+        paddingHorizontal: 14,
+        borderRadius: 8,
+        marginRight: 6,
+        backgroundColor: '#F1F5F9',
     },
-
-    modalCancelText: {
-        color: '#94A3B8',
-        fontWeight: '600'
+    modalBtnCancelText: {
+        color: '#64748B',
+        fontSize: 12,
+        fontWeight: '600',
     },
-
-    modalSaveBtn: {
-        backgroundColor: '#1D4ED8',
-        borderRadius: 10,
-        paddingVertical: 12,
-        flex: 1,
-        marginLeft: 8,
-        alignItems: 'center'
+    modalBtnSave: {
+        paddingVertical: 9,
+        paddingHorizontal: 14,
+        borderRadius: 8,
+        backgroundColor: '#059669',
     },
-
-    modalSaveText: {
+    modalBtnSaveText: {
         color: '#FFFFFF',
-        fontWeight: '700'
-    }
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
 });

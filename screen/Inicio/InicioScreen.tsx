@@ -8,9 +8,14 @@ import {
     ActivityIndicator,
     Platform,
 } from 'react-native';
+
 import React, { useEffect, useState } from 'react';
+
 import { auth, db } from '../../firebase/FirebaseConfig';
+
 import { ref, onValue } from 'firebase/database';
+
+import { Ionicons } from '@expo/vector-icons';
 
 export default function InicioScreen({ navigation }: any) {
     const usuarioActual = auth.currentUser;
@@ -25,7 +30,14 @@ export default function InicioScreen({ navigation }: any) {
     const [movimientos, setMovimientos] = useState<any[]>([]);
 
     // ============================================================
-    // OBTENER PAREJA
+    // DATOS DEL PERFIL (el nombre que se puso al registrarse)
+    // ============================================================
+
+    const [nombreCuenta, setNombreCuenta] = useState<string>('');
+    const [fotoCuenta, setFotoCuenta] = useState<string | null>(null);
+
+    // ============================================================
+    // OBTENER PAREJA + PERFIL
     // ============================================================
 
     useEffect(() => {
@@ -44,6 +56,20 @@ export default function InicioScreen({ navigation }: any) {
 
         const unsubscribe = onValue(userRef, (snapshot) => {
             const data = snapshot.val();
+
+            // El nombre se toma del registro guardado en la base de
+            // datos (como se guarda al momento del registro),
+            // con respaldo en los datos de autenticación.
+            const nombreRegistrado =
+                data?.nombre ||
+                data?.nombreCompleto ||
+                data?.displayName ||
+                usuarioActual?.displayName ||
+                usuarioActual?.email?.split('@')[0] ||
+                'Usuario';
+
+            setNombreCuenta(nombreRegistrado);
+            setFotoCuenta(data?.foto || usuarioActual?.photoURL || null);
 
             if (data?.idPareja) {
                 setIdPareja(data.idPareja);
@@ -400,6 +426,14 @@ export default function InicioScreen({ navigation }: any) {
     const balanceNeto =
         totalIngresos - totalGastos;
 
+    const iniciales = nombreCuenta
+        .trim()
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((palabra) => palabra[0]?.toUpperCase())
+        .join('') || 'U';
+
     return (
         <View style={styles.root}>
             <ScrollView
@@ -407,222 +441,124 @@ export default function InicioScreen({ navigation }: any) {
                 contentContainerStyle={styles.container}
                 showsVerticalScrollIndicator={false}
             >
+
                 {/* ================================================= */}
-                {/* HEADER */}
+                {/* HEADER: HOLA + NOMBRE + FOTO */}
                 {/* ================================================= */}
 
                 <View style={styles.header}>
-                    <View style={styles.logoContainer}>
-                        <Image
-                            source={require('../../assets/img/logov2.png')}
-                            style={styles.logoHeader}
-                            resizeMode="contain"
-                        />
+
+                    <View style={styles.avatarContainer}>
+                        {fotoCuenta ? (
+                            <Image
+                                source={{ uri: fotoCuenta }}
+                                style={styles.avatarImage}
+                            />
+                        ) : (
+                            <Text style={styles.avatarIniciales}>
+                                {iniciales}
+                            </Text>
+                        )}
                     </View>
 
                     <View style={styles.headerInfo}>
+
                         <Text style={styles.welcomeText}>
-                            FINANZAS EN PAREJA
+                            Hola,
                         </Text>
 
                         <Text style={styles.nameText}>
-                            Dashboard Compartido
+                            {nombreCuenta || 'Usuario'}
                         </Text>
 
-                        <View style={styles.onlineRow}>
-                            <View style={styles.onlineDot} />
-                            <Text style={styles.onlineText}>
-                                Cuenta sincronizada
-                            </Text>
-                        </View>
                     </View>
+
+                    <View style={styles.headerSyncPill}>
+                        <View style={styles.onlineDot} />
+                        <Text style={styles.onlineText}>
+                            Sincronizado
+                        </Text>
+                    </View>
+
                 </View>
 
                 {/* ================================================= */}
-                {/* TITULO */}
-                {/* ================================================= */}
-
-                <View style={styles.titleRow}>
-                    <View>
-                        <Text style={styles.dashboardHeaderTitle}>
-                            Resumen financiero
-                        </Text>
-
-                        <Text style={styles.dashboardSubtitle}>
-                            Tu situación financiera actual
-                        </Text>
-                    </View>
-
-                    <View style={styles.monthBadge}>
-                        <Text style={styles.monthBadgeText}>
-                            HOY
-                        </Text>
-                    </View>
-                </View>
-
-                {/* ================================================= */}
-                {/* BALANCE PRINCIPAL */}
+                {/* BALANCE PRINCIPAL — TARJETA DESTACADA */}
                 {/* ================================================= */}
 
                 <View style={styles.mainDashboardCard}>
+
                     <View style={styles.balanceTopRow}>
-                        <View style={styles.balanceIcon}>
-                            <Text style={styles.balanceIconText}>
-                                $
-                            </Text>
-                        </View>
+                        <Text style={styles.mainCardTitle}>
+                            BALANCE NETO
+                        </Text>
 
-                        <View>
-                            <Text style={styles.mainCardTitle}>
-                                BALANCE NETO
-                            </Text>
-
-                            <Text style={styles.mainCardSubtitle}>
-                                Ingresos − gastos
-                            </Text>
+                        <View
+                            style={[
+                                styles.balanceStatusChip,
+                                balanceNeto < 0 &&
+                                    styles.balanceStatusChipNegativo,
+                            ]}
+                        >
+                            <Ionicons
+                                name={
+                                    balanceNeto >= 0
+                                        ? 'trending-up'
+                                        : 'trending-down'
+                                }
+                                size={12}
+                                color="#FFFFFF"
+                            />
                         </View>
                     </View>
 
-                    <Text
-                        style={[
-                            styles.mainCardAmount,
-                            balanceNeto < 0 &&
-                                styles.textRed,
-                        ]}
-                    >
+                    <Text style={styles.mainCardAmount}>
                         ${balanceNeto.toFixed(2)}
                     </Text>
 
-                    <View style={styles.balanceLine}>
-                        <View
-                            style={[
-                                styles.balanceLineProgress,
-                                {
-                                    width:
-                                        balanceNeto > 0
-                                            ? '75%'
-                                            : '35%',
-                                },
-                            ]}
-                        />
-                    </View>
-
-                    <Text style={styles.balanceFooter}>
+                    <Text style={styles.mainCardSubtitle}>
                         {balanceNeto >= 0
-                            ? '✓ Tienes un balance positivo'
-                            : '⚠ Tus gastos superan tus ingresos'}
+                            ? 'Balance positivo entre los dos'
+                            : 'Los gastos superan los ingresos'}
                     </Text>
-                </View>
 
-                {/* ================================================= */}
-                {/* RESUMEN */}
-                {/* ================================================= */}
+                    <View style={styles.balanceDivider} />
 
-                <View style={styles.dashboardGrid}>
-                    {/* INGRESOS */}
+                    <View style={styles.balanceMiniRow}>
 
-                    <View
-                        style={[
-                            styles.dashCard,
-                            styles.incomeCard,
-                        ]}
-                    >
-                        <View
-                            style={[
-                                styles.dashIcon,
-                                styles.incomeIcon,
-                            ]}
-                        >
-                            <Text style={styles.dashIconText}>
-                                ↗
+                        <View style={styles.balanceMiniItem}>
+                            <Text style={styles.balanceMiniLabel}>
+                                Ingresos
+                            </Text>
+                            <Text style={styles.balanceMiniValueIngreso}>
+                                ${totalIngresos.toFixed(2)}
                             </Text>
                         </View>
 
-                        <Text style={styles.dashCardTitle}>
-                            Ingresos
-                        </Text>
+                        <View style={styles.balanceMiniSeparator} />
 
-                        <Text
-                            style={
-                                styles.dashCardIncome
-                            }
-                        >
-                            +$
-                            {totalIngresos.toFixed(
-                                2
-                            )}
-                        </Text>
-                    </View>
-
-                    {/* GASTOS */}
-
-                    <View
-                        style={[
-                            styles.dashCard,
-                            styles.expenseCard,
-                        ]}
-                    >
-                        <View
-                            style={[
-                                styles.dashIcon,
-                                styles.expenseIcon,
-                            ]}
-                        >
-                            <Text style={styles.dashIconText}>
-                                ↘
+                        <View style={styles.balanceMiniItem}>
+                            <Text style={styles.balanceMiniLabel}>
+                                Gastos
+                            </Text>
+                            <Text style={styles.balanceMiniValueGasto}>
+                                ${totalGastos.toFixed(2)}
                             </Text>
                         </View>
 
-                        <Text style={styles.dashCardTitle}>
-                            Gastos
-                        </Text>
+                        <View style={styles.balanceMiniSeparator} />
 
-                        <Text
-                            style={
-                                styles.dashCardExpense
-                            }
-                        >
-                            -$
-                            {totalGastos.toFixed(
-                                2
-                            )}
-                        </Text>
-                    </View>
-
-                    {/* DEUDAS */}
-
-                    <View
-                        style={[
-                            styles.dashCard,
-                            styles.debtCard,
-                        ]}
-                    >
-                        <View
-                            style={[
-                                styles.dashIcon,
-                                styles.debtIcon,
-                            ]}
-                        >
-                            <Text style={styles.dashIconText}>
-                                $
+                        <View style={styles.balanceMiniItem}>
+                            <Text style={styles.balanceMiniLabel}>
+                                Deudas
+                            </Text>
+                            <Text style={styles.balanceMiniValueDeuda}>
+                                ${totalDeudas.toFixed(2)}
                             </Text>
                         </View>
 
-                        <Text style={styles.dashCardTitle}>
-                            Deudas
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.dashCardDebt
-                            }
-                        >
-                            $
-                            {totalDeudas.toFixed(
-                                2
-                            )}
-                        </Text>
                     </View>
+
                 </View>
 
                 {/* ================================================= */}
@@ -634,131 +570,112 @@ export default function InicioScreen({ navigation }: any) {
                 </Text>
 
                 <View style={styles.actionButtonsRow}>
+
+                    {/* GASTOS */}
+
                     <TouchableOpacity
-                        activeOpacity={0.8}
-                        style={
-                            styles.actionButtonRapido
-                        }
+                        activeOpacity={0.85}
+                        style={styles.actionButton}
                         onPress={() =>
                             navigation.navigate(
                                 'gastosRapidos'
                             )
                         }
                     >
+
                         <View
-                            style={
-                                styles.actionIconContainer
-                            }
+                            style={[
+                                styles.actionIconContainer,
+                                { backgroundColor: '#F8EEEE' },
+                            ]}
                         >
-                            <Text
-                                style={
-                                    styles.actionIcon
-                                }
-                            >
-                                ⚡
-                            </Text>
+                            <Ionicons
+                                name="flash-outline"
+                                size={19}
+                                color={COLOR_ROJO}
+                            />
                         </View>
 
-                        <Text
-                            style={
-                                styles.actionButtonText
-                            }
-                        >
+                        <Text style={styles.actionButtonText}>
                             Gastos
                         </Text>
 
-                        <Text
-                            style={
-                                styles.actionButtonSmallText
-                            }
-                        >
+                        <Text style={styles.actionButtonSmallText}>
                             Rápidos
                         </Text>
+
                     </TouchableOpacity>
 
+                    {/* REGISTROS */}
+
                     <TouchableOpacity
-                        activeOpacity={0.8}
-                        style={
-                            styles.actionButtonSmall
-                        }
+                        activeOpacity={0.85}
+                        style={styles.actionButton}
                         onPress={() =>
                             navigation.navigate(
                                 'Registros'
                             )
                         }
                     >
+
                         <View
-                            style={
-                                styles.actionIconContainerBlue
-                            }
+                            style={[
+                                styles.actionIconContainer,
+                                { backgroundColor: COLOR_SUAVE },
+                            ]}
                         >
-                            <Text
-                                style={
-                                    styles.actionIcon
-                                }
-                            >
-                                📝
-                            </Text>
+                            <Ionicons
+                                name="document-text-outline"
+                                size={19}
+                                color={COLOR_PRINCIPAL}
+                            />
                         </View>
 
-                        <Text
-                            style={
-                                styles.actionButtonText
-                            }
-                        >
+                        <Text style={styles.actionButtonText}>
                             Registros
                         </Text>
 
-                        <Text
-                            style={
-                                styles.actionButtonSmallText
-                            }
-                        >
+                        <Text style={styles.actionButtonSmallText}>
                             Movimientos
                         </Text>
+
                     </TouchableOpacity>
 
+                    {/* DEUDAS */}
+
                     <TouchableOpacity
-                        activeOpacity={0.8}
-                        style={
-                            styles.actionButtonDebt
-                        }
+                        activeOpacity={0.85}
+                        style={styles.actionButton}
                         onPress={() =>
                             navigation.navigate(
                                 'deudas'
                             )
                         }
                     >
+
                         <View
-                            style={
-                                styles.actionIconContainerPurple
-                            }
+                            style={[
+                                styles.actionIconContainer,
+                                { backgroundColor: '#EDF5F2' },
+                            ]}
                         >
-                            <Text
-                                style={
-                                    styles.actionIcon
-                                }
-                            >
-                                💳
-                            </Text>
+                            <Ionicons
+                                name="card-outline"
+                                size={19}
+                                color={COLOR_VERDE}
+                            />
                         </View>
 
-                        <Text
-                            style={
-                                styles.actionButtonText
-                            }
-                        >
+                        <Text style={styles.actionButtonText}>
                             Deudas
                         </Text>
 
-                        <Text
-                            style={
-                                styles.actionButtonSmallText
-                            }
-                        >
+                        <Text style={styles.actionButtonSmallText}>
                             Obligaciones
                         </Text>
+
                     </TouchableOpacity>
+
                 </View>
 
                 {/* ================================================= */}
@@ -766,7 +683,9 @@ export default function InicioScreen({ navigation }: any) {
                 {/* ================================================= */}
 
                 <View style={styles.activityHeader}>
-                    <View>
+
+                    <View style={styles.activityInfo}>
+
                         <Text style={styles.sectionTitle}>
                             Actividad reciente
                         </Text>
@@ -774,6 +693,7 @@ export default function InicioScreen({ navigation }: any) {
                         <Text style={styles.sectionSubtitle}>
                             Últimos movimientos de la pareja
                         </Text>
+
                     </View>
 
                     <View style={styles.activityCount}>
@@ -781,6 +701,7 @@ export default function InicioScreen({ navigation }: any) {
                             {movimientos.length}
                         </Text>
                     </View>
+
                 </View>
 
                 {/* ================================================= */}
@@ -788,22 +709,30 @@ export default function InicioScreen({ navigation }: any) {
                 {/* ================================================= */}
 
                 {loading ? (
+
                     <View style={styles.loadingCard}>
+
                         <ActivityIndicator
                             size="large"
-                            color="#38BDF8"
+                            color={COLOR_PRINCIPAL}
                         />
 
                         <Text style={styles.loadingText}>
                             Sincronizando información...
                         </Text>
+
                     </View>
+
                 ) : movimientos.length === 0 ? (
+
                     <View style={styles.emptyCard}>
+
                         <View style={styles.emptyIcon}>
-                            <Text style={styles.emptyIconText}>
-                                $
-                            </Text>
+                            <Ionicons
+                                name="wallet-outline"
+                                size={26}
+                                color={COLOR_PRINCIPAL}
+                            />
                         </View>
 
                         <Text style={styles.emptyTitle}>
@@ -814,30 +743,30 @@ export default function InicioScreen({ navigation }: any) {
                             Empieza registrando tus ingresos,
                             gastos o deudas.
                         </Text>
+
                     </View>
+
                 ) : (
+
                     movimientos.map((item) => {
+
                         const esIngreso =
-                            item.tipo ===
-                            'ingreso';
+                            item.tipo === 'ingreso';
 
                         const esDeuda =
-                            item.tipo ===
-                                'deuda' ||
-                            item.tipo ===
-                                'consumoTarjeta';
+                            item.tipo === 'deuda' ||
+                            item.tipo === 'consumoTarjeta';
 
                         const esConsumoTarjeta =
-                            item.tipo ===
-                            'consumoTarjeta';
+                            item.tipo === 'consumoTarjeta';
 
                         return (
+
                             <View
                                 key={item.id}
-                                style={
-                                    styles.transactionItem
-                                }
+                                style={styles.transactionItem}
                             >
+
                                 {/* ICONO */}
 
                                 <View
@@ -850,30 +779,33 @@ export default function InicioScreen({ navigation }: any) {
                                             : styles.transactionExpense,
                                     ]}
                                 >
-                                    <Text
-                                        style={
-                                            styles.transactionIconText
+
+                                    <Ionicons
+                                        name={
+                                            esIngreso
+                                                ? 'arrow-up'
+                                                : esDeuda
+                                                ? 'card-outline'
+                                                : 'arrow-down'
                                         }
-                                    >
-                                        {esIngreso
-                                            ? '↗'
-                                            : esDeuda
-                                            ? '💳'
-                                            : '↘'}
-                                    </Text>
+                                        size={18}
+                                        color={
+                                            esIngreso
+                                                ? COLOR_VERDE
+                                                : esDeuda
+                                                ? COLOR_PRINCIPAL
+                                                : COLOR_ROJO
+                                        }
+                                    />
+
                                 </View>
 
                                 {/* INFO */}
 
-                                <View
-                                    style={
-                                        styles.transactionInfo
-                                    }
-                                >
+                                <View style={styles.transactionInfo}>
+
                                     <Text
-                                        style={
-                                            styles.transactionTitle
-                                        }
+                                        style={styles.transactionTitle}
                                         numberOfLines={2}
                                     >
                                         {item.descripcion ||
@@ -888,7 +820,6 @@ export default function InicioScreen({ navigation }: any) {
                                                 styles.cardDetailText
                                             }
                                         >
-                                            💳{' '}
                                             {item.tarjetaMarca ||
                                                 'Tarjeta'}{' '}
                                             ·{' '}
@@ -900,14 +831,13 @@ export default function InicioScreen({ navigation }: any) {
                                     {/* DIFERIDO */}
 
                                     {esConsumoTarjeta &&
-                                        item.diferido ===
-                                            true && (
+                                        item.diferido === true && (
                                             <Text
                                                 style={
                                                     styles.subDetailText
                                                 }
                                             >
-                                                📅 Diferido a{' '}
+                                                Diferido a{' '}
                                                 {
                                                     item.numeroCuotas
                                                 }{' '}
@@ -926,33 +856,28 @@ export default function InicioScreen({ navigation }: any) {
                                                     styles.cuotaText
                                                 }
                                             >
-                                                💰 Cuota: $
+                                                Cuota: $
                                                 {Number(
                                                     item.cuotaPagar
-                                                ).toFixed(
-                                                    2
-                                                )}
+                                                ).toFixed(2)}
                                             </Text>
                                         )}
 
                                     {/* CUOTA DEUDA */}
 
-                                    {item.tipo ===
-                                        'deuda' &&
+                                    {item.tipo === 'deuda' &&
                                         Number(
                                             item.cuotaPagar
                                         ) > 0 && (
                                             <Text
                                                 style={
-                                                    styles.subDetailText
+                                                    styles.cuotaText
                                                 }
                                             >
-                                                💰 Cuota: $
+                                                Cuota: $
                                                 {Number(
                                                     item.cuotaPagar
-                                                ).toFixed(
-                                                    2
-                                                )}
+                                                ).toFixed(2)}
                                             </Text>
                                         )}
 
@@ -964,9 +889,9 @@ export default function InicioScreen({ navigation }: any) {
                                         }
                                     >
                                         Registrado por:{' '}
-                                        {item.autor ||
-                                            'Usuario'}
+                                        {item.autor || 'Usuario'}
                                     </Text>
+
                                 </View>
 
                                 {/* MONTO */}
@@ -976,33 +901,28 @@ export default function InicioScreen({ navigation }: any) {
                                         styles.amountContainer
                                     }
                                 >
+
                                     <Text
                                         style={[
                                             styles.transactionAmount,
                                             esIngreso
                                                 ? styles.textGreen
                                                 : esDeuda
-                                                ? styles.textOrange
+                                                ? styles.textTeal
                                                 : styles.textRed,
                                         ]}
                                     >
                                         {esIngreso
                                             ? `+$${Number(
                                                   item.monto
-                                              ).toFixed(
-                                                  2
-                                              )}`
+                                              ).toFixed(2)}`
                                             : esDeuda
                                             ? `$${Number(
                                                   item.monto
-                                              ).toFixed(
-                                                  2
-                                              )}`
+                                              ).toFixed(2)}`
                                             : `-$${Number(
                                                   item.monto
-                                              ).toFixed(
-                                                  2
-                                              )}`}
+                                              ).toFixed(2)}`}
                                     </Text>
 
                                     <Text
@@ -1016,7 +936,9 @@ export default function InicioScreen({ navigation }: any) {
                                             ? 'Deuda'
                                             : 'Gasto'}
                                     </Text>
+
                                 </View>
+
                             </View>
                         );
                     })
@@ -1027,38 +949,68 @@ export default function InicioScreen({ navigation }: any) {
                 {/* ================================================= */}
 
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>
-                        Finanzas en Pareja
-                    </Text>
+
+                    <View style={styles.footerLogoRow}>
+
+                        <Ionicons
+                            name="heart-outline"
+                            size={14}
+                            color={COLOR_PRINCIPAL}
+                        />
+
+                        <Text style={styles.footerText}>
+                            Finanzas en Pareja
+                        </Text>
+
+                    </View>
 
                     <Text style={styles.footerSubText}>
                         Tu dinero, organizado entre los dos.
                     </Text>
+
                 </View>
+
             </ScrollView>
         </View>
     );
 }
 
+// ============================================================
+// PALETA (misma gama que ya tenías)
+// ============================================================
+
+const COLOR_PRINCIPAL = '#176B63';
+const COLOR_OSCURO = '#124C47';
+const COLOR_VERDE = '#2E7D6E';
+const COLOR_SUAVE = '#DCEAE7';
+const COLOR_MUY_SUAVE = '#F3F7F6';
+
+const COLOR_ROJO = '#B85C5C';
+
+// ============================================================
+// ESTILOS
+// ============================================================
+
 const styles = StyleSheet.create({
+
     // ============================================================
     // GENERAL
     // ============================================================
 
     root: {
         flex: 1,
-        backgroundColor: '#07111F',
+        backgroundColor: '#FFFFFF',
     },
 
     scrollView: {
         flex: 1,
-        backgroundColor: '#07111F',
+        backgroundColor: '#FFFFFF',
     },
 
     container: {
-        paddingHorizontal: 18,
-        paddingTop: Platform.OS === 'web' ? 30 : 42,
-        paddingBottom: 50,
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'web' ? 25 : 38,
+        paddingBottom: 45,
     },
 
     // ============================================================
@@ -1068,29 +1020,37 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#0D1B2A',
-        borderRadius: 20,
-        padding: 15,
-        marginBottom: 25,
-        borderWidth: 1,
-        borderColor: '#1E344A',
+
+        marginBottom: 22,
     },
 
-    logoContainer: {
-        width: 62,
-        height: 62,
-        borderRadius: 18,
-        backgroundColor: '#13283D',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 14,
-        borderWidth: 1,
-        borderColor: '#27445F',
-    },
-
-    logoHeader: {
+    avatarContainer: {
         width: 50,
         height: 50,
+
+        borderRadius: 25,
+
+        backgroundColor: COLOR_PRINCIPAL,
+
+        alignItems: 'center',
+        justifyContent: 'center',
+
+        marginRight: 12,
+
+        overflow: 'hidden',
+    },
+
+    avatarImage: {
+        width: 50,
+        height: 50,
+    },
+
+    avatarIniciales: {
+        color: '#FFFFFF',
+
+        fontSize: 17,
+
+        fontWeight: '700',
     },
 
     headerInfo: {
@@ -1098,260 +1058,192 @@ const styles = StyleSheet.create({
     },
 
     welcomeText: {
-        color: '#38BDF8',
-        fontSize: 11,
-        fontWeight: '800',
-        letterSpacing: 1.5,
-        marginBottom: 3,
+        color: '#8A908E',
+
+        fontSize: 12,
     },
 
     nameText: {
-        color: '#F8FAFC',
-        fontSize: 19,
-        fontWeight: '800',
+        color: '#171A19',
+
+        fontSize: 18,
+
+        fontWeight: '700',
     },
 
-    onlineRow: {
+    headerSyncPill: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 5,
+
+        backgroundColor: COLOR_MUY_SUAVE,
+
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+
+        borderRadius: 20,
     },
 
     onlineDot: {
-        width: 7,
-        height: 7,
-        borderRadius: 10,
-        backgroundColor: '#22C55E',
-        marginRight: 6,
+        width: 6,
+        height: 6,
+
+        borderRadius: 4,
+
+        backgroundColor: COLOR_VERDE,
+
+        marginRight: 5,
     },
 
     onlineText: {
-        color: '#64748B',
+        color: COLOR_OSCURO,
+
         fontSize: 10,
-    },
 
-    // ============================================================
-    // TITULO
-    // ============================================================
-
-    titleRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 13,
-    },
-
-    dashboardHeaderTitle: {
-        color: '#F8FAFC',
-        fontSize: 22,
-        fontWeight: '800',
-    },
-
-    dashboardSubtitle: {
-        color: '#64748B',
-        fontSize: 12,
-        marginTop: 3,
-    },
-
-    monthBadge: {
-        backgroundColor: '#132B42',
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#245273',
-    },
-
-    monthBadgeText: {
-        color: '#38BDF8',
-        fontSize: 10,
-        fontWeight: '800',
-    },
-
-    // ============================================================
-    // BALANCE
-    // ============================================================
-
-    mainDashboardCard: {
-        backgroundColor: '#10263A',
-        borderRadius: 22,
-        padding: 22,
-        marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#1D4968',
-        overflow: 'hidden',
-        shadowColor: '#0284C7',
-        shadowOffset: {
-            width: 0,
-            height: 8,
-        },
-        shadowOpacity: 0.18,
-        shadowRadius: 15,
-        elevation: 7,
-    },
-
-    balanceTopRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-
-    balanceIcon: {
-        width: 45,
-        height: 45,
-        borderRadius: 14,
-        backgroundColor: '#164E63',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-
-    balanceIconText: {
-        color: '#67E8F9',
-        fontSize: 23,
-        fontWeight: '800',
-    },
-
-    mainCardTitle: {
-        color: '#CBD5E1',
-        fontSize: 11,
-        fontWeight: '800',
-        letterSpacing: 1,
-    },
-
-    mainCardSubtitle: {
-        color: '#64748B',
-        fontSize: 11,
-        marginTop: 2,
-    },
-
-    mainCardAmount: {
-        color: '#67E8F9',
-        fontSize: 35,
-        fontWeight: '900',
-        marginTop: 18,
-        marginBottom: 13,
-    },
-
-    balanceLine: {
-        width: '100%',
-        height: 5,
-        backgroundColor: '#18354C',
-        borderRadius: 10,
-        overflow: 'hidden',
-    },
-
-    balanceLineProgress: {
-        height: 5,
-        backgroundColor: '#22D3EE',
-        borderRadius: 10,
-    },
-
-    balanceFooter: {
-        color: '#7DD3FC',
-        fontSize: 11,
-        marginTop: 10,
         fontWeight: '600',
     },
 
     // ============================================================
-    // COLORES
+    // BALANCE PRINCIPAL — TARJETA DESTACADA
+    // ============================================================
+
+    mainDashboardCard: {
+        backgroundColor: COLOR_PRINCIPAL,
+
+        borderRadius: 18,
+
+        padding: 22,
+
+        marginBottom: 25,
+    },
+
+    balanceTopRow: {
+        flexDirection: 'row',
+
+        justifyContent: 'space-between',
+
+        alignItems: 'center',
+    },
+
+    mainCardTitle: {
+        color: '#CDE6E1',
+
+        fontSize: 11,
+
+        fontWeight: '700',
+
+        letterSpacing: 1,
+    },
+
+    balanceStatusChip: {
+        width: 24,
+        height: 24,
+
+        borderRadius: 12,
+
+        backgroundColor: 'rgba(255,255,255,0.18)',
+
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    balanceStatusChipNegativo: {
+        backgroundColor: 'rgba(184,92,92,0.55)',
+    },
+
+    mainCardAmount: {
+        color: '#FFFFFF',
+
+        fontSize: 36,
+
+        fontWeight: '800',
+
+        marginTop: 12,
+    },
+
+    mainCardSubtitle: {
+        color: '#CDE6E1',
+
+        fontSize: 12,
+
+        marginTop: 4,
+    },
+
+    balanceDivider: {
+        height: 1,
+
+        backgroundColor: 'rgba(255,255,255,0.18)',
+
+        marginTop: 18,
+
+        marginBottom: 16,
+    },
+
+    balanceMiniRow: {
+        flexDirection: 'row',
+
+        alignItems: 'center',
+    },
+
+    balanceMiniItem: {
+        flex: 1,
+    },
+
+    balanceMiniSeparator: {
+        width: 1,
+
+        height: 28,
+
+        backgroundColor: 'rgba(255,255,255,0.18)',
+
+        marginHorizontal: 12,
+    },
+
+    balanceMiniLabel: {
+        color: '#CDE6E1',
+
+        fontSize: 10,
+
+        marginBottom: 4,
+    },
+
+    balanceMiniValueIngreso: {
+        color: '#A9E6C9',
+
+        fontSize: 14,
+
+        fontWeight: '700',
+    },
+
+    balanceMiniValueGasto: {
+        color: '#F0BEBE',
+
+        fontSize: 14,
+
+        fontWeight: '700',
+    },
+
+    balanceMiniValueDeuda: {
+        color: '#FFFFFF',
+
+        fontSize: 14,
+
+        fontWeight: '700',
+    },
+
+    // ============================================================
+    // COLORES TEXTO (usados en la lista de movimientos)
     // ============================================================
 
     textRed: {
-        color: '#FB7185',
+        color: COLOR_ROJO,
     },
 
     textGreen: {
-        color: '#34D399',
+        color: COLOR_VERDE,
     },
 
-    textOrange: {
-        color: '#FB923C',
-    },
-
-    // ============================================================
-    // DASH CARDS
-    // ============================================================
-
-    dashboardGrid: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 22,
-    },
-
-    dashCard: {
-        width: '31.5%',
-        backgroundColor: '#0D1B2A',
-        borderRadius: 17,
-        padding: 13,
-        borderWidth: 1,
-        borderColor: '#1E344A',
-    },
-
-    incomeCard: {
-        borderBottomWidth: 3,
-        borderBottomColor: '#10B981',
-    },
-
-    expenseCard: {
-        borderBottomWidth: 3,
-        borderBottomColor: '#F43F5E',
-    },
-
-    debtCard: {
-        borderBottomWidth: 3,
-        borderBottomColor: '#F97316',
-    },
-
-    dashIcon: {
-        width: 30,
-        height: 30,
-        borderRadius: 9,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 9,
-    },
-
-    incomeIcon: {
-        backgroundColor: '#063B30',
-    },
-
-    expenseIcon: {
-        backgroundColor: '#451322',
-    },
-
-    debtIcon: {
-        backgroundColor: '#47220C',
-    },
-
-    dashIconText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '800',
-    },
-
-    dashCardTitle: {
-        color: '#64748B',
-        fontSize: 11,
-        marginBottom: 5,
-    },
-
-    dashCardIncome: {
-        color: '#34D399',
-        fontSize: 14,
-        fontWeight: '800',
-    },
-
-    dashCardExpense: {
-        color: '#FB7185',
-        fontSize: 14,
-        fontWeight: '800',
-    },
-
-    dashCardDebt: {
-        color: '#FB923C',
-        fontSize: 14,
-        fontWeight: '800',
+    textTeal: {
+        color: COLOR_PRINCIPAL,
     },
 
     // ============================================================
@@ -1359,94 +1251,66 @@ const styles = StyleSheet.create({
     // ============================================================
 
     quickTitle: {
-        color: '#E2E8F0',
+        color: '#171A19',
+
         fontSize: 15,
-        fontWeight: '800',
+
+        fontWeight: '700',
+
         marginBottom: 10,
     },
 
     actionButtonsRow: {
         flexDirection: 'row',
+
         justifyContent: 'space-between',
-        marginBottom: 28,
+
+        marginBottom: 29,
     },
 
-    actionButtonRapido: {
+    actionButton: {
         flex: 1,
-        backgroundColor: '#7C2D12',
-        borderRadius: 16,
-        paddingVertical: 13,
-        alignItems: 'center',
-        marginHorizontal: 3,
-        borderWidth: 1,
-        borderColor: '#C2410C',
-    },
 
-    actionButtonSmall: {
-        flex: 1,
-        backgroundColor: '#123B63',
-        borderRadius: 16,
-        paddingVertical: 13,
-        alignItems: 'center',
-        marginHorizontal: 3,
-        borderWidth: 1,
-        borderColor: '#2563A8',
-    },
+        backgroundColor: '#FFFFFF',
 
-    actionButtonDebt: {
-        flex: 1,
-        backgroundColor: '#31215A',
-        borderRadius: 16,
-        paddingVertical: 13,
+        borderRadius: 14,
+
+        paddingVertical: 16,
+
         alignItems: 'center',
-        marginHorizontal: 3,
+
+        marginHorizontal: 4,
+
         borderWidth: 1,
-        borderColor: '#6941A5',
+
+        borderColor: '#EAEEED',
     },
 
     actionIconContainer: {
-        width: 34,
-        height: 34,
-        borderRadius: 11,
-        backgroundColor: '#EA580C',
+        width: 38,
+        height: 38,
+
+        borderRadius: 12,
+
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 7,
-    },
 
-    actionIconContainerBlue: {
-        width: 34,
-        height: 34,
-        borderRadius: 11,
-        backgroundColor: '#2563EB',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 7,
-    },
-
-    actionIconContainerPurple: {
-        width: 34,
-        height: 34,
-        borderRadius: 11,
-        backgroundColor: '#7C3AED',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 7,
-    },
-
-    actionIcon: {
-        fontSize: 16,
+        marginBottom: 8,
     },
 
     actionButtonText: {
-        color: '#FFFFFF',
+        color: '#222725',
+
         fontSize: 12,
-        fontWeight: '800',
+
+        fontWeight: '700',
     },
 
     actionButtonSmallText: {
-        color: '#94A3B8',
+        color: '#929997',
+
         fontSize: 9,
+
         marginTop: 2,
     },
 
@@ -1456,38 +1320,55 @@ const styles = StyleSheet.create({
 
     activityHeader: {
         flexDirection: 'row',
+
         justifyContent: 'space-between',
+
         alignItems: 'center',
+
         marginBottom: 12,
     },
 
+    activityInfo: {
+        flex: 1,
+    },
+
     sectionTitle: {
-        color: '#F8FAFC',
+        color: '#171A19',
+
         fontSize: 18,
-        fontWeight: '800',
+
+        fontWeight: '700',
     },
 
     sectionSubtitle: {
-        color: '#64748B',
+        color: '#777F7C',
+
         fontSize: 11,
+
         marginTop: 3,
     },
 
     activityCount: {
-        minWidth: 31,
-        height: 31,
-        borderRadius: 10,
-        backgroundColor: '#172B40',
-        borderWidth: 1,
-        borderColor: '#294762',
+        minWidth: 30,
+
+        height: 30,
+
+        borderRadius: 15,
+
+        backgroundColor: COLOR_MUY_SUAVE,
+
         alignItems: 'center',
         justifyContent: 'center',
+
+        paddingHorizontal: 8,
     },
 
     activityCountText: {
-        color: '#38BDF8',
+        color: COLOR_PRINCIPAL,
+
         fontSize: 12,
-        fontWeight: '800',
+
+        fontWeight: '700',
     },
 
     // ============================================================
@@ -1495,17 +1376,24 @@ const styles = StyleSheet.create({
     // ============================================================
 
     loadingCard: {
-        backgroundColor: '#0D1B2A',
-        borderRadius: 18,
+        backgroundColor: '#FFFFFF',
+
+        borderRadius: 14,
+
         padding: 30,
+
         alignItems: 'center',
+
         borderWidth: 1,
-        borderColor: '#1E344A',
+
+        borderColor: '#E2E7E6',
     },
 
     loadingText: {
-        color: '#64748B',
+        color: '#707875',
+
         fontSize: 12,
+
         marginTop: 12,
     },
 
@@ -1514,41 +1402,50 @@ const styles = StyleSheet.create({
     // ============================================================
 
     emptyCard: {
-        backgroundColor: '#0D1B2A',
-        borderRadius: 18,
+        backgroundColor: '#FFFFFF',
+
+        borderRadius: 14,
+
         padding: 30,
+
         alignItems: 'center',
+
         borderWidth: 1,
-        borderColor: '#1E344A',
+
+        borderColor: '#E2E7E6',
     },
 
     emptyIcon: {
-        width: 60,
-        height: 60,
-        borderRadius: 20,
-        backgroundColor: '#132B42',
+        width: 54,
+        height: 54,
+
+        borderRadius: 14,
+
+        backgroundColor: COLOR_MUY_SUAVE,
+
         alignItems: 'center',
         justifyContent: 'center',
+
         marginBottom: 12,
     },
 
-    emptyIconText: {
-        color: '#38BDF8',
-        fontSize: 28,
-        fontWeight: '900',
-    },
-
     emptyTitle: {
-        color: '#E2E8F0',
+        color: '#202523',
+
         fontSize: 15,
-        fontWeight: '800',
+
+        fontWeight: '700',
+
         marginBottom: 5,
     },
 
     emptyText: {
-        color: '#64748B',
+        color: '#707875',
+
         textAlign: 'center',
+
         fontSize: 12,
+
         lineHeight: 19,
     },
 
@@ -1557,94 +1454,116 @@ const styles = StyleSheet.create({
     // ============================================================
 
     transactionItem: {
-        backgroundColor: '#0D1B2A',
-        borderRadius: 17,
-        padding: 14,
+        backgroundColor: '#FFFFFF',
+
+        borderRadius: 14,
+
+        padding: 13,
+
         flexDirection: 'row',
+
         alignItems: 'center',
+
         marginBottom: 9,
+
         borderWidth: 1,
-        borderColor: '#1B3044',
+
+        borderColor: '#EAEEED',
     },
 
     transactionIcon: {
-        width: 42,
-        height: 42,
-        borderRadius: 13,
+        width: 40,
+        height: 40,
+
+        borderRadius: 12,
+
         alignItems: 'center',
         justifyContent: 'center',
+
         marginRight: 12,
     },
 
     transactionIncome: {
-        backgroundColor: '#063B30',
+        backgroundColor: '#EDF5F2',
     },
 
     transactionExpense: {
-        backgroundColor: '#451322',
+        backgroundColor: '#F8EEEE',
     },
 
     transactionDebt: {
-        backgroundColor: '#47220C',
-    },
-
-    transactionIconText: {
-        color: '#FFFFFF',
-        fontSize: 17,
-        fontWeight: '800',
+        backgroundColor: COLOR_MUY_SUAVE,
     },
 
     transactionInfo: {
         flex: 1,
+
         paddingRight: 5,
     },
 
     transactionTitle: {
-        color: '#F8FAFC',
+        color: '#222725',
+
         fontSize: 14,
-        fontWeight: '700',
+
+        fontWeight: '600',
     },
 
     cardDetailText: {
-        color: '#A78BFA',
+        color: COLOR_PRINCIPAL,
+
         fontSize: 11,
+
         marginTop: 4,
+
         fontWeight: '600',
     },
 
     subDetailText: {
-        color: '#38BDF8',
+        color: '#747C79',
+
         fontSize: 11,
+
         marginTop: 3,
-        fontWeight: '600',
+
+        fontWeight: '500',
     },
 
     cuotaText: {
-        color: '#34D399',
+        color: COLOR_VERDE,
+
         fontSize: 11,
+
         marginTop: 3,
+
         fontWeight: '700',
     },
 
     transactionAuthor: {
-        color: '#475569',
+        color: '#9A9F9D',
+
         fontSize: 10,
+
         marginTop: 5,
     },
 
     amountContainer: {
         alignItems: 'flex-end',
+
         minWidth: 70,
     },
 
     transactionAmount: {
         fontSize: 14,
-        fontWeight: '900',
+
+        fontWeight: '800',
     },
 
     amountLabel: {
-        color: '#475569',
+        color: '#999F9C',
+
         fontSize: 9,
+
         marginTop: 3,
     },
 
@@ -1654,21 +1573,37 @@ const styles = StyleSheet.create({
 
     footer: {
         alignItems: 'center',
+
         marginTop: 30,
+
         paddingTop: 20,
+
         borderTopWidth: 1,
-        borderTopColor: '#16283A',
+
+        borderTopColor: '#E3E7E6',
+    },
+
+    footerLogoRow: {
+        flexDirection: 'row',
+
+        alignItems: 'center',
+
+        gap: 5,
     },
 
     footerText: {
-        color: '#334155',
+        color: COLOR_OSCURO,
+
         fontSize: 12,
-        fontWeight: '800',
+
+        fontWeight: '700',
     },
 
     footerSubText: {
-        color: '#26384A',
+        color: '#999F9C',
+
         fontSize: 10,
+
         marginTop: 3,
     },
 });

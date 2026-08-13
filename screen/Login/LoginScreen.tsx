@@ -10,13 +10,18 @@ import {
     Platform,
     ScrollView,
 } from 'react-native';
+
 import React, { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+
 import { auth, db } from '../../firebase/FirebaseConfig';
+
 import { ref, get, child } from 'firebase/database';
+
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen({ navigation }: any) {
+
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [mostrarContrasena, setMostrarContrasena] = useState(false);
@@ -33,21 +38,30 @@ export default function LoginScreen({ navigation }: any) {
     // ============================================================
 
     const verificarYRedirigir = (user: any) => {
+
         const dbRef = ref(db);
 
         get(child(dbRef, `usuarios/${user.uid}`))
             .then((snapshot) => {
+
                 if (
                     snapshot.exists() &&
                     snapshot.val().idPareja
                 ) {
+
                     navigation.replace('tabs');
+
                 } else {
+
                     navigation.replace('configurarPareja');
+
                 }
+
             })
             .catch(() => {
+
                 navigation.replace('configurarPareja');
+
             });
     };
 
@@ -56,11 +70,14 @@ export default function LoginScreen({ navigation }: any) {
     // ============================================================
 
     function ingresar() {
+
         if (!correo.trim() || !contrasena) {
+
             Alert.alert(
                 'Atención',
                 'Por favor ingresa tu correo y contraseña'
             );
+
             return;
         }
 
@@ -72,9 +89,12 @@ export default function LoginScreen({ navigation }: any) {
             contrasena
         )
             .then((userCredential) => {
+
                 verificarYRedirigir(userCredential.user);
+
             })
             .catch((error) => {
+
                 console.log(
                     'Error en login:',
                     error.code,
@@ -87,10 +107,12 @@ export default function LoginScreen({ navigation }: any) {
                 );
 
                 setCargando(false);
+
             });
     }
 
     return (
+
         <KeyboardAvoidingView
             style={styles.keyboardContainer}
             behavior={
@@ -99,42 +121,45 @@ export default function LoginScreen({ navigation }: any) {
                     : undefined
             }
         >
+
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.container}>
 
-                    {/* DECORACIÓN SUPERIOR */}
+                {/* ================================================= */}
+                {/* ENCABEZADO — TARJETA SÓLIDA (mismo lenguaje que el */}
+                {/* balance del dashboard)                             */}
+                {/* ================================================= */}
 
-                    <View style={styles.glowTop} />
-
-                    {/* LOGO */}
+                <View style={styles.headerBlock}>
 
                     <View style={styles.logoContainer}>
-                        <View style={styles.logoBackground}>
-                            <Image
-                                source={require('../../assets/img/logov2.png')}
-                                style={styles.logo}
-                                resizeMode="contain"
-                            />
-                        </View>
+
+                        <Image
+                            source={require('../../assets/img/logov2.png')}
+                            style={styles.logo}
+                            resizeMode="contain"
+                        />
+
                     </View>
 
-                    {/* TÍTULO */}
+                    <Text style={styles.titulo}>
+                        Bienvenido
+                    </Text>
 
-                    <View style={styles.titleContainer}>
-                        <Text style={styles.titulo}>
-                            Bienvenido
-                        </Text>
+                    <Text style={styles.subtitulo}>
+                        Administra tus finanzas en pareja
+                    </Text>
 
-                        <Text style={styles.subtitulo}>
-                            Administra tus finanzas en pareja
-                        </Text>
-                    </View>
+                </View>
 
+                <View style={styles.container}>
+
+                    {/* ================================================= */}
                     {/* FORMULARIO */}
+                    {/* ================================================= */}
 
                     <View style={styles.formCard}>
 
@@ -145,16 +170,18 @@ export default function LoginScreen({ navigation }: any) {
                         </Text>
 
                         <View style={styles.inputContainer}>
-                            <Ionicons
-                                name="mail-outline"
-                                size={20}
-                                color="#38BDF8"
-                                style={styles.inputIcon}
-                            />
+
+                            <View style={styles.inputIconBox}>
+                                <Ionicons
+                                    name="mail-outline"
+                                    size={18}
+                                    color={COLOR_PRINCIPAL}
+                                />
+                            </View>
 
                             <TextInput
                                 placeholder="Ingresa tu correo"
-                                placeholderTextColor="#64748B"
+                                placeholderTextColor="#9CA3AF"
                                 value={correo}
                                 onChangeText={setCorreo}
                                 style={styles.input}
@@ -162,6 +189,7 @@ export default function LoginScreen({ navigation }: any) {
                                 keyboardType="email-address"
                                 autoCorrect={false}
                             />
+
                         </View>
 
                         {/* CONTRASEÑA */}
@@ -171,19 +199,19 @@ export default function LoginScreen({ navigation }: any) {
                         </Text>
 
                         <View style={styles.inputContainer}>
-                            <Ionicons
-                                name="lock-closed-outline"
-                                size={20}
-                                color="#38BDF8"
-                                style={styles.inputIcon}
-                            />
+
+                            <View style={styles.inputIconBox}>
+                                <Ionicons
+                                    name="lock-closed-outline"
+                                    size={18}
+                                    color={COLOR_PRINCIPAL}
+                                />
+                            </View>
 
                             <TextInput
                                 placeholder="Ingresa tu contraseña"
-                                placeholderTextColor="#64748B"
-                                secureTextEntry={
-                                    !mostrarContrasena
-                                }
+                                placeholderTextColor="#9CA3AF"
+                                secureTextEntry={!mostrarContrasena}
                                 value={contrasena}
                                 onChangeText={setContrasena}
                                 style={styles.input}
@@ -198,62 +226,67 @@ export default function LoginScreen({ navigation }: any) {
                                 }
                                 style={styles.eyeButton}
                             >
+
                                 <Ionicons
                                     name={
                                         mostrarContrasena
                                             ? 'eye-off-outline'
                                             : 'eye-outline'
                                     }
-                                    size={21}
-                                    color="#94A3B8"
+                                    size={19}
+                                    color="#8A908E"
                                 />
+
                             </TouchableOpacity>
+
                         </View>
 
+                        {/* ================================================= */}
                         {/* BOTÓN INGRESAR */}
+                        {/* ================================================= */}
 
                         <TouchableOpacity
                             style={[
                                 styles.primaryButton,
-                                cargando &&
-                                    styles.buttonDisabled,
+                                cargando && styles.buttonDisabled
                             ]}
                             onPress={ingresar}
                             disabled={cargando}
-                            activeOpacity={0.8}
+                            activeOpacity={0.85}
                         >
+
                             {cargando ? (
-                                <Text
-                                    style={
-                                        styles.primaryButtonText
-                                    }
-                                >
+
+                                <Text style={styles.primaryButtonText}>
                                     Ingresando...
                                 </Text>
+
                             ) : (
+
                                 <>
-                                    <Text
-                                        style={
-                                            styles.primaryButtonText
-                                        }
-                                    >
+                                    <Text style={styles.primaryButtonText}>
                                         Ingresar
                                     </Text>
 
                                     <Ionicons
                                         name="arrow-forward"
-                                        size={20}
+                                        size={19}
                                         color="#FFFFFF"
                                     />
                                 </>
+
                             )}
+
                         </TouchableOpacity>
 
                     </View>
 
+                    {/* ================================================= */}
                     {/* SEPARADOR */}
+                    {/* ================================================= */}
 
                     <View style={styles.separatorContainer}>
+
                         <View style={styles.separatorLine} />
 
                         <Text style={styles.separatorText}>
@@ -261,53 +294,84 @@ export default function LoginScreen({ navigation }: any) {
                         </Text>
 
                         <View style={styles.separatorLine} />
+
                     </View>
 
-                    {/* REGISTRO */}
+                    {/* ================================================= */}
+                    {/* CREAR CUENTA */}
+                    {/* ================================================= */}
 
                     <TouchableOpacity
                         style={styles.secondaryButton}
                         onPress={() =>
                             navigation.navigate('registro')
                         }
-                        activeOpacity={0.8}
+                        activeOpacity={0.85}
                     >
+
                         <Ionicons
                             name="person-add-outline"
-                            size={20}
-                            color="#FFFFFF"
+                            size={19}
+                            color={COLOR_PRINCIPAL}
                         />
 
-                        <Text
-                            style={
-                                styles.secondaryButtonText
-                            }
-                        >
+                        <Text style={styles.secondaryButtonText}>
                             Crear una cuenta
                         </Text>
+
                     </TouchableOpacity>
 
+                    {/* ================================================= */}
                     {/* TEXTO INFERIOR */}
+                    {/* ================================================= */}
 
-                    <Text style={styles.footerText}>
-                        Tus finanzas, organizadas juntos.
-                    </Text>
+                    <View style={styles.footerContainer}>
+
+                        <Ionicons
+                            name="heart-outline"
+                            size={14}
+                            color={COLOR_PRINCIPAL}
+                        />
+
+                        <Text style={styles.footerText}>
+                            Tus finanzas, organizadas juntos.
+                        </Text>
+
+                    </View>
 
                 </View>
+
             </ScrollView>
+
         </KeyboardAvoidingView>
     );
 }
 
+
+// ============================================================
+// PALETA — misma gama que el nuevo InicioScreen
+// ============================================================
+
+const COLOR_PRINCIPAL = '#176B63';
+const COLOR_OSCURO = '#124C47';
+const COLOR_VERDE = '#2E7D6E';
+const COLOR_SUAVE = '#DCEAE7';
+const COLOR_MUY_SUAVE = '#F3F7F6';
+
+
+// ============================================================
+// ESTILOS
+// ============================================================
+
 const styles = StyleSheet.create({
 
     // ============================================================
-    // CONTENEDOR
+    // CONTENEDOR GENERAL
     // ============================================================
 
     keyboardContainer: {
         flex: 1,
-        backgroundColor: '#0B1120',
+        backgroundColor: '#FFFFFF',
     },
 
     scrollContent: {
@@ -315,145 +379,147 @@ const styles = StyleSheet.create({
     },
 
     container: {
-        flex: 1,
-        backgroundColor: '#0B1120',
         paddingHorizontal: 25,
-        paddingTop: 35,
+        paddingTop: 28,
         paddingBottom: 35,
-        justifyContent: 'center',
-        overflow: 'hidden',
     },
 
     // ============================================================
-    // DECORACIÓN
+    // ENCABEZADO SÓLIDO (mismo lenguaje que la tarjeta de
+    // balance del dashboard)
     // ============================================================
 
-    glowTop: {
-        position: 'absolute',
-        width: 260,
-        height: 260,
-        borderRadius: 130,
-        backgroundColor: '#0C4A6E',
-        opacity: 0.16,
-        top: -130,
-        right: -90,
+    headerBlock: {
+        backgroundColor: COLOR_PRINCIPAL,
+
+        paddingTop:
+            Platform.OS === 'ios' ? 70 : 55,
+
+        paddingBottom: 36,
+
+        paddingHorizontal: 25,
+
+        alignItems: 'center',
+
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
     },
-
-    // ============================================================
-    // LOGO
-    // ============================================================
 
     logoContainer: {
-        alignItems: 'center',
-        marginBottom: 8,
-    },
+        width: 76,
+        height: 76,
 
-    logoBackground: {
-        width: 145,
-        height: 145,
-        borderRadius: 35,
+        borderRadius: 20,
+
+        backgroundColor: 'rgba(255,255,255,0.14)',
+
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#111C31',
-        borderWidth: 1,
-        borderColor: '#1E3A5F',
-        shadowColor: '#38BDF8',
-        shadowOffset: {
-            width: 0,
-            height: 8,
-        },
-        shadowOpacity: 0.18,
-        shadowRadius: 15,
-        elevation: 8,
+
+        marginBottom: 16,
     },
 
     logo: {
-        width: 125,
-        height: 125,
-    },
-
-    // ============================================================
-    // TÍTULO
-    // ============================================================
-
-    titleContainer: {
-        alignItems: 'center',
-        marginBottom: 25,
+        width: 52,
+        height: 52,
     },
 
     titulo: {
-        fontSize: 30,
+        fontSize: 24,
         fontWeight: '800',
-        color: '#F8FAFC',
-        letterSpacing: 0.3,
+        color: '#FFFFFF',
     },
 
     subtitulo: {
         marginTop: 6,
-        color: '#94A3B8',
+        color: '#CDE6E1',
         fontSize: 13,
         textAlign: 'center',
     },
 
     // ============================================================
-    // CARD FORMULARIO
+    // CARD DEL FORMULARIO
     // ============================================================
 
     formCard: {
-        backgroundColor: '#111C31',
-        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+
+        borderRadius: 18,
+
         padding: 20,
+
+        marginTop: -24,
+
         borderWidth: 1,
-        borderColor: '#1E293B',
-        shadowColor: '#000000',
-        shadowOffset: {
-            width: 0,
-            height: 8,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 15,
-        elevation: 8,
+        borderColor: '#EAEEED',
     },
 
     // ============================================================
-    // INPUTS
+    // LABELS
     // ============================================================
 
     inputLabel: {
-        color: '#CBD5E1',
+        color: '#222725',
         fontSize: 12,
-        fontWeight: '600',
-        marginBottom: 7,
-        marginLeft: 3,
+        fontWeight: '700',
+        marginBottom: 8,
+        marginLeft: 2,
     },
+
+    // ============================================================
+    // INPUT
+    // ============================================================
 
     inputContainer: {
         height: 54,
-        backgroundColor: '#0F172A',
+
+        backgroundColor: COLOR_MUY_SUAVE,
+
         borderWidth: 1,
-        borderColor: '#263449',
-        borderRadius: 13,
+        borderColor: '#E4E7E6',
+
+        borderRadius: 12,
+
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 17,
+
+        marginBottom: 16,
+
+        paddingRight: 6,
     },
 
-    inputIcon: {
-        marginLeft: 15,
+    inputIconBox: {
+        width: 38,
+        height: 38,
+
+        borderRadius: 10,
+
+        backgroundColor: COLOR_SUAVE,
+
+        alignItems: 'center',
+        justifyContent: 'center',
+
+        marginLeft: 8,
         marginRight: 10,
     },
 
     input: {
         flex: 1,
+
         height: '100%',
-        color: '#F8FAFC',
+
+        color: '#171A19',
+
         fontSize: 14,
+
         paddingVertical: 0,
     },
 
     eyeButton: {
-        paddingHorizontal: 14,
+        paddingHorizontal: 10,
+
         height: '100%',
+
         justifyContent: 'center',
     },
 
@@ -463,22 +529,20 @@ const styles = StyleSheet.create({
 
     primaryButton: {
         height: 54,
-        marginTop: 5,
-        borderRadius: 13,
-        backgroundColor: '#2563EB',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
 
-        shadowColor: '#2563EB',
-        shadowOffset: {
-            width: 0,
-            height: 5,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
+        marginTop: 6,
+
+        borderRadius: 12,
+
+        backgroundColor: COLOR_PRINCIPAL,
+
+        flexDirection: 'row',
+
+        alignItems: 'center',
+
+        justifyContent: 'center',
+
+        gap: 9,
     },
 
     buttonDisabled: {
@@ -487,7 +551,9 @@ const styles = StyleSheet.create({
 
     primaryButtonText: {
         color: '#FFFFFF',
-        fontSize: 16,
+
+        fontSize: 15,
+
         fontWeight: '700',
     },
 
@@ -497,48 +563,59 @@ const styles = StyleSheet.create({
 
     separatorContainer: {
         flexDirection: 'row',
+
         alignItems: 'center',
-        marginVertical: 24,
+
+        marginVertical: 22,
     },
 
     separatorLine: {
         flex: 1,
+
         height: 1,
-        backgroundColor: '#1E293B',
+
+        backgroundColor: '#E4E7E6',
     },
 
     separatorText: {
-        color: '#64748B',
+        color: '#8A908E',
+
         fontSize: 11,
+
         marginHorizontal: 10,
+
+        textAlign: 'center',
     },
 
     // ============================================================
-    // BOTÓN REGISTRO
+    // BOTÓN CREAR CUENTA
     // ============================================================
 
     secondaryButton: {
         height: 52,
-        borderRadius: 13,
-        backgroundColor: '#EA580C',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 9,
 
-        shadowColor: '#EA580C',
-        shadowOffset: {
-            width: 0,
-            height: 5,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 5,
+        borderRadius: 12,
+
+        backgroundColor: COLOR_MUY_SUAVE,
+
+        borderWidth: 1,
+
+        borderColor: '#E4E7E6',
+
+        flexDirection: 'row',
+
+        alignItems: 'center',
+
+        justifyContent: 'center',
+
+        gap: 9,
     },
 
     secondaryButtonText: {
-        color: '#FFFFFF',
-        fontSize: 15,
+        color: COLOR_OSCURO,
+
+        fontSize: 14,
+
         fontWeight: '700',
     },
 
@@ -546,10 +623,23 @@ const styles = StyleSheet.create({
     // FOOTER
     // ============================================================
 
+    footerContainer: {
+        flexDirection: 'row',
+
+        alignItems: 'center',
+
+        justifyContent: 'center',
+
+        marginTop: 24,
+
+        gap: 5,
+    },
+
     footerText: {
-        color: '#475569',
+        color: '#8A908E',
+
         textAlign: 'center',
+
         fontSize: 11,
-        marginTop: 22,
     },
 });

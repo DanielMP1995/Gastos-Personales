@@ -1,11 +1,29 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import {
+    StyleSheet,
+    Text,
+    View,
+    TextInput,
+    TouchableOpacity,
+    Alert,
+    ScrollView,
+} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { auth, db } from '../../firebase/FirebaseConfig';
 import { ref, push, set, get } from 'firebase/database';
 
 export default function RegistroIngresosScreen({ navigation }: any) {
     const [monto, setMonto] = useState('');
     const [descripcion, setDescripcion] = useState('');
+    const [categoriaIngreso, setCategoriaIngreso] = useState('Salario');
+
+    const categoriasIngresos = [
+        'Salario',
+        'Venta',
+        'Inversión',
+        'Regalo',
+        'Extra',
+    ];
 
     useEffect(() => {
         navigation.setOptions({
@@ -14,20 +32,17 @@ export default function RegistroIngresosScreen({ navigation }: any) {
     }, [navigation]);
 
     function guardarIngreso() {
-        // 1. Validar que los campos no estén vacíos
         if (!monto || !descripcion) {
             Alert.alert("Error", "Por favor ingresa un monto y una descripción.");
             return;
         }
 
-        // 2. Obtener el usuario actual
         const usuarioActual = auth.currentUser;
         if (!usuarioActual) {
             Alert.alert("Error", "No hay un usuario logueado.");
             return;
         }
 
-        // 3. Consultar primero el idPareja del usuario actual en la base de datos
         const usuarioRef = ref(db, `usuarios/${usuarioActual.uid}`);
         get(usuarioRef).then((snapshot) => {
             if (snapshot.exists()) {
@@ -40,27 +55,26 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     return;
                 }
 
-                // 4. Crear la referencia en la base de datos bajo el nodo de la PAREJA compartida
                 const ingresosRef = ref(db, `parejas/${idPareja}/ingresos`);
                 const nuevoIngresoRef = push(ingresosRef);
 
-                // 5. Construir el objeto de datos a guardar
                 const datosIngreso = {
                     tipo: 'ingreso',
                     monto: parseFloat(monto),
                     descripcion: descripcion,
+                    categoria: categoriaIngreso,
                     fecha: new Date().toISOString(),
                     usuarioEmail: usuarioActual.email,
                     usuarioId: usuarioActual.uid,
                     autor: nombreUsuario
                 };
 
-                // 6. Guardar en Firebase
                 set(nuevoIngresoRef, datosIngreso)
                     .then(() => {
                         Alert.alert("¡Éxito!", "Ingreso registrado y compartido correctamente.");
                         setMonto('');
                         setDescripcion('');
+                        setCategoriaIngreso('Salario');
                         navigation.goBack();
                     })
                     .catch((error) => {
@@ -76,367 +90,401 @@ export default function RegistroIngresosScreen({ navigation }: any) {
     }
 
     return (
-        <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.container}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* ENCABEZADO */}
-            <View style={styles.header}>
-                <View style={styles.headerIcon}>
-                    <Text style={styles.headerIconText}>$</Text>
+        <View style={styles.rootContainer}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.container}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* Cabecera Superior Minimalista */}
+                <View style={styles.topHeader}>
+                    <TouchableOpacity
+                        style={styles.backButtonTop}
+                        onPress={() => navigation.goBack()}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.backButtonTopText}>←</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.topHeaderTitle}>Registro de Ingresos</Text>
+                    <View style={{ width: 40 }} />
                 </View>
 
-                <View style={styles.headerTextContainer}>
-                    <Text style={styles.headerSmall}>
-                        MOVIMIENTO FINANCIERO
-                    </Text>
-
-                    <Text style={styles.titulo}>
-                        Registrar Ingreso
-                    </Text>
-                </View>
-            </View>
-
-            <Text style={styles.subtitulo}>
-                Añade un nuevo ingreso al fondo común
-            </Text>
-
-            {/* FORMULARIO */}
-            <View style={styles.formContainer}>
-
-                {/* MONTO */}
-                <View style={styles.labelContainer}>
-                    <View style={styles.labelIcon}>
-                        <Text style={styles.labelIconText}>$</Text>
+                {/* Hero Card */}
+                <View style={styles.heroCard}>
+                    <View style={styles.heroIconContainer}>
+                        <Ionicons name="trending-up-outline" size={24} color="#047857" />
                     </View>
-
-                    <Text style={styles.label}>
-                        Monto del Ingreso
-                    </Text>
-                </View>
-
-                <View style={styles.inputWrapper}>
-                    <Text style={styles.currency}>
-                        $
-                    </Text>
-
-                    <TextInput
-                        style={styles.inputMonto}
-                        placeholder="0.00"
-                        placeholderTextColor="#475569"
-                        keyboardType="numeric"
-                        value={monto}
-                        onChangeText={setMonto}
-                    />
-                </View>
-
-                {/* DESCRIPCIÓN */}
-                <View style={styles.labelContainer}>
-                    <View style={styles.labelIcon}>
-                        <Text style={styles.labelIconText}>≡</Text>
+                    <View style={styles.heroTextContainer}>
+                        <Text style={styles.smallTitle}>MOVIMIENTO FINANCIERO</Text>
+                        <Text style={styles.titulo}>Nuevo Ingreso</Text>
+                        <Text style={styles.subtitulo}>
+                            Añade fondos al balance compartido con tu pareja
+                        </Text>
                     </View>
-
-                    <Text style={styles.label}>
-                        Descripción o Motivo
-                    </Text>
                 </View>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ej. Pago de quincena, Venta, etc."
-                    placeholderTextColor="#475569"
-                    value={descripcion}
-                    onChangeText={setDescripcion}
-                    multiline
-                />
-
-                {/* INFORMACIÓN */}
-                <View style={styles.infoBox}>
-                    <Text style={styles.infoIcon}>
-                        ⓘ
-                    </Text>
-
-                    <Text style={styles.infoText}>
-                        Este ingreso será compartido automáticamente
-                        con tu pareja.
-                    </Text>
+                {/* Sección 01: Categoría */}
+                <View style={styles.sectionHeader}>
+                    <View style={styles.stepBadge}>
+                        <Text style={styles.stepBadgeText}>01</Text>
+                    </View>
+                    <Text style={styles.sectionTitle}>Categoría de Ingreso</Text>
                 </View>
 
-                {/* GUARDAR */}
-                <TouchableOpacity
-                    style={styles.primaryButton}
-                    onPress={guardarIngreso}
-                    activeOpacity={0.8}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.rowCat}
                 >
-                    <Text style={styles.primaryButtonIcon}>
-                        ✓
-                    </Text>
+                    {categoriasIngresos.map((cat) => {
+                        const isSelected = categoriaIngreso === cat;
+                        return (
+                            <TouchableOpacity
+                                key={cat}
+                                style={[
+                                    styles.catBtn,
+                                    isSelected && styles.catBtnActive,
+                                ]}
+                                onPress={() => setCategoriaIngreso(cat)}
+                                activeOpacity={0.8}
+                            >
+                                <Text
+                                    style={[
+                                        styles.catText,
+                                        isSelected && styles.catTextActive,
+                                    ]}
+                                >
+                                    {cat}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
 
-                    <Text style={styles.primaryButtonText}>
-                        Guardar Ingreso
-                    </Text>
-                </TouchableOpacity>
+                {/* Sección 02: Formulario */}
+                <View style={styles.sectionHeader}>
+                    <View style={styles.stepBadge}>
+                        <Text style={styles.stepBadgeText}>02</Text>
+                    </View>
+                    <Text style={styles.sectionTitle}>Detalles del Monto</Text>
+                </View>
 
-                {/* CANCELAR */}
+                <View style={styles.formCard}>
+                    <Text style={styles.label}>Monto del Ingreso ($)</Text>
+                    <View style={styles.inputWrapper}>
+                        <Text style={styles.currency}>$</Text>
+                        <TextInput
+                            style={styles.inputMonto}
+                            placeholder="0.00"
+                            placeholderTextColor="#94A3B8"
+                            keyboardType="numeric"
+                            value={monto}
+                            onChangeText={setMonto}
+                        />
+                    </View>
+
+                    <Text style={styles.label}>Descripción o Motivo</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ej. Pago de quincena, Venta, etc."
+                        placeholderTextColor="#94A3B8"
+                        value={descripcion}
+                        onChangeText={setDescripcion}
+                        multiline
+                    />
+
+                    <View style={styles.infoBox}>
+                        <Ionicons name="information-circle-outline" size={18} color="#059669" style={{ marginRight: 8 }} />
+                        <Text style={styles.infoText}>
+                            Este ingreso será compartido automáticamente con tu pareja.
+                        </Text>
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.primaryButton}
+                        onPress={guardarIngreso}
+                        activeOpacity={0.85}
+                    >
+                        <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                        <Text style={styles.primaryButtonText}>
+                            Guardar Ingreso
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Botón Cancelar */}
                 <TouchableOpacity
                     style={styles.secondaryButton}
                     onPress={() => navigation.goBack()}
-                    activeOpacity={0.8}
+                    activeOpacity={0.85}
                 >
                     <Text style={styles.secondaryButtonText}>
-                        Cancelar
+                        Cancelar / Volver
                     </Text>
                 </TouchableOpacity>
 
-            </View>
-
-            <Text style={styles.footerText}>
-                Finanzas en Pareja
-            </Text>
-
-        </ScrollView>
-    )
+                {/* Footer */}
+                <Text style={styles.footerText}>
+                    Finanzas en Pareja
+                </Text>
+            </ScrollView>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-
+    rootContainer: {
+        flex: 1,
+        backgroundColor: '#F8FAFC',
+    },
     scrollView: {
         flex: 1,
-        backgroundColor: '#08111F',
     },
-
     container: {
-        paddingHorizontal: 22,
-        paddingTop: 35,
-        paddingBottom: 45,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 40,
     },
-
-    /* HEADER */
-
-    header: {
+    topHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    backButtonTop: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    backButtonTopText: {
+        color: '#1E293B',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    topHeaderTitle: {
+        color: '#1E293B',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    heroCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 18,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    heroIconContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 15,
+        backgroundColor: '#ECFDF5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15,
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+    },
+    heroTextContainer: {
+        flex: 1,
+    },
+    smallTitle: {
+        color: '#059669',
+        fontSize: 10,
+        fontWeight: '800',
+        letterSpacing: 1.5,
+        marginBottom: 3,
+    },
+    titulo: {
+        color: '#1E293B',
+        fontSize: 17,
+        fontWeight: 'bold',
+        marginBottom: 3,
+    },
+    subtitulo: {
+        color: '#64748B',
+        fontSize: 12,
+        lineHeight: 16,
+    },
+    sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
+        marginTop: 6,
     },
-
-    headerIcon: {
-        width: 52,
-        height: 52,
-        borderRadius: 16,
+    stepBadge: {
+        width: 26,
+        height: 26,
+        borderRadius: 8,
         backgroundColor: '#059669',
-        alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 13,
-        shadowColor: '#10B981',
-        shadowOffset: {
-            width: 0,
-            height: 5,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
+        alignItems: 'center',
+        marginRight: 10,
     },
-
-    headerIconText: {
+    stepBadgeText: {
         color: '#FFFFFF',
-        fontSize: 27,
-        fontWeight: '900',
+        fontSize: 11,
+        fontWeight: 'bold',
     },
-
-    headerTextContainer: {
-        flex: 1,
-    },
-
-    headerSmall: {
-        color: '#64748B',
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1.3,
-        marginBottom: 2,
-    },
-
-    titulo: {
-        color: '#F8FAFC',
-        fontSize: 25,
-        fontWeight: '800',
-    },
-
-    subtitulo: {
-        color: '#64748B',
-        fontSize: 13,
-        marginBottom: 25,
-        marginLeft: 65,
-    },
-
-    /* FORMULARIO */
-
-    formContainer: {
-        backgroundColor: '#111C2E',
-        borderRadius: 20,
-        padding: 19,
-        borderWidth: 1,
-        borderColor: '#1E3350',
-    },
-
-    /* LABELS */
-
-    labelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 9,
-        marginTop: 4,
-    },
-
-    labelIcon: {
-        width: 28,
-        height: 28,
-        borderRadius: 9,
-        backgroundColor: '#102F2B',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 9,
-    },
-
-    labelIconText: {
-        color: '#34D399',
+    sectionTitle: {
+        color: '#1E293B',
         fontSize: 15,
-        fontWeight: '900',
+        fontWeight: '600',
     },
-
+    rowCat: {
+        paddingVertical: 4,
+        paddingRight: 10,
+        marginBottom: 16,
+    },
+    catBtn: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
+        marginRight: 8,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    catBtnActive: {
+        backgroundColor: '#ECFDF5',
+        borderColor: '#059669',
+    },
+    catText: {
+        color: '#64748B',
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    catTextActive: {
+        color: '#047857',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+    formCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
     label: {
-        color: '#F8FAFC',
-        fontSize: 14,
-        fontWeight: '700',
+        color: '#475569',
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 6,
+        marginTop: 10,
     },
-
-    /* MONTO */
-
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#0A1322',
+        backgroundColor: '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#1F4052',
-        borderRadius: 13,
-        marginBottom: 20,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
         paddingHorizontal: 14,
     },
-
     currency: {
-        color: '#10B981',
-        fontSize: 25,
-        fontWeight: '800',
-        marginRight: 5,
+        color: '#059669',
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginRight: 8,
     },
-
     inputMonto: {
         flex: 1,
-        color: '#F8FAFC',
-        fontSize: 22,
-        fontWeight: '700',
-        paddingVertical: 15,
+        color: '#1E293B',
+        fontSize: 18,
+        fontWeight: 'bold',
+        paddingVertical: 12,
     },
-
-    /* DESCRIPCIÓN */
-
     input: {
-        backgroundColor: '#0A1322',
+        backgroundColor: '#F8FAFC',
         borderWidth: 1,
-        borderColor: '#22334A',
-        borderRadius: 13,
+        borderColor: '#E2E8F0',
+        borderRadius: 12,
         paddingHorizontal: 14,
-        paddingVertical: 14,
-        color: '#F8FAFC',
-        fontSize: 15,
-        marginBottom: 15,
-        minHeight: 52,
+        paddingVertical: 12,
+        color: '#1E293B',
+        fontSize: 13,
+        minHeight: 50,
     },
-
-    /* INFORMACIÓN */
-
     infoBox: {
-        backgroundColor: '#0D2523',
+        backgroundColor: '#ECFDF5',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#164E46',
-        padding: 13,
+        borderColor: '#A7F3D0',
+        padding: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 2,
-        marginBottom: 5,
+        marginTop: 14,
+        marginBottom: 4,
     },
-
-    infoIcon: {
-        color: '#34D399',
-        fontSize: 18,
-        marginRight: 9,
-    },
-
     infoText: {
-        color: '#6EE7B7',
+        color: '#065F46',
         fontSize: 11,
-        lineHeight: 17,
+        lineHeight: 16,
         flex: 1,
+        fontWeight: '500',
     },
-
-    /* BOTÓN PRINCIPAL */
-
     primaryButton: {
         backgroundColor: '#059669',
-        marginTop: 20,
-        borderRadius: 13,
+        marginTop: 16,
+        borderRadius: 14,
         paddingVertical: 15,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
-        shadowColor: '#10B981',
-        shadowOffset: {
-            width: 0,
-            height: 5,
-        },
+        shadowColor: '#059669',
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
-        shadowRadius: 7,
-        elevation: 4,
+        shadowRadius: 6,
+        elevation: 3,
     },
-
-    primaryButtonIcon: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: '900',
-        marginRight: 8,
-    },
-
     primaryButtonText: {
         color: '#FFFFFF',
-        fontSize: 15,
-        fontWeight: '800',
+        fontSize: 14,
+        fontWeight: 'bold',
     },
-
-    /* CANCELAR */
-
     secondaryButton: {
-        backgroundColor: '#182436',
-        marginTop: 11,
-        borderRadius: 13,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 14,
         paddingVertical: 14,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#293B52',
+        borderColor: '#E2E8F0',
+        marginBottom: 20,
     },
-
     secondaryButtonText: {
-        color: '#94A3B8',
-        fontSize: 14,
-        fontWeight: '700',
+        color: '#64748B',
+        fontSize: 13,
+        fontWeight: '600',
     },
-
-    /* FOOTER */
-
     footerText: {
-        color: '#334155',
+        color: '#94A3B8',
         fontSize: 11,
         textAlign: 'center',
-        marginTop: 25,
+        marginTop: 10,
     },
 });

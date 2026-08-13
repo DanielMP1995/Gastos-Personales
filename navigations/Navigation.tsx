@@ -22,18 +22,23 @@ const Stack = createNativeStackNavigator();
 
 function MyTabs() {
     return (
-        <Tab.Navigator
+<Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: '#0F172A',
-                    borderTopColor: '#1E293B',
+                    backgroundColor: '#FFFFFF',
+                    borderTopColor: '#E2E8F0',
                     elevation: 0,
                     height: 60,
                     paddingBottom: 8,
+                    paddingTop: 8,
                 },
-                tabBarActiveTintColor: '#38BDF8',
-                tabBarInactiveTintColor: '#f5f6f8',
+                tabBarActiveTintColor: '#059669',
+                tabBarInactiveTintColor: '#64748B',
+                tabBarLabelStyle: {
+                    fontSize: 11,
+                    fontWeight: '600',
+                },
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
 
@@ -61,7 +66,7 @@ function MyTabs() {
 
 function MyStack() {
     return (
-        <Stack.Navigator initialRouteName="login" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator initialRouteName="tabs" screenOptions={{ headerShown: false }}>
             <Stack.Screen name="login" component={LoginScreen} />
             <Stack.Screen name="registro" component={RegistroScreen} />
 

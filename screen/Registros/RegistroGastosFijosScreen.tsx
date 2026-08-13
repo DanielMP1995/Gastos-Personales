@@ -332,60 +332,74 @@ export default function RegistroGastosFijosScreen({
     // ============================================================
 
     return (
+        <View style={styles.rootContainer}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={
+                    styles.container
+                }
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* Cabecera superior minimalista */}
+                <View style={styles.topHeader}>
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Text style={styles.backButtonText}>
+                            ←
+                        </Text>
+                    </TouchableOpacity>
+                    <Text style={styles.topHeaderTitle}>
+                        Gastos Fijos
+                    </Text>
+                    <View style={{ width: 40 }} />
+                </View>
 
-        <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={
-                styles.container
-            }
-            showsVerticalScrollIndicator={true}
-            keyboardShouldPersistTaps="handled"
-        >
+                {/* Hero Card */}
+                <View style={styles.heroCard}>
+                    <View style={styles.heroIconContainer}>
+                        <Text style={styles.heroEmoji}>
+                            ⚡
+                        </Text>
+                    </View>
+                    <View style={styles.heroTextContainer}>
+                        <Text style={styles.heroTitle}>
+                            Servicios Recurrentes
+                        </Text>
+                        <Text style={styles.heroSubtitle}>
+                            Establece y gestiona tus servicios mensuales fijos
+                        </Text>
+                    </View>
+                </View>
 
-            {/* ================================================== */}
-            {/* TÍTULO */}
-            {/* ================================================== */}
-
-            <Text style={styles.titulo}>
-                ⚡ Configurar Gastos Fijos
-            </Text>
-
-            <Text style={styles.subtitulo}>
-                Establece tus servicios recurrentes
-                mensuales.
-            </Text>
-
-            {/* ================================================== */}
-            {/* FORMULARIO */}
-            {/* ================================================== */}
-
-            <View style={styles.formCard}>
-
-                {/* CATEGORÍA */}
-
-                <Text style={styles.label}>
-                    Tipo de Servicio:
-                </Text>
+                {/* Sección Paso 1: Categoría */}
+                <View style={styles.sectionHeader}>
+                    <View style={styles.stepBadge}>
+                        <Text style={styles.stepBadgeText}>
+                            01
+                        </Text>
+                    </View>
+                    <Text style={styles.sectionTitle}>
+                        Tipo de Servicio
+                    </Text>
+                </View>
 
                 <ScrollView
                     horizontal
-                    showsHorizontalScrollIndicator={
-                        false
-                    }
-                    contentContainerStyle={
-                        styles.rowCat
-                    }
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.rowCat}
                 >
-
-                    {categoriasServicios.map(
-                        (cat) => (
-
+                    {categoriasServicios.map((cat) => {
+                        const isSelected =
+                            categoriaServicio === cat;
+                        return (
                             <TouchableOpacity
                                 key={cat}
                                 style={[
                                     styles.catBtn,
-                                    categoriaServicio ===
-                                        cat &&
+                                    isSelected &&
                                         styles.catBtnActive,
                                 ]}
                                 onPress={() =>
@@ -393,219 +407,133 @@ export default function RegistroGastosFijosScreen({
                                         cat
                                     )
                                 }
+                                activeOpacity={0.8}
                             >
-
                                 <Text
-                                    style={
-                                        categoriaServicio ===
-                                            cat
-                                            ? styles.catTextActive
-                                            : styles.catText
-                                    }
+                                    style={[
+                                        styles.catText,
+                                        isSelected &&
+                                            styles.catTextActive,
+                                    ]}
                                 >
                                     {cat}
                                 </Text>
-
                             </TouchableOpacity>
-
-                        )
-                    )}
-
+                        );
+                    })}
                 </ScrollView>
 
-                {/* NOMBRE */}
-
-                <Text style={styles.label}>
-                    Nombre / Identificador:
-                </Text>
-
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ej. Luz de casa / Plan de Claro"
-                    placeholderTextColor="#64748B"
-                    value={nombreGasto}
-                    onChangeText={
-                        setNombreGasto
-                    }
-                />
-
-                {/* MONTO */}
-
-                <Text style={styles.label}>
-                    Monto Estimado Mensual ($):
-                </Text>
-
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ej. 35.00"
-                    placeholderTextColor="#64748B"
-                    keyboardType="numeric"
-                    value={montoFijo}
-                    onChangeText={
-                        setMontoFijo
-                    }
-                />
-
-                {/* BOTÓN */}
-
-                <TouchableOpacity
-                    style={styles.btnGuardar}
-                    onPress={
-                        guardarGastoFijo
-                    }
-                >
-
-                    <Ionicons
-                        name="add-circle-outline"
-                        size={18}
-                        color="white"
-                        style={{
-                            marginRight: 6,
-                        }}
-                    />
-
-                    <Text
-                        style={
-                            styles.btnGuardarText
-                        }
-                    >
-                        Guardar Gasto Fijo
+                {/* Sección Paso 2: Formulario */}
+                <View style={styles.sectionHeader}>
+                    <View style={styles.stepBadge}>
+                        <Text style={styles.stepBadgeText}>
+                            02
+                        </Text>
+                    </View>
+                    <Text style={styles.sectionTitle}>
+                        Detalles del Gasto
                     </Text>
-
-                </TouchableOpacity>
-
-            </View>
-
-            {/* ================================================== */}
-            {/* LISTA */}
-            {/* ================================================== */}
-
-            <Text
-                style={
-                    styles.sectionTitle
-                }
-            >
-                Servicios Fijos Registrados
-            </Text>
-
-            {gastosFijosRegistrados.length ===
-            0 ? (
-
-                <View
-                    style={
-                        styles.vacioCard
-                    }
-                >
-
-                    <Ionicons
-                        name="information-circle-outline"
-                        size={24}
-                        color="#64748B"
-                    />
-
-                    <Text
-                        style={
-                            styles.vacioTexto
-                        }
-                    >
-                        Aún no hay gastos fijos
-                        configurados.
-                    </Text>
-
                 </View>
 
-            ) : (
+                <View style={styles.formCard}>
+                    <Text style={styles.label}>
+                        Nombre / Identificador
+                    </Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ej. Luz de casa / Plan de Claro"
+                        placeholderTextColor="#94A3B8"
+                        value={nombreGasto}
+                        onChangeText={setNombreGasto}
+                    />
 
-                gastosFijosRegistrados.map(
-                    (item) => (
+                    <Text style={styles.label}>
+                        Monto Estimado Mensual ($)
+                    </Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ej. 35.00"
+                        placeholderTextColor="#94A3B8"
+                        keyboardType="numeric"
+                        value={montoFijo}
+                        onChangeText={setMontoFijo}
+                    />
 
+                    <TouchableOpacity
+                        style={styles.btnGuardar}
+                        onPress={guardarGastoFijo}
+                        activeOpacity={0.85}
+                    >
+                        <Ionicons
+                            name="add-circle-outline"
+                            size={18}
+                            color="white"
+                            style={{ marginRight: 6 }}
+                        />
+                        <Text style={styles.btnGuardarText}>
+                            Guardar Gasto Fijo
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Sección Lista de Gastos */}
+                <View style={styles.sectionHeader}>
+                    <View style={styles.stepBadge}>
+                        <Text style={styles.stepBadgeText}>
+                            03
+                        </Text>
+                    </View>
+                    <Text style={styles.sectionTitle}>
+                        Servicios Fijos Registrados
+                    </Text>
+                </View>
+
+                {gastosFijosRegistrados.length === 0 ? (
+                    <View style={styles.vacioCard}>
+                        <Ionicons
+                            name="information-circle-outline"
+                            size={22}
+                            color="#059669"
+                        />
+                        <Text style={styles.vacioTexto}>
+                            Aún no hay gastos fijos configurados.
+                        </Text>
+                    </View>
+                ) : (
+                    gastosFijosRegistrados.map((item) => (
                         <View
                             key={item.id}
-                            style={
-                                styles.itemCard
-                            }
+                            style={styles.itemCard}
                         >
-
-                            <View
-                                style={
-                                    styles.itemInfo
-                                }
-                            >
-
-                                <Text
-                                    style={
-                                        styles.itemNombre
-                                    }
-                                >
+                            <View style={styles.itemInfo}>
+                                <Text style={styles.itemNombre}>
                                     {item.nombre ||
                                         'Servicio sin nombre'}
                                 </Text>
-
-                                <Text
-                                    style={
-                                        styles.itemCategoria
-                                    }
-                                >
+                                <Text style={styles.itemCategoria}>
                                     Categoría:{' '}
-                                    {item.categoria ||
-                                        'Otro'}
+                                    {item.categoria || 'Otro'}
                                 </Text>
-
-                                <Text
-                                    style={
-                                        styles.itemEstado
-                                    }
-                                >
-                                    {item.activo ===
-                                    false
+                                <Text style={styles.itemEstado}>
+                                    {item.activo === false
                                         ? 'Inactivo'
                                         : 'Activo'}
                                 </Text>
-
                             </View>
 
-                            <Text
-                                style={
-                                    styles.itemMonto
-                                }
-                            >
+                            <Text style={styles.itemMonto}>
                                 $
                                 {Number(
                                     item.monto
                                 ).toFixed(2)}
                             </Text>
-
                         </View>
+                    ))
+                )}
 
-                    )
-                )
 
-            )}
-
-            {/* ================================================== */}
-            {/* VOLVER */}
-            {/* ================================================== */}
-
-            <TouchableOpacity
-                style={
-                    styles.btnVolver
-                }
-                onPress={() =>
-                    navigation.goBack()
-                }
-            >
-
-                <Text
-                    style={
-                        styles.btnVolverText
-                    }
-                >
-                    Regresar
-                </Text>
-
-            </TouchableOpacity>
-
-        </ScrollView>
+            </ScrollView>
+        </View>
     );
 }
 
@@ -614,188 +542,267 @@ export default function RegistroGastosFijosScreen({
 // ============================================================
 
 const styles = StyleSheet.create({
-
+    rootContainer: {
+        flex: 1,
+        backgroundColor: '#F8FAFC',
+    },
     scrollView: {
         flex: 1,
-        backgroundColor: '#0F172A',
     },
-
     container: {
-        padding: 25,
-        paddingTop: 30,
-        paddingBottom: 60,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 40,
     },
-
-    titulo: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#38BDF8',
-        textAlign: 'center',
-        marginBottom: 4,
-    },
-
-    subtitulo: {
-        fontSize: 13,
-        color: '#94A3B8',
-        textAlign: 'center',
+    topHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: 20,
     },
-
-    formCard: {
-        backgroundColor: '#1E293B',
-        padding: 16,
-        borderRadius: 14,
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#334155',
-        marginBottom: 20,
+        borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 2,
     },
-
-    label: {
-        color: '#F8FAFC',
-        fontSize: 13,
+    backButtonText: {
+        color: '#1E293B',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    topHeaderTitle: {
+        color: '#1E293B',
+        fontSize: 16,
         fontWeight: '600',
-        marginBottom: 6,
-        marginTop: 8,
     },
-
+    heroCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 18,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    heroIconContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 15,
+        backgroundColor: '#ECFDF5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15,
+    },
+    heroEmoji: {
+        fontSize: 24,
+    },
+    heroTextContainer: {
+        flex: 1,
+    },
+    heroTitle: {
+        color: '#1E293B',
+        fontSize: 17,
+        fontWeight: 'bold',
+        marginBottom: 3,
+    },
+    heroSubtitle: {
+        color: '#64748B',
+        fontSize: 12,
+        lineHeight: 16,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+        marginTop: 10,
+    },
+    stepBadge: {
+        width: 26,
+        height: 26,
+        borderRadius: 8,
+        backgroundColor: '#059669',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    stepBadgeText: {
+        color: '#FFFFFF',
+        fontSize: 11,
+        fontWeight: 'bold',
+    },
+    sectionTitle: {
+        color: '#1E293B',
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    formCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    label: {
+        color: '#475569',
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 6,
+        marginTop: 12,
+    },
     rowCat: {
         paddingVertical: 4,
-        marginBottom: 8,
+        paddingRight: 10,
+        marginBottom: 6,
     },
-
     catBtn: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        backgroundColor: '#0F172A',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
         marginRight: 8,
         borderWidth: 1,
-        borderColor: '#334155',
+        borderColor: '#E2E8F0',
     },
-
     catBtnActive: {
-        backgroundColor: '#EA580C',
-        borderColor: '#EA580C',
+        backgroundColor: '#ECFDF5',
+        borderColor: '#059669',
     },
-
     catText: {
-        color: '#94A3B8',
+        color: '#64748B',
         fontSize: 12,
+        fontWeight: '500',
     },
-
     catTextActive: {
-        color: '#FFFFFF',
+        color: '#047857',
         fontWeight: 'bold',
         fontSize: 12,
     },
-
     input: {
-        backgroundColor: '#0F172A',
-        borderRadius: 10,
-        padding: 12,
-        color: '#F8FAFC',
-        marginBottom: 10,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        color: '#1E293B',
         borderWidth: 1,
-        borderColor: '#334155',
-        fontSize: 14,
+        borderColor: '#E2E8F0',
+        fontSize: 13,
     },
-
     btnGuardar: {
-        backgroundColor: '#EA580C',
-        padding: 14,
-        borderRadius: 10,
+        backgroundColor: '#059669',
+        paddingVertical: 15,
+        borderRadius: 14,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 20,
+        shadowColor: '#059669',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 3,
     },
-
     btnGuardarText: {
-        color: 'white',
+        color: '#FFFFFF',
         fontWeight: 'bold',
         fontSize: 14,
     },
-
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#F8FAFC',
-        marginBottom: 10,
-    },
-
     vacioCard: {
-        backgroundColor: '#1E293B',
+        backgroundColor: '#FFFFFF',
         padding: 16,
-        borderRadius: 10,
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#334155',
+        borderColor: '#E2E8F0',
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 2,
+        elevation: 1,
     },
-
     vacioTexto: {
         color: '#64748B',
-        fontSize: 13,
+        fontSize: 12,
         fontStyle: 'italic',
-        marginLeft: 8,
+        marginLeft: 10,
     },
-
     itemCard: {
-        backgroundColor: '#1E293B',
-        padding: 14,
-        borderRadius: 10,
-        marginBottom: 8,
+        backgroundColor: '#FFFFFF',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#334155',
+        borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 2,
+        elevation: 1,
     },
-
     itemInfo: {
         flex: 1,
         paddingRight: 10,
     },
-
     itemNombre: {
-        color: '#F8FAFC',
+        color: '#1E293B',
         fontWeight: 'bold',
         fontSize: 14,
+        marginBottom: 3,
     },
-
     itemCategoria: {
-        color: '#94A3B8',
+        color: '#64748B',
         fontSize: 11,
         marginTop: 2,
     },
-
     itemEstado: {
-        color: '#22C55E',
-        fontSize: 10,
+        color: '#059669',
+        fontSize: 11,
         fontWeight: '600',
         marginTop: 3,
     },
-
     itemMonto: {
-        color: '#38BDF8',
+        color: '#047857',
         fontWeight: 'bold',
         fontSize: 16,
     },
-
     btnVolver: {
-        padding: 14,
+        paddingVertical: 14,
         alignItems: 'center',
         marginTop: 10,
-        backgroundColor: '#1E293B',
-        borderRadius: 10,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: '#334155',
-        marginBottom: 30,
+        borderColor: '#E2E8F0',
     },
-
     btnVolverText: {
-        color: '#94A3B8',
+        color: '#64748B',
         fontWeight: '600',
+        fontSize: 13,
     },
-});
+}); //pagina /registros/gastos fijos

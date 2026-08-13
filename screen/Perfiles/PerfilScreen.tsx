@@ -53,6 +53,11 @@ export default function PerfilScreen({ navigation }: any) {
 
     const [subiendoFoto, setSubiendoFoto] = useState(false);
 
+    // Se usa para "romper" el caché del componente Image cada
+    // vez que se sube una foto nueva, así siempre se ve la
+    // última versión y no una versión vieja guardada en caché.
+    const [fotoCacheKey, setFotoCacheKey] = useState(Date.now());
+
 
     /* HEADER */
 
@@ -161,6 +166,41 @@ export default function PerfilScreen({ navigation }: any) {
 
 
     /* =========================================
+       CONVERTIR UNA URI LOCAL A BLOB
+       (fetch().blob() falla o genera archivos
+       corruptos/0kb en varios dispositivos Android;
+       XMLHttpRequest es el método confiable para esto
+       en Expo/React Native)
+    ========================================= */
+
+    function uriABlob(uri: string): Promise<Blob> {
+
+        return new Promise((resolve, reject) => {
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.onload = function () {
+                resolve(xhr.response);
+            };
+
+            xhr.onerror = function () {
+                reject(
+                    new Error(
+                        'No se pudo leer la imagen seleccionada.'
+                    )
+                );
+            };
+
+            xhr.responseType = 'blob';
+            xhr.open('GET', uri, true);
+            xhr.send(null);
+
+        });
+
+    }
+
+
+    /* =========================================
        SELECCIONAR Y SUBIR FOTO DE PERFIL
     ========================================= */
 
@@ -227,13 +267,10 @@ export default function PerfilScreen({ navigation }: any) {
             setSubiendoFoto(true);
 
 
-            /* CONVERTIR URI A BLOB */
-
-            const response =
-                await fetch(imagen.uri);
+            /* CONVERTIR URI A BLOB (método confiable) */
 
             const blob =
-                await response.blob();
+                await uriABlob(imagen.uri);
 
 
             /* RUTA ÚNICA EN FIREBASE STORAGE */
@@ -288,6 +325,10 @@ export default function PerfilScreen({ navigation }: any) {
                 ...prev,
                 fotoPerfil: urlFoto,
             }));
+
+            // Forzamos a que <Image> vuelva a pedir la imagen
+            // en vez de mostrar una versión en caché.
+            setFotoCacheKey(Date.now());
 
 
             Alert.alert(
@@ -432,6 +473,11 @@ export default function PerfilScreen({ navigation }: any) {
     }
 
 
+    const parejaEncontrada =
+        !nombreParejaVinculada.includes('Aún') &&
+        !nombreParejaVinculada.includes('Buscando');
+
+
     return (
 
         <ScrollView
@@ -447,28 +493,13 @@ export default function PerfilScreen({ navigation }: any) {
 
             <View style={styles.header}>
 
-                <View style={styles.headerIcon}>
+                <Text style={styles.headerSmall}>
+                    CUENTA PERSONAL
+                </Text>
 
-                    <Ionicons
-                        name="person"
-                        size={28}
-                        color="#FFFFFF"
-                    />
-
-                </View>
-
-
-                <View style={styles.headerTextContainer}>
-
-                    <Text style={styles.headerSmall}>
-                        CUENTA PERSONAL
-                    </Text>
-
-                    <Text style={styles.titulo}>
-                        Mi Perfil
-                    </Text>
-
-                </View>
+                <Text style={styles.titulo}>
+                    Perfil y pareja
+                </Text>
 
             </View>
 
@@ -485,9 +516,19 @@ export default function PerfilScreen({ navigation }: any) {
 
                         <Image
                             source={{
-                                uri: data.fotoPerfil
+                                uri: `${data.fotoPerfil}${
+                                    data.fotoPerfil.includes('?')
+                                        ? '&'
+                                        : '?'
+                                }cache=${fotoCacheKey}`,
                             }}
                             style={styles.avatarImage}
+                            onError={(e) =>
+                                console.log(
+                                    'Error cargando foto de perfil:',
+                                    e.nativeEvent?.error
+                                )
+                            }
                         />
 
                     ) : (
@@ -529,7 +570,7 @@ export default function PerfilScreen({ navigation }: any) {
 
                             <Ionicons
                                 name="camera"
-                                size={19}
+                                size={17}
                                 color="#FFFFFF"
                             />
 
@@ -561,41 +602,28 @@ export default function PerfilScreen({ navigation }: any) {
 
 
             {/* =================================
-                CONEXIÓN DE PAREJA
+                CÓDIGO DE PAREJA
             ================================= */}
 
             <View style={styles.sectionHeader}>
 
                 <Ionicons
-                    name="people-outline"
-                    size={20}
-                    color="#38BDF8"
+                    name="key-outline"
+                    size={18}
+                    color={COLOR_PRINCIPAL}
                 />
 
                 <Text style={styles.sectionTitle}>
-                    Conexión de pareja
+                    Código de pareja
                 </Text>
 
             </View>
 
 
-            {/* CÓDIGO */}
-
             <View style={styles.codeCard}>
 
-                <View style={styles.codeIcon}>
-
-                    <Ionicons
-                        name="key-outline"
-                        size={24}
-                        color="#38BDF8"
-                    />
-
-                </View>
-
-
                 <Text style={styles.codeLabel}>
-                    TU CÓDIGO DE CONEXIÓN
+                    TU CÓDIGO ÚNICO
                 </Text>
 
 
@@ -605,22 +633,21 @@ export default function PerfilScreen({ navigation }: any) {
 
 
                 <Text style={styles.codeDescription}>
-                    Comparte este código con tu
-                    pareja para sincronizar sus
-                    finanzas.
+                    Comparte este código con tu pareja
+                    para sincronizar sus finanzas.
                 </Text>
 
 
                 <TouchableOpacity
                     style={styles.copiarBtn}
                     onPress={copiarCodigo}
-                    activeOpacity={0.8}
+                    activeOpacity={0.85}
                 >
 
                     <Ionicons
                         name="copy-outline"
-                        size={18}
-                        color="#0F172A"
+                        size={17}
+                        color="#FFFFFF"
                     />
 
                     <Text style={styles.copiarText}>
@@ -628,6 +655,57 @@ export default function PerfilScreen({ navigation }: any) {
                     </Text>
 
                 </TouchableOpacity>
+
+            </View>
+
+
+            {/* =================================
+                PAREJA VINCULADA
+            ================================= */}
+
+            <View style={styles.partnerCard}>
+
+                <View style={styles.partnerIcon}>
+
+                    <Ionicons
+                        name="heart"
+                        size={18}
+                        color={COLOR_PRINCIPAL}
+                    />
+
+                </View>
+
+
+                <View style={{ flex: 1 }}>
+
+                    <Text style={styles.labelVinculo}>
+                        PAREJA VINCULADA
+                    </Text>
+
+
+                    <Text
+                        style={styles.valueVinculo}
+                        numberOfLines={1}
+                    >
+                        {nombreParejaVinculada}
+                    </Text>
+
+                </View>
+
+
+                <Ionicons
+                    name={
+                        parejaEncontrada
+                            ? 'checkmark-circle'
+                            : 'ellipse-outline'
+                    }
+                    size={20}
+                    color={
+                        parejaEncontrada
+                            ? COLOR_VERDE
+                            : '#B7BDBB'
+                    }
+                />
 
             </View>
 
@@ -644,8 +722,8 @@ export default function PerfilScreen({ navigation }: any) {
 
                         <Ionicons
                             name="link-outline"
-                            size={22}
-                            color="#FFFFFF"
+                            size={19}
+                            color={COLOR_PRINCIPAL}
                         />
 
                     </View>
@@ -676,8 +754,8 @@ export default function PerfilScreen({ navigation }: any) {
 
 
                 <Text style={styles.vincularDescription}>
-                    Ingresa el código de conexión de
-                    tu pareja para sincronizar la
+                    Ingresa el código de conexión de tu
+                    pareja para sincronizar la
                     información financiera.
                 </Text>
 
@@ -691,12 +769,12 @@ export default function PerfilScreen({ navigation }: any) {
                         onPress={() =>
                             setModoVincular(true)
                         }
-                        activeOpacity={0.8}
+                        activeOpacity={0.85}
                     >
 
                         <Ionicons
                             name="link"
-                            size={18}
+                            size={17}
                             color="#FFFFFF"
                         />
 
@@ -717,7 +795,7 @@ export default function PerfilScreen({ navigation }: any) {
                         <TextInput
                             style={styles.inputVinculo}
                             placeholder="Ej. ABC123"
-                            placeholderTextColor="#64748B"
+                            placeholderTextColor="#9AA1A0"
                             value={codigoNuevo}
                             onChangeText={
                                 setCodigoNuevo
@@ -740,12 +818,12 @@ export default function PerfilScreen({ navigation }: any) {
                                 onPress={
                                     guardarNuevoCodigoPareja
                                 }
-                                activeOpacity={0.8}
+                                activeOpacity={0.85}
                             >
 
                                 <Ionicons
                                     name="checkmark"
-                                    size={18}
+                                    size={17}
                                     color="#FFFFFF"
                                 />
 
@@ -773,13 +851,13 @@ export default function PerfilScreen({ navigation }: any) {
                                     setCodigoNuevo('');
 
                                 }}
-                                activeOpacity={0.8}
+                                activeOpacity={0.85}
                             >
 
                                 <Ionicons
                                     name="close"
-                                    size={18}
-                                    color="#CBD5E1"
+                                    size={17}
+                                    color="#5A615E"
                                 />
 
                                 <Text
@@ -802,61 +880,6 @@ export default function PerfilScreen({ navigation }: any) {
 
 
             {/* =================================
-                PAREJA VINCULADA
-            ================================= */}
-
-            <View style={styles.partnerCard}>
-
-                <View style={styles.partnerIcon}>
-
-                    <Ionicons
-                        name="heart"
-                        size={20}
-                        color="#FB7185"
-                    />
-
-                </View>
-
-
-                <View style={{ flex: 1 }}>
-
-                    <Text style={styles.labelVinculo}>
-                        PAREJA VINCULADA
-                    </Text>
-
-
-                    <Text
-                        style={styles.valueVinculo}
-                        numberOfLines={1}
-                    >
-                        {nombreParejaVinculada}
-                    </Text>
-
-                </View>
-
-
-                <Ionicons
-                    name={
-                        nombreParejaVinculada.includes(
-                            'Aún'
-                        )
-                            ? 'ellipse-outline'
-                            : 'checkmark-circle'
-                    }
-                    size={22}
-                    color={
-                        nombreParejaVinculada.includes(
-                            'Aún'
-                        )
-                            ? '#64748B'
-                            : '#10B981'
-                    }
-                />
-
-            </View>
-
-
-            {/* =================================
                 DATOS PERSONALES
             ================================= */}
 
@@ -864,8 +887,8 @@ export default function PerfilScreen({ navigation }: any) {
 
                 <Ionicons
                     name="person-outline"
-                    size={20}
-                    color="#38BDF8"
+                    size={18}
+                    color={COLOR_PRINCIPAL}
                 />
 
                 <Text style={styles.sectionTitle}>
@@ -881,8 +904,8 @@ export default function PerfilScreen({ navigation }: any) {
 
                     <Ionicons
                         name="person-outline"
-                        size={18}
-                        color="#38BDF8"
+                        size={17}
+                        color={COLOR_PRINCIPAL}
                     />
 
                 </View>
@@ -909,8 +932,8 @@ export default function PerfilScreen({ navigation }: any) {
 
                     <Ionicons
                         name="male-female-outline"
-                        size={18}
-                        color="#A78BFA"
+                        size={17}
+                        color={COLOR_PRINCIPAL}
                     />
 
                 </View>
@@ -937,8 +960,8 @@ export default function PerfilScreen({ navigation }: any) {
 
                     <Ionicons
                         name="mail-outline"
-                        size={18}
-                        color="#34D399"
+                        size={17}
+                        color={COLOR_PRINCIPAL}
                     />
 
                 </View>
@@ -969,15 +992,15 @@ export default function PerfilScreen({ navigation }: any) {
             <TouchableOpacity
                 style={styles.logoutButton}
                 onPress={cerrarSesion}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
             >
 
                 <View style={styles.logoutIcon}>
 
                     <Ionicons
                         name="log-out-outline"
-                        size={20}
-                        color="#F87171"
+                        size={18}
+                        color={COLOR_ROJO}
                     />
 
                 </View>
@@ -990,8 +1013,8 @@ export default function PerfilScreen({ navigation }: any) {
 
                 <Ionicons
                     name="chevron-forward"
-                    size={20}
-                    color="#F87171"
+                    size={18}
+                    color={COLOR_ROJO}
                 />
 
             </TouchableOpacity>
@@ -1007,6 +1030,22 @@ export default function PerfilScreen({ navigation }: any) {
 
 
 /* =====================================================
+   PALETA — misma gama que el resto de la app
+===================================================== */
+
+const COLOR_PRINCIPAL = '#176B63';
+const COLOR_OSCURO = '#124C47';
+const COLOR_VERDE = '#2E7D6E';
+const COLOR_SUAVE = '#DCEAE7';
+const COLOR_MUY_SUAVE = '#F3F7F6';
+
+const COLOR_ROJO = '#B85C5C';
+
+const COLOR_BORDE = '#E4E7E6';
+const COLOR_TEXTO_SUAVE = '#7A817F';
+
+
+/* =====================================================
    ESTILOS
 ===================================================== */
 
@@ -1014,12 +1053,12 @@ const styles = StyleSheet.create({
 
     scrollView: {
         flex: 1,
-        backgroundColor: '#08111F',
+        backgroundColor: '#FFFFFF',
     },
 
     container: {
-        paddingHorizontal: 22,
-        paddingTop: 35,
+        paddingHorizontal: 20,
+        paddingTop: 45,
         paddingBottom: 45,
     },
 
@@ -1027,36 +1066,20 @@ const styles = StyleSheet.create({
     /* HEADER */
 
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 22,
-    },
-
-    headerIcon: {
-        width: 52,
-        height: 52,
-        borderRadius: 16,
-        backgroundColor: '#2563EB',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 13,
-    },
-
-    headerTextContainer: {
-        flex: 1,
+        marginBottom: 20,
     },
 
     headerSmall: {
-        color: '#64748B',
+        color: COLOR_PRINCIPAL,
         fontSize: 10,
         fontWeight: '700',
         letterSpacing: 1.3,
-        marginBottom: 2,
+        marginBottom: 4,
     },
 
     titulo: {
-        color: '#F8FAFC',
-        fontSize: 26,
+        color: '#171A19',
+        fontSize: 24,
         fontWeight: '800',
     },
 
@@ -1064,75 +1087,71 @@ const styles = StyleSheet.create({
     /* PERFIL */
 
     profileCard: {
-        backgroundColor: '#111C2E',
-        borderRadius: 22,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 18,
         paddingVertical: 24,
         paddingHorizontal: 18,
         alignItems: 'center',
-        marginBottom: 25,
+        marginBottom: 22,
         borderWidth: 1,
-        borderColor: '#1E3350',
+        borderColor: COLOR_BORDE,
     },
 
     avatarContainer: {
         position: 'relative',
-        marginBottom: 8,
+        marginBottom: 10,
     },
 
     avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: '#2563EB',
+        width: 92,
+        height: 92,
+        borderRadius: 46,
+        backgroundColor: COLOR_PRINCIPAL,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 4,
-        borderColor: '#172B4A',
     },
 
     avatarImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        borderWidth: 4,
-        borderColor: '#172B4A',
+        width: 92,
+        height: 92,
+        borderRadius: 46,
     },
 
     avatarText: {
         color: '#FFFFFF',
-        fontSize: 38,
+        fontSize: 34,
         fontWeight: '800',
     },
 
     cameraButton: {
         position: 'absolute',
-        right: -3,
-        bottom: 2,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#2563EB',
+        right: -2,
+        bottom: 0,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: COLOR_PRINCIPAL,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 3,
-        borderColor: '#111C2E',
+        borderColor: '#FFFFFF',
     },
 
     changePhotoText: {
-        color: '#64748B',
+        color: COLOR_TEXTO_SUAVE,
         fontSize: 10,
-        marginBottom: 8,
+        marginBottom: 10,
     },
 
     profileName: {
-        color: '#F8FAFC',
-        fontSize: 20,
+        color: '#171A19',
+        fontSize: 19,
         fontWeight: '800',
-        marginBottom: 4,
+        marginBottom: 3,
     },
 
     profileEmail: {
-        color: '#64748B',
+        color: COLOR_TEXTO_SUAVE,
         fontSize: 13,
     },
 
@@ -1142,57 +1161,45 @@ const styles = StyleSheet.create({
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 10,
         marginTop: 3,
+        gap: 8,
     },
 
     sectionTitle: {
-        color: '#F8FAFC',
-        fontSize: 17,
+        color: '#171A19',
+        fontSize: 15,
         fontWeight: '700',
-        marginLeft: 8,
     },
 
 
     /* CÓDIGO */
 
     codeCard: {
-        backgroundColor: '#10233C',
-        borderRadius: 20,
+        backgroundColor: COLOR_PRINCIPAL,
+        borderRadius: 18,
         padding: 20,
         alignItems: 'center',
         marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#1E4F7A',
-    },
-
-    codeIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 15,
-        backgroundColor: '#123A5D',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
     },
 
     codeLabel: {
-        color: '#64748B',
+        color: '#CDE6E1',
         fontSize: 10,
         fontWeight: '800',
         letterSpacing: 1.2,
     },
 
     roleName: {
-        color: '#38BDF8',
-        fontSize: 28,
+        color: '#FFFFFF',
+        fontSize: 26,
         fontWeight: '900',
         letterSpacing: 3,
         marginVertical: 8,
     },
 
     codeDescription: {
-        color: '#94A3B8',
+        color: '#CDE6E1',
         fontSize: 12,
         textAlign: 'center',
         lineHeight: 18,
@@ -1201,32 +1208,70 @@ const styles = StyleSheet.create({
     },
 
     copiarBtn: {
-        backgroundColor: '#38BDF8',
+        backgroundColor: 'rgba(255,255,255,0.16)',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 22,
+        paddingHorizontal: 20,
         paddingVertical: 11,
         borderRadius: 12,
     },
 
     copiarText: {
-        color: '#07111F',
-        fontWeight: '800',
+        color: '#FFFFFF',
+        fontWeight: '700',
         fontSize: 13,
         marginLeft: 7,
+    },
+
+
+    /* PAREJA VINCULADA */
+
+    partnerCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: COLOR_BORDE,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+
+    partnerIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: COLOR_MUY_SUAVE,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+
+    labelVinculo: {
+        color: COLOR_TEXTO_SUAVE,
+        fontSize: 9,
+        fontWeight: '800',
+        letterSpacing: 1,
+        marginBottom: 3,
+    },
+
+    valueVinculo: {
+        color: '#171A19',
+        fontSize: 14,
+        fontWeight: '700',
     },
 
 
     /* VINCULAR */
 
     vincularCard: {
-        backgroundColor: '#151E38',
-        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 18,
         padding: 18,
-        marginBottom: 15,
+        marginBottom: 25,
         borderWidth: 1,
-        borderColor: '#303D69',
+        borderColor: COLOR_BORDE,
     },
 
     vincularHeader: {
@@ -1236,36 +1281,36 @@ const styles = StyleSheet.create({
     },
 
     vincularIcon: {
-        width: 45,
-        height: 45,
-        borderRadius: 14,
-        backgroundColor: '#7C3AED',
+        width: 42,
+        height: 42,
+        borderRadius: 13,
+        backgroundColor: COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
 
     vincularCardTitulo: {
-        color: '#FFFFFF',
-        fontSize: 16,
+        color: '#171A19',
+        fontSize: 15,
         fontWeight: '800',
     },
 
     vincularCardSub: {
-        color: '#A5B4FC',
+        color: COLOR_TEXTO_SUAVE,
         fontSize: 11,
         marginTop: 2,
     },
 
     vincularDescription: {
-        color: '#94A3B8',
+        color: COLOR_TEXTO_SUAVE,
         fontSize: 12,
         lineHeight: 18,
         marginBottom: 15,
     },
 
     btnAbrirVincular: {
-        backgroundColor: '#7C3AED',
+        backgroundColor: COLOR_PRINCIPAL,
         width: '100%',
         paddingVertical: 13,
         borderRadius: 12,
@@ -1276,7 +1321,7 @@ const styles = StyleSheet.create({
 
     btnAbrirVincularText: {
         color: '#FFFFFF',
-        fontWeight: '800',
+        fontWeight: '700',
         fontSize: 13,
         marginLeft: 7,
     },
@@ -1286,12 +1331,12 @@ const styles = StyleSheet.create({
     },
 
     inputVinculo: {
-        backgroundColor: '#0A1322',
+        backgroundColor: COLOR_MUY_SUAVE,
         borderWidth: 1,
-        borderColor: '#6366F1',
+        borderColor: COLOR_BORDE,
         borderRadius: 12,
         padding: 13,
-        color: '#F8FAFC',
+        color: '#171A19',
         marginBottom: 10,
         fontSize: 16,
         fontWeight: '700',
@@ -1305,7 +1350,7 @@ const styles = StyleSheet.create({
     },
 
     btnGuardarVinculo: {
-        backgroundColor: '#10B981',
+        backgroundColor: COLOR_VERDE,
         flex: 0.48,
         paddingVertical: 12,
         borderRadius: 11,
@@ -1316,85 +1361,49 @@ const styles = StyleSheet.create({
 
     btnGuardarVinculoText: {
         color: '#FFFFFF',
-        fontWeight: '800',
+        fontWeight: '700',
         fontSize: 13,
         marginLeft: 5,
     },
 
     btnCancelarVinculo: {
-        backgroundColor: '#263449',
+        backgroundColor: COLOR_MUY_SUAVE,
         flex: 0.48,
         paddingVertical: 12,
         borderRadius: 11,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
+        borderWidth: 1,
+        borderColor: COLOR_BORDE,
     },
 
     btnCancelarVinculoText: {
-        color: '#CBD5E1',
+        color: '#5A615E',
         fontWeight: '700',
         fontSize: 13,
         marginLeft: 5,
     },
 
 
-    /* PAREJA */
-
-    partnerCard: {
-        backgroundColor: '#111C2E',
-        borderRadius: 16,
-        padding: 15,
-        marginBottom: 25,
-        borderWidth: 1,
-        borderColor: '#24344D',
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-
-    partnerIcon: {
-        width: 42,
-        height: 42,
-        borderRadius: 13,
-        backgroundColor: '#3B1D2B',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-
-    labelVinculo: {
-        color: '#64748B',
-        fontSize: 9,
-        fontWeight: '800',
-        letterSpacing: 1,
-        marginBottom: 3,
-    },
-
-    valueVinculo: {
-        color: '#F8FAFC',
-        fontSize: 14,
-        fontWeight: '700',
-    },
-
-
     /* INFORMACIÓN */
 
     infoBox: {
-        backgroundColor: '#111C2E',
+        backgroundColor: '#FFFFFF',
         padding: 14,
-        borderRadius: 15,
+        borderRadius: 14,
         marginBottom: 10,
         borderWidth: 1,
-        borderColor: '#22334A',
+        borderColor: COLOR_BORDE,
         flexDirection: 'row',
         alignItems: 'center',
     },
 
     infoIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: '#17263A',
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        backgroundColor: COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
@@ -1405,14 +1414,14 @@ const styles = StyleSheet.create({
     },
 
     label: {
-        color: '#64748B',
+        color: COLOR_TEXTO_SUAVE,
         fontSize: 10,
         fontWeight: '700',
         marginBottom: 3,
     },
 
     value: {
-        color: '#F8FAFC',
+        color: '#171A19',
         fontSize: 14,
         fontWeight: '600',
     },
@@ -1421,35 +1430,35 @@ const styles = StyleSheet.create({
     /* LOGOUT */
 
     logoutButton: {
-        marginTop: 25,
-        backgroundColor: '#21161D',
+        marginTop: 22,
+        backgroundColor: '#FBF2F2',
         borderWidth: 1,
-        borderColor: '#5B2632',
-        borderRadius: 15,
+        borderColor: '#EFD7D7',
+        borderRadius: 14,
         padding: 14,
         flexDirection: 'row',
         alignItems: 'center',
     },
 
     logoutIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: '#351B23',
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        backgroundColor: '#F8EEEE',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
 
     logoutText: {
-        color: '#F87171',
+        color: COLOR_ROJO,
         fontSize: 14,
         fontWeight: '700',
         flex: 1,
     },
 
     footerText: {
-        color: '#334155',
+        color: '#B7BDBB',
         fontSize: 11,
         textAlign: 'center',
         marginTop: 25,
