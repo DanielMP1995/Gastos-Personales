@@ -9,6 +9,7 @@ import {
     Clipboard,
     Image,
     ActivityIndicator,
+    Platform,
 } from 'react-native';
 
 import React, { useState, useEffect } from 'react';
@@ -125,9 +126,9 @@ export default function PerfilScreen({ navigation }: any) {
 
                                         if (
                                             uidKey !==
-                                                usuarioActual.uid &&
+                                            usuarioActual.uid &&
                                             usuarioItem.idPareja ===
-                                                val.idPareja
+                                            val.idPareja
                                         ) {
 
                                             setNombreParejaVinculada(
@@ -166,194 +167,94 @@ export default function PerfilScreen({ navigation }: any) {
 
 
     /* =========================================
-       CONVERTIR UNA URI LOCAL A BLOB
-       (fetch().blob() falla o genera archivos
-       corruptos/0kb en varios dispositivos Android;
-       XMLHttpRequest es el método confiable para esto
-       en Expo/React Native)
-    ========================================= */
-
-    function uriABlob(uri: string): Promise<Blob> {
-
-        return new Promise((resolve, reject) => {
-
-            const xhr = new XMLHttpRequest();
-
-            xhr.onload = function () {
-                resolve(xhr.response);
-            };
-
-            xhr.onerror = function () {
-                reject(
-                    new Error(
-                        'No se pudo leer la imagen seleccionada.'
-                    )
-                );
-            };
-
-            xhr.responseType = 'blob';
-            xhr.open('GET', uri, true);
-            xhr.send(null);
-
-        });
-
-    }
-
-
-    /* =========================================
        SELECCIONAR Y SUBIR FOTO DE PERFIL
     ========================================= */
 
     async function seleccionarFoto() {
-
         try {
-
             if (!usuarioActual) {
-                Alert.alert(
-                    'Error',
-                    'No hay un usuario autenticado.'
-                );
+                Alert.alert('Error', 'No hay un usuario autenticado.');
                 return;
             }
 
-
-            /* PERMISO PARA GALERÍA */
-
-            const permiso =
-                await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-
+            const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!permiso.granted) {
-
-                Alert.alert(
-                    'Permiso necesario',
-                    'Necesitamos permiso para acceder a tus fotos.'
-                );
-
+                Alert.alert('Permiso necesario', 'Necesitamos permiso para acceder a tus fotos.');
                 return;
             }
 
-
-            /* ABRIR GALERÍA */
-
-            const resultado =
-                await ImagePicker.launchImageLibraryAsync({
-
-                    mediaTypes: ['images'],
-
-                    allowsEditing: true,
-
-                    aspect: [1, 1],
-
-                    quality: 0.8,
-
-                });
-
+            const resultado = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
 
             if (resultado.canceled) {
                 return;
             }
 
-
-            const imagen =
-                resultado.assets[0];
-
-
+            const imagen = resultado.assets[0];
             if (!imagen?.uri) {
                 return;
             }
 
-
             setSubiendoFoto(true);
 
+            // Corrección para Android nativo: Manejo directo de la URI o conversión segura por XMLHttpRequest si es necesario
+            const uriLimpia = decodeURI(imagen.uri);
 
-            /* CONVERTIR URI A BLOB (método confiable) */
+            const uploadUri = Platform.OS === 'ios' ? uriLimpia.replace('file://', '') : uriLimpia;
 
-            const blob =
-                await uriABlob(imagen.uri);
+            // Usamos XMLHttpRequest que es mucho más estable en APKs nativas de Android para Storage
+            const blob: any = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.onload = function () {
+                    resolve(xhr.response);
+                };
+                xhr.onerror = function (e) {
+                    console.log(e);
+                    reject(new TypeError('Fallo en la red al procesar la imagen.'));
+                };
+                xhr.responseType = 'blob';
+                xhr.open('GET', uploadUri, true);
+                xhr.send(null);
+            });
 
+            const rutaFoto = `usuarios/${usuarioActual.uid}/fotoPerfil.jpg`;
+            const fotoRef = storageRef(storage, rutaFoto);
 
-            /* RUTA ÚNICA EN FIREBASE STORAGE */
+            await uploadBytes(fotoRef, blob, {
+                contentType: imagen.mimeType || 'image/jpeg',
+            });
 
-            const rutaFoto =
-                `usuarios/${usuarioActual.uid}/fotoPerfil.jpg`;
+            // Cerrar el blob de forma segura
+            blob.close();
 
+            const urlFoto = await getDownloadURL(fotoRef);
 
-            const fotoRef =
-                storageRef(
-                    storage,
-                    rutaFoto
-                );
-
-
-            /* SUBIR IMAGEN */
-
-            await uploadBytes(
-                fotoRef,
-                blob,
-                {
-                    contentType:
-                        imagen.mimeType || 'image/jpeg',
-                }
-            );
-
-
-            /* OBTENER URL */
-
-            const urlFoto =
-                await getDownloadURL(
-                    fotoRef
-                );
-
-
-            /* GUARDAR SOLO EL CAMPO fotoPerfil */
-
-            await update(
-                ref(
-                    db,
-                    `usuarios/${usuarioActual.uid}`
-                ),
-                {
-                    fotoPerfil: urlFoto,
-                }
-            );
-
-
-            /* ACTUALIZAR PANTALLA */
+            await update(ref(db, `usuarios/${usuarioActual.uid}`), {
+                fotoPerfil: urlFoto,
+            });
 
             setData((prev) => ({
                 ...prev,
                 fotoPerfil: urlFoto,
             }));
 
-            // Forzamos a que <Image> vuelva a pedir la imagen
-            // en vez de mostrar una versión en caché.
             setFotoCacheKey(Date.now());
 
-
-            Alert.alert(
-                '¡Foto actualizada!',
-                'Tu foto de perfil se guardó correctamente.'
-            );
+            Alert.alert('¡Foto actualizada!', 'Tu foto de perfil se guardó correctamente.');
 
         } catch (error: any) {
-
-            console.log(
-                'Error subiendo foto:',
-                error
-            );
-
+            console.log('Error subiendo foto:', error);
             Alert.alert(
                 'Error',
-                'No se pudo subir la foto. Verifica tu conexión e inténtalo nuevamente.'
+                'No se pudo subir la foto. Detalle: ' + (error.message || 'Error desconocido')
             );
-
         } finally {
-
             setSubiendoFoto(false);
-
         }
-
     }
 
 
@@ -465,7 +366,7 @@ export default function PerfilScreen({ navigation }: any) {
                 Alert.alert(
                     'Error',
                     'No se pudo cerrar sesión: ' +
-                        error.message
+                    error.message
                 );
 
             });
@@ -516,11 +417,10 @@ export default function PerfilScreen({ navigation }: any) {
 
                         <Image
                             source={{
-                                uri: `${data.fotoPerfil}${
-                                    data.fotoPerfil.includes('?')
+                                uri: `${data.fotoPerfil}${data.fotoPerfil.includes('?')
                                         ? '&'
                                         : '?'
-                                }cache=${fotoCacheKey}`,
+                                    }cache=${fotoCacheKey}`,
                             }}
                             style={styles.avatarImage}
                             onError={(e) =>
@@ -539,8 +439,8 @@ export default function PerfilScreen({ navigation }: any) {
 
                                 {data.nombre
                                     ? data.nombre
-                                          .charAt(0)
-                                          .toUpperCase()
+                                        .charAt(0)
+                                        .toUpperCase()
                                     : 'U'}
 
                             </Text>
@@ -1030,7 +930,7 @@ export default function PerfilScreen({ navigation }: any) {
 
 
 /* =====================================================
-   PALETA — misma gama que el resto de la app
+   PALETA
 ===================================================== */
 
 const COLOR_PRINCIPAL = '#176B63';
@@ -1062,9 +962,6 @@ const styles = StyleSheet.create({
         paddingBottom: 45,
     },
 
-
-    /* HEADER */
-
     header: {
         marginBottom: 20,
     },
@@ -1082,9 +979,6 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: '800',
     },
-
-
-    /* PERFIL */
 
     profileCard: {
         backgroundColor: '#FFFFFF',
@@ -1155,9 +1049,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
 
-
-    /* SECCIONES */
-
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1171,9 +1062,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '700',
     },
-
-
-    /* CÓDIGO */
 
     codeCard: {
         backgroundColor: COLOR_PRINCIPAL,
@@ -1224,9 +1112,6 @@ const styles = StyleSheet.create({
         marginLeft: 7,
     },
 
-
-    /* PAREJA VINCULADA */
-
     partnerCard: {
         backgroundColor: '#FFFFFF',
         borderRadius: 15,
@@ -1261,9 +1146,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
     },
-
-
-    /* VINCULAR */
 
     vincularCard: {
         backgroundColor: '#FFFFFF',
@@ -1346,14 +1228,14 @@ const styles = StyleSheet.create({
 
     rowBotonesVinculo: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        gap: 10,
     },
 
     btnGuardarVinculo: {
-        backgroundColor: COLOR_VERDE,
-        flex: 0.48,
+        flex: 1,
+        backgroundColor: COLOR_PRINCIPAL,
         paddingVertical: 12,
-        borderRadius: 11,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
@@ -1362,47 +1244,44 @@ const styles = StyleSheet.create({
     btnGuardarVinculoText: {
         color: '#FFFFFF',
         fontWeight: '700',
-        fontSize: 13,
+        fontSize: 12,
         marginLeft: 5,
     },
 
     btnCancelarVinculo: {
+        flex: 1,
         backgroundColor: COLOR_MUY_SUAVE,
-        flex: 0.48,
+        borderWidth: 1,
+        borderColor: COLOR_BORDE,
         paddingVertical: 12,
-        borderRadius: 11,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
-        borderWidth: 1,
-        borderColor: COLOR_BORDE,
     },
 
     btnCancelarVinculoText: {
         color: '#5A615E',
         fontWeight: '700',
-        fontSize: 13,
+        fontSize: 12,
         marginLeft: 5,
     },
 
-
-    /* INFORMACIÓN */
-
     infoBox: {
-        backgroundColor: '#FFFFFF',
-        padding: 14,
-        borderRadius: 14,
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: COLOR_BORDE,
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: COLOR_BORDE,
+        borderRadius: 14,
+        padding: 14,
+        marginBottom: 12,
     },
 
     infoIcon: {
-        width: 38,
-        height: 38,
-        borderRadius: 11,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         backgroundColor: COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
@@ -1417,51 +1296,49 @@ const styles = StyleSheet.create({
         color: COLOR_TEXTO_SUAVE,
         fontSize: 10,
         fontWeight: '700',
-        marginBottom: 3,
+        marginBottom: 2,
     },
 
     value: {
         color: '#171A19',
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
     },
 
-
-    /* LOGOUT */
-
     logoutButton: {
-        marginTop: 22,
-        backgroundColor: '#FBF2F2',
-        borderWidth: 1,
-        borderColor: '#EFD7D7',
-        borderRadius: 14,
-        padding: 14,
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#FCF3F3',
+        borderWidth: 1,
+        borderColor: '#F5D6D6',
+        borderRadius: 14,
+        padding: 16,
+        marginTop: 10,
+        marginBottom: 20,
     },
 
     logoutIcon: {
-        width: 38,
-        height: 38,
-        borderRadius: 11,
-        backgroundColor: '#F8EEEE',
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: '#FADBD8',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
 
     logoutText: {
+        flex: 1,
         color: COLOR_ROJO,
         fontSize: 14,
         fontWeight: '700',
-        flex: 1,
     },
 
     footerText: {
-        color: '#B7BDBB',
-        fontSize: 11,
         textAlign: 'center',
-        marginTop: 25,
+        color: COLOR_TEXTO_SUAVE,
+        fontSize: 11,
+        marginTop: 10,
     },
 
 });

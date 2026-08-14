@@ -66,7 +66,7 @@ function MyTabs() {
 
 function MyStack() {
     return (
-        <Stack.Navigator initialRouteName="tabs" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator initialRouteName="login" screenOptions={{ headerShown: false }}>
             <Stack.Screen name="login" component={LoginScreen} />
             <Stack.Screen name="registro" component={RegistroScreen} />
 
