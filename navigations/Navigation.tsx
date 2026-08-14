@@ -16,6 +16,7 @@ import RegistroGastosRapidos from '../screen/Registros/RegistroGastosRapidos'; /
 import ReporteDeudasRegistradas from '../screen/Reportes/ReporteDeudasRegistradas';
 import ConfigurarParejaScreen from '../config/ConfigurarParejaScreen';
 import RegistroGastosDetallados from '../screen/Registros/RegistroGastosDetallados';
+import CuentasYEfectivoScreen from '../screen/Cuentas/CuentasYEfectivoScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -60,6 +61,7 @@ function MyTabs() {
             <Tab.Screen name="Registros" component={RegistroMovimientosScreen} />
             <Tab.Screen name="Reportes" component={ReporteDeudasRegistradas} />
             <Tab.Screen name="Perfil" component={PerfilScreen} />
+            <Tab.Screen name="Cuentas" component={CuentasYEfectivoScreen} />
         </Tab.Navigator>
     );
 }

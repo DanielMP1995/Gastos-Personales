@@ -6,6 +6,8 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 
 import React, { useState, useEffect } from 'react';
@@ -541,7 +543,11 @@ export default function RegistroDeudasScreen({
     // ============================================================
 
     return (
-        <View style={styles.rootContainer}>
+        <KeyboardAvoidingView
+            style={styles.rootContainer}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.container}
@@ -916,7 +922,7 @@ export default function RegistroDeudasScreen({
                     </View>
                 )}
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
