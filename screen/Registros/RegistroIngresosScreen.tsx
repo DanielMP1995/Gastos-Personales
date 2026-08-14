@@ -10,12 +10,19 @@ import {
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { auth, db } from '../../firebase/FirebaseConfig';
-import { ref, push, set, get } from 'firebase/database';
+import { ref, push, set, get, onValue, update } from 'firebase/database';
 
 export default function RegistroIngresosScreen({ navigation }: any) {
     const [monto, setMonto] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [categoriaIngreso, setCategoriaIngreso] = useState('Salario');
+
+    // ============================================================
+    // CUENTAS (banco / efectivo) A DONDE ENTRA EL DINERO
+    // ============================================================
+
+    const [cuentasFirebase, setCuentasFirebase] = useState<any[]>([]);
+    const [cuentaDestinoId, setCuentaDestinoId] = useState<string | null>(null);
 
     const categoriasIngresos = [
         'Salario',
@@ -31,9 +38,78 @@ export default function RegistroIngresosScreen({ navigation }: any) {
         });
     }, [navigation]);
 
+    useEffect(() => {
+        const usuarioActual = auth.currentUser;
+
+        if (!usuarioActual) {
+            return;
+        }
+
+        const usuarioRef = ref(db, `usuarios/${usuarioActual.uid}`);
+
+        get(usuarioRef).then((snapshot) => {
+            if (!snapshot.exists()) {
+                return;
+            }
+
+            const idPareja = snapshot.val().idPareja;
+
+            if (!idPareja) {
+                return;
+            }
+
+            const cuentasRef = ref(db, `parejas/${idPareja}/cuentas`);
+
+            onValue(cuentasRef, (snap) => {
+                const data = snap.val();
+
+                const lista = data
+                    ? Object.keys(data).map((key) => ({
+                          id: key,
+                          ...data[key],
+                      }))
+                    : [];
+
+                setCuentasFirebase(lista);
+
+                setCuentaDestinoId((actual) => {
+                    if (actual && lista.some((c) => c.id === actual)) {
+                        return actual;
+                    }
+
+                    return lista.length > 0 ? lista[0].id : null;
+                });
+            });
+        });
+    }, []);
+
     function guardarIngreso() {
         if (!monto || !descripcion) {
             Alert.alert("Error", "Por favor ingresa un monto y una descripción.");
+            return;
+        }
+
+        const montoNum = parseFloat(monto);
+
+        if (isNaN(montoNum) || montoNum <= 0) {
+            Alert.alert("Error", "Ingresa un monto válido.");
+            return;
+        }
+
+        if (!cuentaDestinoId) {
+            Alert.alert(
+                "Selecciona una cuenta",
+                "Elige a qué cuenta (banco o efectivo) entra este ingreso. Si no tienes ninguna, créala primero en la pestaña Cuentas."
+            );
+            return;
+        }
+
+        const cuentaDestino = cuentasFirebase.find(
+            (c) => c.id === cuentaDestinoId
+        );
+
+        if (!cuentaDestino) {
+            Alert.alert("Error", "La cuenta seleccionada ya no existe.");
             return;
         }
 
@@ -60,18 +136,45 @@ export default function RegistroIngresosScreen({ navigation }: any) {
 
                 const datosIngreso = {
                     tipo: 'ingreso',
-                    monto: parseFloat(monto),
+                    monto: montoNum,
                     descripcion: descripcion,
                     categoria: categoriaIngreso,
                     fecha: new Date().toISOString(),
                     usuarioEmail: usuarioActual.email,
                     usuarioId: usuarioActual.uid,
-                    autor: nombreUsuario
+                    autor: nombreUsuario,
+                    cuentaDestinoId: cuentaDestino.id,
+                    cuentaDestinoNombre: cuentaDestino.nombre,
                 };
 
-                set(nuevoIngresoRef, datosIngreso)
+                const nuevoSaldoCuenta =
+                    Number(cuentaDestino.saldo || 0) + montoNum;
+
+                const movimientoCuentaRef = push(
+                    ref(db, `parejas/${idPareja}/movimientosCuentas`)
+                );
+
+                Promise.all([
+                    set(nuevoIngresoRef, datosIngreso),
+                    update(
+                        ref(
+                            db,
+                            `parejas/${idPareja}/cuentas/${cuentaDestino.id}`
+                        ),
+                        { saldo: nuevoSaldoCuenta }
+                    ),
+                    set(movimientoCuentaRef, {
+                        tipo: 'ingreso',
+                        cuentaDestinoId: cuentaDestino.id,
+                        cuentaDestinoNombre: cuentaDestino.nombre,
+                        monto: montoNum,
+                        descripcion: descripcion,
+                        fecha: datosIngreso.fecha,
+                        autor: nombreUsuario,
+                    }),
+                ])
                     .then(() => {
-                        Alert.alert("¡Éxito!", "Ingreso registrado y compartido correctamente.");
+                        Alert.alert("¡Éxito!", `Ingreso registrado y agregado a ${cuentaDestino.nombre}.`);
                         setMonto('');
                         setDescripcion('');
                         setCategoriaIngreso('Salario');
@@ -193,6 +296,64 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                         onChangeText={setDescripcion}
                         multiline
                     />
+
+                    <Text style={styles.label}>¿A qué cuenta entra?</Text>
+
+                    {cuentasFirebase.length === 0 ? (
+                        <TouchableOpacity
+                            style={styles.avisoSinCuentas}
+                            onPress={() =>
+                                navigation.navigate('tabs', { screen: 'Cuentas' })
+                            }
+                        >
+                            <Ionicons
+                                name="alert-circle-outline"
+                                size={16}
+                                color="#B85C5C"
+                            />
+                            <Text style={styles.avisoSinCuentasText}>
+                                No tienes cuentas creadas. Toca aquí para crear
+                                una (banco o efectivo).
+                            </Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={styles.cuentasChipRow}>
+                            {cuentasFirebase.map((cuenta) => {
+                                const isSelected = cuentaDestinoId === cuenta.id;
+                                return (
+                                    <TouchableOpacity
+                                        key={cuenta.id}
+                                        style={[
+                                            styles.catBtn,
+                                            isSelected && styles.catBtnActive,
+                                        ]}
+                                        onPress={() => setCuentaDestinoId(cuenta.id)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons
+                                            name={
+                                                cuenta.tipo === 'efectivo'
+                                                    ? 'cash-outline'
+                                                    : 'card-outline'
+                                            }
+                                            size={13}
+                                            color={isSelected ? '#047857' : '#64748B'}
+                                            style={{ marginRight: 6 }}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.catText,
+                                                isSelected && styles.catTextActive,
+                                            ]}
+                                        >
+                                            {cuenta.nombre} · $
+                                            {Number(cuenta.saldo || 0).toFixed(2)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    )}
 
                     <View style={styles.infoBox}>
                         <Ionicons name="information-circle-outline" size={18} color="#059669" style={{ marginRight: 8 }} />
@@ -486,5 +647,27 @@ const styles = StyleSheet.create({
         fontSize: 11,
         textAlign: 'center',
         marginTop: 10,
+    },
+    cuentasChipRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 4,
+    },
+    avisoSinCuentas: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FDF2F2',
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#F3D6D6',
+        marginBottom: 4,
+    },
+    avisoSinCuentasText: {
+        color: '#B85C5C',
+        fontSize: 12,
+        marginLeft: 8,
+        flex: 1,
     },
 });

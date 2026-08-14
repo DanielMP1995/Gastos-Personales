@@ -19,6 +19,8 @@ import {
     push,
     set,
     get,
+    onValue,
+    update,
 } from 'firebase/database';
 
 export default function RegistroGastosRapidos({
@@ -33,11 +35,66 @@ export default function RegistroGastosRapidos({
     const [motivo, setMotivo] = useState('');
     const [categoria, setCategoria] = useState('Tienda');
 
+    // ============================================================
+    // CUENTAS (banco / efectivo) DE DONDE SALE EL DINERO
+    // ============================================================
+
+    const [cuentasFirebase, setCuentasFirebase] = useState<any[]>([]);
+    const [cuentaOrigenId, setCuentaOrigenId] = useState<string | null>(null);
+    const [idParejaActual, setIdParejaActual] = useState<string | null>(null);
+
     useEffect(() => {
         navigation.setOptions({
             headerShown: false,
         });
     }, [navigation]);
+
+    useEffect(() => {
+        const usuarioActual = auth.currentUser;
+
+        if (!usuarioActual) {
+            return;
+        }
+
+        const usuarioRef = ref(db, `usuarios/${usuarioActual.uid}`);
+
+        get(usuarioRef).then((snapshot) => {
+            if (!snapshot.exists()) {
+                return;
+            }
+
+            const idPareja = snapshot.val().idPareja;
+
+            if (!idPareja) {
+                return;
+            }
+
+            setIdParejaActual(idPareja);
+
+            const cuentasRef = ref(db, `parejas/${idPareja}/cuentas`);
+
+            onValue(cuentasRef, (snap) => {
+                const data = snap.val();
+
+                const lista = data
+                    ? Object.keys(data).map((key) => ({
+                          id: key,
+                          ...data[key],
+                      }))
+                    : [];
+
+                setCuentasFirebase(lista);
+
+                setCuentaOrigenId((actual) => {
+                    if (actual && lista.some((c) => c.id === actual)) {
+                        return actual;
+                    }
+
+                    return lista.length > 0 ? lista[0].id : null;
+                });
+            });
+        });
+    }, []);
 
     // ============================================================
     // CATEGORÍAS CON ICONOS
@@ -66,6 +123,36 @@ export default function RegistroGastosRapidos({
             Alert.alert(
                 'Error',
                 'Por favor ingresa o selecciona un monto válido.'
+            );
+            return;
+        }
+
+        if (!cuentaOrigenId) {
+            Alert.alert(
+                'Selecciona una cuenta',
+                'Elige desde qué cuenta (banco o efectivo) sale este gasto. Si no tienes ninguna, créala primero en la pestaña Cuentas.'
+            );
+            return;
+        }
+
+        const cuentaOrigen = cuentasFirebase.find(
+            (c) => c.id === cuentaOrigenId
+        );
+
+        if (!cuentaOrigen) {
+            Alert.alert(
+                'Error',
+                'La cuenta seleccionada ya no existe.'
+            );
+            return;
+        }
+
+        if (Number(cuentaOrigen.saldo || 0) < montoNum) {
+            Alert.alert(
+                'Saldo insuficiente',
+                `${cuentaOrigen.nombre} solo tiene $${Number(
+                    cuentaOrigen.saldo || 0
+                ).toFixed(2)} disponible.`
             );
             return;
         }
@@ -128,13 +215,40 @@ export default function RegistroGastosRapidos({
                     usuarioEmail: usuarioActual.email,
                     autor: userData.nombre || usuarioActual.email || 'Usuario',
                     origen: 'gastoRapido',
+                    cuentaOrigenId: cuentaOrigen.id,
+                    cuentaOrigenNombre: cuentaOrigen.nombre,
                 };
 
-                set(nuevoGastoRef, datosGasto)
+                const nuevoSaldoCuenta =
+                    Number(cuentaOrigen.saldo || 0) - montoNum;
+
+                const movimientoCuentaRef = push(
+                    ref(db, `parejas/${idPareja}/movimientosCuentas`)
+                );
+
+                Promise.all([
+                    set(nuevoGastoRef, datosGasto),
+                    update(
+                        ref(
+                            db,
+                            `parejas/${idPareja}/cuentas/${cuentaOrigen.id}`
+                        ),
+                        { saldo: nuevoSaldoCuenta }
+                    ),
+                    set(movimientoCuentaRef, {
+                        tipo: 'gasto',
+                        cuentaOrigenId: cuentaOrigen.id,
+                        cuentaOrigenNombre: cuentaOrigen.nombre,
+                        monto: Number(montoNum.toFixed(2)),
+                        descripcion: descripcionFinal,
+                        fecha: datosGasto.fecha,
+                        autor: datosGasto.autor,
+                    }),
+                ])
                     .then(() => {
                         Alert.alert(
                             '¡Éxito!',
-                            `Gasto de $${montoNum.toFixed(2)} registrado correctamente.`
+                            `Gasto de $${montoNum.toFixed(2)} registrado y descontado de ${cuentaOrigen.nombre}.`
                         );
 
                         setMonto('');
@@ -305,6 +419,74 @@ export default function RegistroGastosRapidos({
                     value={motivo}
                     onChangeText={setMotivo}
                 />
+
+                {/* PASO 4: CUENTA DE ORIGEN */}
+                <View style={styles.sectionHeader}>
+                    <View style={styles.stepBadge}>
+                        <Text style={styles.stepBadgeText}>04</Text>
+                    </View>
+                    <Text style={styles.sectionTitle}>¿De qué cuenta sale?</Text>
+                </View>
+
+                {cuentasFirebase.length === 0 ? (
+                    <TouchableOpacity
+                        style={styles.avisoSinCuentas}
+                        onPress={() =>
+                            navigation.navigate('tabs', { screen: 'Cuentas' })
+                        }
+                    >
+                        <Ionicons
+                            name="alert-circle-outline"
+                            size={16}
+                            color="#B85C5C"
+                        />
+                        <Text style={styles.avisoSinCuentasText}>
+                            No tienes cuentas creadas. Toca aquí para crear una
+                            (banco o efectivo).
+                        </Text>
+                    </TouchableOpacity>
+                ) : (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.row}
+                    >
+                        {cuentasFirebase.map((cuenta) => {
+                            const isSelected = cuentaOrigenId === cuenta.id;
+                            return (
+                                <TouchableOpacity
+                                    key={cuenta.id}
+                                    style={[
+                                        styles.catBtn,
+                                        isSelected && styles.catActive,
+                                    ]}
+                                    onPress={() => setCuentaOrigenId(cuenta.id)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons
+                                        name={
+                                            cuenta.tipo === 'efectivo'
+                                                ? 'cash-outline'
+                                                : 'card-outline'
+                                        }
+                                        size={16}
+                                        color={isSelected ? '#FFFFFF' : '#059669'}
+                                        style={{ marginRight: 6 }}
+                                    />
+                                    <Text
+                                        style={[
+                                            styles.catText,
+                                            isSelected && styles.catTextActive,
+                                        ]}
+                                    >
+                                        {cuenta.nombre} · $
+                                        {Number(cuenta.saldo || 0).toFixed(2)}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                )}
 
                 {/* RESUMEN DINÁMICO */}
                 {parseFloat(monto) > 0 && (
@@ -638,5 +820,21 @@ const styles = StyleSheet.create({
         color: '#64748B',
         fontWeight: '600',
         fontSize: 13,
+    },
+    avisoSinCuentas: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FDF2F2',
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#F3D6D6',
+        marginBottom: 8,
+    },
+    avisoSinCuentasText: {
+        color: '#B85C5C',
+        fontSize: 12,
+        marginLeft: 8,
+        flex: 1,
     },
 });

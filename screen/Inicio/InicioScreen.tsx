@@ -27,6 +27,8 @@ export default function InicioScreen({ navigation }: any) {
     const [totalGastos, setTotalGastos] = useState(0);
     const [totalDeudas, setTotalDeudas] = useState(0);
 
+    const [cuentas, setCuentas] = useState<any[]>([]);
+
     const [movimientos, setMovimientos] = useState<any[]>([]);
 
     // ============================================================
@@ -412,10 +414,32 @@ export default function InicioScreen({ navigation }: any) {
             }
         );
 
+        const cuentasRef = ref(
+            db,
+            `parejas/${idPareja}/cuentas`
+        );
+
+        const unsubscribeCuentas = onValue(
+            cuentasRef,
+            (snapshot) => {
+                const data = snapshot.val();
+
+                const lista = data
+                    ? Object.keys(data).map((key) => ({
+                          id: key,
+                          ...data[key],
+                      }))
+                    : [];
+
+                setCuentas(lista);
+            }
+        );
+
         return () => {
             unsubscribeMovimientos();
             unsubscribeIngresos();
             unsubscribeDeudas();
+            unsubscribeCuentas();
         };
     }, [idPareja]);
 
@@ -425,6 +449,19 @@ export default function InicioScreen({ navigation }: any) {
 
     const balanceNeto =
         totalIngresos - totalGastos;
+
+    const totalEnBancos = cuentas
+        .filter((c) => c.tipo === 'banco')
+        .reduce((acc, c) => acc + (Number(c.saldo) || 0), 0);
+
+    const totalEnEfectivo = cuentas
+        .filter((c) => c.tipo === 'efectivo')
+        .reduce((acc, c) => acc + (Number(c.saldo) || 0), 0);
+
+    const totalEnCuentas = cuentas.reduce(
+        (acc, c) => acc + (Number(c.saldo) || 0),
+        0
+    );
 
     const iniciales = nombreCuenta
         .trim()
@@ -560,6 +597,74 @@ export default function InicioScreen({ navigation }: any) {
                     </View>
 
                 </View>
+
+                {/* ================================================= */}
+                {/* CUENTAS: BANCO / EFECTIVO */}
+                {/* ================================================= */}
+
+                <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={styles.cuentasCard}
+                    onPress={() =>
+                        navigation.navigate('tabs', { screen: 'Cuentas' })
+                    }
+                >
+                    <View style={styles.cuentasCardHeader}>
+                        <Text style={styles.cuentasCardTitle}>
+                            Mis Cuentas
+                        </Text>
+                        <Ionicons
+                            name="chevron-forward"
+                            size={16}
+                            color="#64748B"
+                        />
+                    </View>
+
+                    {cuentas.length === 0 ? (
+                        <Text style={styles.cuentasCardVacio}>
+                            Aún no tienes cuentas creadas. Toca aquí para
+                            agregar tu banco o efectivo.
+                        </Text>
+                    ) : (
+                        <>
+                            <Text style={styles.cuentasCardTotal}>
+                                ${totalEnCuentas.toFixed(2)}
+                            </Text>
+
+                            <View style={styles.cuentasMiniRow}>
+                                <View style={styles.cuentasMiniItem}>
+                                    <Ionicons
+                                        name="card-outline"
+                                        size={14}
+                                        color="#059669"
+                                    />
+                                    <Text style={styles.cuentasMiniLabel}>
+                                        Banco
+                                    </Text>
+                                    <Text style={styles.cuentasMiniValor}>
+                                        ${totalEnBancos.toFixed(2)}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.cuentasMiniSeparator} />
+
+                                <View style={styles.cuentasMiniItem}>
+                                    <Ionicons
+                                        name="cash-outline"
+                                        size={14}
+                                        color="#059669"
+                                    />
+                                    <Text style={styles.cuentasMiniLabel}>
+                                        Efectivo
+                                    </Text>
+                                    <Text style={styles.cuentasMiniValor}>
+                                        ${totalEnEfectivo.toFixed(2)}
+                                    </Text>
+                                </View>
+                            </View>
+                        </>
+                    )}
+                </TouchableOpacity>
 
                 {/* ================================================= */}
                 {/* ACCIONES */}
@@ -1227,6 +1332,85 @@ const styles = StyleSheet.create({
 
         fontSize: 14,
 
+        fontWeight: '700',
+    },
+
+    // ============================================================
+    // TARJETA DE CUENTAS (BANCO / EFECTIVO)
+    // ============================================================
+
+    cuentasCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 18,
+        marginTop: 14,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+
+    cuentasCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 6,
+    },
+
+    cuentasCardTitle: {
+        color: '#1E293B',
+        fontSize: 13,
+        fontWeight: '700',
+    },
+
+    cuentasCardVacio: {
+        color: '#64748B',
+        fontSize: 12,
+        lineHeight: 17,
+        marginTop: 4,
+    },
+
+    cuentasCardTotal: {
+        color: '#059669',
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+
+    cuentasMiniRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+        paddingTop: 10,
+    },
+
+    cuentasMiniItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+
+    cuentasMiniSeparator: {
+        width: 1,
+        height: 20,
+        backgroundColor: '#E2E8F0',
+        marginHorizontal: 10,
+    },
+
+    cuentasMiniLabel: {
+        color: '#64748B',
+        fontSize: 11,
+        marginLeft: 6,
+        marginRight: 6,
+    },
+
+    cuentasMiniValor: {
+        color: '#1E293B',
+        fontSize: 12,
         fontWeight: '700',
     },
 

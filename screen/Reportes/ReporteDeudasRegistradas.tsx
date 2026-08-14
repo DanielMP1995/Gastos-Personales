@@ -14,11 +14,12 @@ import { ref, onValue, remove, update } from 'firebase/database';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ReporteDeudasRegistradas({ navigation }: any) {
-    const [tipoVista, setTipoVista] = useState<'deudas' | 'fijos'>('deudas');
+    const [tipoVista, setTipoVista] = useState<'deudas' | 'fijos' | 'cuentas'>('deudas');
 
     const [deudas, setDeudas] = useState<any[]>([]);
     const [gastosFijos, setGastosFijos] = useState<any[]>([]);
     const [movimientos, setMovimientos] = useState<any[]>([]);
+    const [movimientosCuentas, setMovimientosCuentas] = useState<any[]>([]);
 
     const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
     const [loading, setLoading] = useState(true);
@@ -82,6 +83,7 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
         const deudasRef = ref(db, `parejas/${idPareja}/deudas`);
         const fijosRef = ref(db, `parejas/${idPareja}/gastosFijos`);
         const movimientosRef = ref(db, `parejas/${idPareja}/movimientos`);
+        const movimientosCuentasRef = ref(db, `parejas/${idPareja}/movimientosCuentas`);
 
         const unsubDeudas = onValue(
             deudasRef,
@@ -161,10 +163,38 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
             }
         );
 
+        const unsubMovimientosCuentas = onValue(
+            movimientosCuentasRef,
+            (snapshot) => {
+                const data = snapshot.val();
+
+                if (data) {
+                    const lista = Object.keys(data).map((key) => ({
+                        id: key,
+                        ...data[key]
+                    }));
+
+                    lista.sort(
+                        (a, b) =>
+                            new Date(b.fecha || 0).getTime() -
+                            new Date(a.fecha || 0).getTime()
+                    );
+
+                    setMovimientosCuentas(lista);
+                } else {
+                    setMovimientosCuentas([]);
+                }
+            },
+            (error) => {
+                console.error('Error cargando movimientos de cuentas:', error);
+            }
+        );
+
         return () => {
             unsubDeudas();
             unsubFijos();
             unsubMovimientos();
+            unsubMovimientosCuentas();
         };
     }, [idPareja]);
 
@@ -427,15 +457,19 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
     const listaActual =
         tipoVista === 'deudas'
             ? deudasProcesadas
-            : fijosConSaldo;
+            : tipoVista === 'fijos'
+                ? fijosConSaldo
+                : movimientosCuentas;
 
     const categoriasDisponibles =
         tipoVista === 'deudas'
             ? categoriasDeudas
-            : categoriasFijos;
+            : tipoVista === 'fijos'
+                ? categoriasFijos
+                : ['Todas'];
 
     const itemsFiltrados =
-        categoriaFiltro === 'Todas'
+        tipoVista === 'cuentas' || categoriaFiltro === 'Todas'
             ? listaActual
             : listaActual.filter((item) => {
                 const catItem = (
@@ -459,19 +493,25 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                 return catItem === catFiltro;
             });
 
-    const totalFiltrado = itemsFiltrados.reduce(
-        (acc, item) => {
-            if (item.tipo === 'tarjeta') {
-                return acc;
-            }
+    const totalFiltrado =
+        tipoVista === 'cuentas'
+            ? itemsFiltrados.reduce(
+                (acc, item) => acc + (Number(item.monto) || 0),
+                0
+            )
+            : itemsFiltrados.reduce(
+                (acc, item) => {
+                    if (item.tipo === 'tarjeta') {
+                        return acc;
+                    }
 
-            return (
-                acc +
-                (Number(item.montoRestante) || 0)
+                    return (
+                        acc +
+                        (Number(item.montoRestante) || 0)
+                    );
+                },
+                0
             );
-        },
-        0
-    );
 
     const eliminarItem = (
         id: string,
@@ -631,7 +671,199 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
             });
     };
 
+    const eliminarMovimientoCuenta = (item: any) => {
+        if (!idPareja) return;
+
+        Alert.alert(
+            'Eliminar movimiento',
+            '¿Estás seguro de eliminar este movimiento? Se revertirá el saldo afectado en la(s) cuenta(s) correspondiente(s).',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Eliminar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const monto = Number(item.monto) || 0;
+
+                            // Revertimos el efecto que tuvo este
+                            // movimiento sobre las cuentas
+                            // involucradas.
+                            if (item.cuentaOrigenId) {
+                                const cuentaRef = ref(
+                                    db,
+                                    `parejas/${idPareja}/cuentas/${item.cuentaOrigenId}`
+                                );
+
+                                await new Promise<void>((resolve) => {
+                                    onValue(
+                                        cuentaRef,
+                                        (snap) => {
+                                            const data = snap.val();
+                                            const saldoActual = Number(
+                                                data?.saldo || 0
+                                            );
+
+                                            // El origen perdió dinero
+                                            // al hacerse el movimiento
+                                            // (gasto/pago/retiro/transferencia),
+                                            // así que se lo devolvemos.
+                                            update(cuentaRef, {
+                                                saldo:
+                                                    saldoActual + monto,
+                                            }).finally(() => resolve());
+                                        },
+                                        { onlyOnce: true }
+                                    );
+                                });
+                            }
+
+                            if (item.cuentaDestinoId) {
+                                const cuentaRef = ref(
+                                    db,
+                                    `parejas/${idPareja}/cuentas/${item.cuentaDestinoId}`
+                                );
+
+                                await new Promise<void>((resolve) => {
+                                    onValue(
+                                        cuentaRef,
+                                        (snap) => {
+                                            const data = snap.val();
+                                            const saldoActual = Number(
+                                                data?.saldo || 0
+                                            );
+
+                                            // El destino ganó dinero
+                                            // (ingreso/depósito/transferencia),
+                                            // así que se lo quitamos.
+                                            update(cuentaRef, {
+                                                saldo:
+                                                    saldoActual - monto,
+                                            }).finally(() => resolve());
+                                        },
+                                        { onlyOnce: true }
+                                    );
+                                });
+                            }
+
+                            // Si el movimiento venía de un gasto,
+                            // ingreso o pago de deuda "normal",
+                            // también existe un registro hermano en
+                            // movimientos/ingresos que conviene
+                            // borrar para no descuadrar el balance
+                            // general. Como no siempre tenemos su
+                            // id exacto, dejamos ese registro
+                            // intacto y solo avisamos al usuario.
+
+                            await remove(
+                                ref(
+                                    db,
+                                    `parejas/${idPareja}/movimientosCuentas/${item.id}`
+                                )
+                            );
+
+                            Alert.alert(
+                                'Eliminado',
+                                'El movimiento fue eliminado y el saldo de la(s) cuenta(s) fue revertido. Si este movimiento venía de un gasto o ingreso, revisa también la pestaña Deudas/Gastos Fijos por si necesitas borrar su registro original.'
+                            );
+                        } catch (error: any) {
+                            Alert.alert(
+                                'Error',
+                                error?.message ||
+                                    'No se pudo eliminar el movimiento.'
+                            );
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const iconoMovimientoCuenta = (tipo: string) => {
+        if (tipo === 'deposito') return 'arrow-down-circle-outline';
+        if (tipo === 'retiro_cajero') return 'arrow-up-circle-outline';
+        if (tipo === 'pago_deuda') return 'card-outline';
+        return 'swap-horizontal-outline';
+    };
+
+    const tituloMovimientoCuenta = (tipo: string) => {
+        if (tipo === 'deposito') return 'Depósito a Banco';
+        if (tipo === 'retiro_cajero') return 'Retiro a Efectivo';
+        if (tipo === 'pago_deuda') return 'Pago de Deuda';
+        if (tipo === 'transferencia') return 'Transferencia';
+        return 'Movimiento';
+    };
+
+    const renderItemCuenta = ({ item }: { item: any }) => (
+        <View style={styles.cardDeuda}>
+            <View style={styles.cardHeaderRow}>
+                <View style={styles.badgeCategoria}>
+                    <Ionicons
+                        name={iconoMovimientoCuenta(item.tipo) as any}
+                        size={12}
+                        color="#059669"
+                        style={{ marginRight: 4 }}
+                    />
+                    <Text style={styles.badgeText}>
+                        {tituloMovimientoCuenta(item.tipo)}
+                    </Text>
+                </View>
+                <View style={styles.cardActions}>
+                    <TouchableOpacity
+                        style={[styles.actionIconBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.2)' }]}
+                        onPress={() => eliminarMovimientoCuenta(item)}
+                    >
+                        <Ionicons name="trash-outline" size={13} color="#EF4444" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <Text style={styles.cardEntidad}>
+                {item.descripcion || tituloMovimientoCuenta(item.tipo)}
+            </Text>
+
+            <View style={styles.gridInfo}>
+                <View style={styles.infoBox}>
+                    <Text style={styles.infoLabel}>Monto</Text>
+                    <Text style={styles.infoValue}>
+                        ${Number(item.monto || 0).toFixed(2)}
+                    </Text>
+                </View>
+                <View style={styles.infoBox}>
+                    <Text style={styles.infoLabel}>Fecha</Text>
+                    <Text style={[styles.infoValue, { fontSize: 11 }]}>
+                        {item.fecha
+                            ? new Date(item.fecha).toLocaleDateString()
+                            : 'N/A'}
+                    </Text>
+                </View>
+            </View>
+
+            {(item.cuentaOrigenNombre || item.cuentaDestinoNombre) && (
+                <Text style={styles.cardAutor}>
+                    {item.cuentaOrigenNombre
+                        ? `Desde: ${item.cuentaOrigenNombre}`
+                        : ''}
+                    {item.cuentaOrigenNombre && item.cuentaDestinoNombre
+                        ? '  →  '
+                        : ''}
+                    {item.cuentaDestinoNombre
+                        ? `Hacia: ${item.cuentaDestinoNombre}`
+                        : ''}
+                </Text>
+            )}
+
+            {item.autor && (
+                <Text style={styles.cardAutor}>Registrado por: {item.autor}</Text>
+            )}
+        </View>
+    );
+
     const renderItem = ({ item }: { item: any }) => {
+        if (tipoVista === 'cuentas') {
+            return renderItemCuenta({ item });
+        }
+
         const nombreEntidad =
             tipoVista === 'deudas'
                 ? item.tipo === 'tarjeta'
@@ -750,6 +982,22 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                         Gastos Fijos
                     </Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.tipoVistaBtn,
+                        tipoVista === 'cuentas' && styles.tipoVistaBtnActive
+                    ]}
+                    onPress={() => {
+                        setTipoVista('cuentas');
+                        setCategoriaFiltro('Todas');
+                    }}
+                >
+                    <Ionicons name="swap-horizontal-outline" size={15} color={tipoVista === 'cuentas' ? '#FFFFFF' : '#64748B'} style={{ marginRight: 6 }} />
+                    <Text style={[styles.tipoVistaText, tipoVista === 'cuentas' && styles.tipoVistaTextActive]}>
+                        Cuentas
+                    </Text>
+                </TouchableOpacity>
             </View>
 
             {/* FILTROS CHIPS */}
@@ -782,7 +1030,9 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
             {/* RESUMEN */}
             <View style={styles.resumenCard}>
                 <Text style={styles.resumenTitle}>
-                    Total Pendiente: {categoriaFiltro}
+                    {tipoVista === 'cuentas'
+                        ? 'Total Movido en Cuentas'
+                        : `Total Pendiente: ${categoriaFiltro}`}
                 </Text>
                 <Text style={styles.resumenAmount}>
                     ${totalFiltrado.toFixed(2)}

@@ -20,6 +20,7 @@ import {
     push,
     set,
     get,
+    update,
 } from 'firebase/database';
 
 export default function RegistroGastosDetallados({
@@ -67,6 +68,16 @@ export default function RegistroGastosDetallados({
     const [montoPagar, setMontoPagar] = useState('');
     const [descripcionDetalle, setDescripcionDetalle] =
         useState('');
+
+    // ========================================================
+    // CUENTAS (banco / efectivo) DE DONDE SALE EL DINERO
+    // ========================================================
+
+    const [cuentasFirebase, setCuentasFirebase] =
+        useState<any[]>([]);
+
+    const [cuentaOrigenId, setCuentaOrigenId] =
+        useState<string | null>(null);
 
     const usuarioActual = auth.currentUser;
 
@@ -140,6 +151,46 @@ export default function RegistroGastosDetallados({
                                           }))
                                         : []
                                 );
+                            }
+                        );
+
+                        onValue(
+                            ref(
+                                db,
+                                `parejas/${idPareja}/cuentas`
+                            ),
+                            (snap) => {
+                                const data = snap.val();
+
+                                const lista = data
+                                    ? Object.keys(data).map(
+                                          (key) => ({
+                                              id: key,
+                                              ...data[key],
+                                          })
+                                      )
+                                    : [];
+
+                                setCuentasFirebase(lista);
+
+                                // Preseleccionar una cuenta
+                                // por defecto si aún no hay
+                                // ninguna elegida.
+                                setCuentaOrigenId((actual) => {
+                                    if (
+                                        actual &&
+                                        lista.some(
+                                            (c) =>
+                                                c.id === actual
+                                        )
+                                    ) {
+                                        return actual;
+                                    }
+
+                                    return lista.length > 0
+                                        ? lista[0].id
+                                        : null;
+                                });
                             }
                         );
                     }
@@ -262,6 +313,36 @@ export default function RegistroGastosDetallados({
             return;
         }
 
+        if (!cuentaOrigenId) {
+            Alert.alert(
+                'Selecciona una cuenta',
+                'Elige desde qué cuenta (banco o efectivo) saldrá este pago. Si no tienes ninguna, créala primero en la pestaña Cuentas.'
+            );
+            return;
+        }
+
+        const cuentaOrigen = cuentasFirebase.find(
+            (c) => c.id === cuentaOrigenId
+        );
+
+        if (!cuentaOrigen) {
+            Alert.alert(
+                'Error',
+                'La cuenta seleccionada ya no existe.'
+            );
+            return;
+        }
+
+        if (Number(cuentaOrigen.saldo || 0) < montoNum) {
+            Alert.alert(
+                'Saldo insuficiente',
+                `${cuentaOrigen.nombre} solo tiene $${Number(
+                    cuentaOrigen.saldo || 0
+                ).toFixed(2)} disponible.`
+            );
+            return;
+        }
+
         if (!usuarioActual) return;
 
         const usuarioRef = ref(
@@ -336,14 +417,61 @@ export default function RegistroGastosDetallados({
                         ? `${nombreConcepto}: ${descripcionDetalle.trim()}`
                         : nombreConcepto;
 
-                set(
-                    nuevoMovimientoRef,
-                    datosMovimiento
-                )
+                datosMovimiento.cuentaOrigenId =
+                    cuentaOrigen.id;
+
+                datosMovimiento.cuentaOrigenNombre =
+                    cuentaOrigen.nombre;
+
+                // ================================================
+                // 1) Guardamos el movimiento general (balance /
+                //    dashboard de deudas en Inicio y Reportes).
+                // 2) Descontamos el saldo real de la cuenta.
+                // 3) Dejamos rastro en movimientosCuentas para
+                //    el historial de la pestaña Cuentas.
+                // ================================================
+
+                const nuevoSaldoCuenta =
+                    Number(cuentaOrigen.saldo || 0) -
+                    montoNum;
+
+                const movimientoCuentaRef = push(
+                    ref(
+                        db,
+                        `parejas/${idPareja}/movimientosCuentas`
+                    )
+                );
+
+                Promise.all([
+                    set(
+                        nuevoMovimientoRef,
+                        datosMovimiento
+                    ),
+                    update(
+                        ref(
+                            db,
+                            `parejas/${idPareja}/cuentas/${cuentaOrigen.id}`
+                        ),
+                        { saldo: nuevoSaldoCuenta }
+                    ),
+                    set(movimientoCuentaRef, {
+                        tipo: 'pago_deuda',
+                        cuentaOrigenId: cuentaOrigen.id,
+                        cuentaOrigenNombre:
+                            cuentaOrigen.nombre,
+                        monto: montoNum,
+                        descripcion:
+                            datosMovimiento.descripcion,
+                        fecha: datosMovimiento.fecha,
+                        autor: datosMovimiento.autor,
+                        deudaId:
+                            datosMovimiento.deudaId || null,
+                    }),
+                ])
                     .then(() => {
                         Alert.alert(
                             '¡Éxito!',
-                            `Se registró el pago de $${montoNum} y se descontó del balance.`
+                            `Se registró el pago de $${montoNum}, se descontó del balance y de ${cuentaOrigen.nombre}.`
                         );
 
                         navigation.goBack();
@@ -753,6 +881,91 @@ export default function RegistroGastosDetallados({
                     </Text>
 
                     <Text style={styles.label}>
+                        ¿De qué cuenta sale el dinero?
+                    </Text>
+
+                    {cuentasFirebase.length === 0 ? (
+                        <TouchableOpacity
+                            style={styles.avisoSinCuentas}
+                            onPress={() =>
+                                navigation.navigate('tabs', {
+                                    screen: 'Cuentas',
+                                })
+                            }
+                        >
+                            <Ionicons
+                                name="alert-circle-outline"
+                                size={16}
+                                color="#B85C5C"
+                            />
+                            <Text
+                                style={
+                                    styles.avisoSinCuentasText
+                                }
+                            >
+                                No tienes cuentas creadas. Toca
+                                aquí para crear una (banco o
+                                efectivo).
+                            </Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={styles.cuentasChipRow}>
+                            {cuentasFirebase.map((cuenta) => {
+                                const seleccionada =
+                                    cuentaOrigenId ===
+                                    cuenta.id;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={cuenta.id}
+                                        style={[
+                                            styles.cuentaChip,
+                                            seleccionada &&
+                                                styles.cuentaChipActive,
+                                        ]}
+                                        onPress={() =>
+                                            setCuentaOrigenId(
+                                                cuenta.id
+                                            )
+                                        }
+                                    >
+                                        <Ionicons
+                                            name={
+                                                cuenta.tipo ===
+                                                'efectivo'
+                                                    ? 'cash-outline'
+                                                    : 'card-outline'
+                                            }
+                                            size={14}
+                                            color={
+                                                seleccionada
+                                                    ? '#FFFFFF'
+                                                    : '#059669'
+                                            }
+                                            style={{
+                                                marginRight: 6,
+                                            }}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.cuentaChipText,
+                                                seleccionada &&
+                                                    styles.cuentaChipTextActive,
+                                            ]}
+                                        >
+                                            {cuenta.nombre} · $
+                                            {Number(
+                                                cuenta.saldo ||
+                                                    0
+                                            ).toFixed(2)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    )}
+
+                    <Text style={styles.label}>
                         Monto a pagar / abonar ($)
                     </Text>
                     <TextInput
@@ -1076,6 +1289,48 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E2E8F0',
         fontSize: 13,
+    },
+    cuentasChipRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    cuentaChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F0FDF4',
+        borderRadius: 20,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: '#BBF7D0',
+    },
+    cuentaChipActive: {
+        backgroundColor: '#059669',
+        borderColor: '#059669',
+    },
+    cuentaChipText: {
+        color: '#059669',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    cuentaChipTextActive: {
+        color: '#FFFFFF',
+    },
+    avisoSinCuentas: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FDF2F2',
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#F3D6D6',
+    },
+    avisoSinCuentasText: {
+        color: '#B85C5C',
+        fontSize: 12,
+        marginLeft: 8,
+        flex: 1,
     },
     btnGuardar: {
         backgroundColor: '#059669',
