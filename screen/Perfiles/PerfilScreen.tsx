@@ -8,17 +8,14 @@ import {
     ScrollView,
     Clipboard,
     Image,
-    ActivityIndicator,
-    Platform,
+    Modal,
 } from 'react-native';
 
 import React, { useState, useEffect } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import * as ImagePicker from 'expo-image-picker';
-
-import { auth, db, storage } from '../../firebase/FirebaseConfig';
+import { auth, db } from '../../firebase/FirebaseConfig';
 
 import {
     ref,
@@ -26,11 +23,18 @@ import {
     update,
 } from 'firebase/database';
 
-import {
-    ref as storageRef,
-    uploadBytes,
-    getDownloadURL,
-} from 'firebase/storage';
+
+/* =====================================================
+   AVATARES DISPONIBLES
+===================================================== */
+
+const AVATARS = [
+    require('../../assets/AVATARES/AVATAR1.png'),
+    require('../../assets/AVATARES/AVATAR2.png'),
+    require('../../assets/AVATARES/AVATAR3.png'),
+    require('../../assets/AVATARES/AVATAR4.png'),
+    require('../../assets/AVATARES/AVATAR5.png'),
+];
 
 
 export default function PerfilScreen({ navigation }: any) {
@@ -52,12 +56,7 @@ export default function PerfilScreen({ navigation }: any) {
     const [codigoNuevo, setCodigoNuevo] = useState('');
     const [modoVincular, setModoVincular] = useState(false);
 
-    const [subiendoFoto, setSubiendoFoto] = useState(false);
-
-    // Se usa para "romper" el caché del componente Image cada
-    // vez que se sube una foto nueva, así siempre se ve la
-    // última versión y no una versión vieja guardada en caché.
-    const [fotoCacheKey, setFotoCacheKey] = useState(Date.now());
+    const [modalAvatarVisible, setModalAvatarVisible] = useState(false);
 
 
     /* HEADER */
@@ -167,94 +166,45 @@ export default function PerfilScreen({ navigation }: any) {
 
 
     /* =========================================
-       SELECCIONAR Y SUBIR FOTO DE PERFIL
+       SELECCIONAR AVATAR
     ========================================= */
 
-    async function seleccionarFoto() {
-        try {
-            if (!usuarioActual) {
-                Alert.alert('Error', 'No hay un usuario autenticado.');
-                return;
-            }
+    function abrirSelectorAvatar() {
+        setModalAvatarVisible(true);
+    }
 
-            const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (!permiso.granted) {
-                Alert.alert('Permiso necesario', 'Necesitamos permiso para acceder a tus fotos.');
-                return;
-            }
+    function seleccionarAvatar(numero: number) {
 
-            const resultado = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 0.8,
+        if (!usuarioActual) return;
+
+        const idAvatar = `AVATAR${numero}`;
+
+        update(
+            ref(db, `usuarios/${usuarioActual.uid}`),
+            { fotoPerfil: idAvatar }
+        )
+            .then(() => {
+
+                setData((prev) => ({
+                    ...prev,
+                    fotoPerfil: idAvatar,
+                }));
+
+                setModalAvatarVisible(false);
+
+            })
+            .catch((error) => {
+
+                Alert.alert('Error', error.message);
+
             });
+    }
 
-            if (resultado.canceled) {
-                return;
-            }
+    function getAvatarSource(idAvatar: string) {
 
-            const imagen = resultado.assets[0];
-            if (!imagen?.uri) {
-                return;
-            }
+        const index = parseInt(idAvatar.replace('AVATAR', ''), 10) - 1;
 
-            setSubiendoFoto(true);
-
-            // Corrección para Android nativo: Manejo directo de la URI o conversión segura por XMLHttpRequest si es necesario
-            const uriLimpia = decodeURI(imagen.uri);
-
-            const uploadUri = Platform.OS === 'ios' ? uriLimpia.replace('file://', '') : uriLimpia;
-
-            // Usamos XMLHttpRequest que es mucho más estable en APKs nativas de Android para Storage
-            const blob: any = await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.onload = function () {
-                    resolve(xhr.response);
-                };
-                xhr.onerror = function (e) {
-                    console.log(e);
-                    reject(new TypeError('Fallo en la red al procesar la imagen.'));
-                };
-                xhr.responseType = 'blob';
-                xhr.open('GET', uploadUri, true);
-                xhr.send(null);
-            });
-
-            const rutaFoto = `usuarios/${usuarioActual.uid}/fotoPerfil.jpg`;
-            const fotoRef = storageRef(storage, rutaFoto);
-
-            await uploadBytes(fotoRef, blob, {
-                contentType: imagen.mimeType || 'image/jpeg',
-            });
-
-            // Cerrar el blob de forma segura
-            blob.close();
-
-            const urlFoto = await getDownloadURL(fotoRef);
-
-            await update(ref(db, `usuarios/${usuarioActual.uid}`), {
-                fotoPerfil: urlFoto,
-            });
-
-            setData((prev) => ({
-                ...prev,
-                fotoPerfil: urlFoto,
-            }));
-
-            setFotoCacheKey(Date.now());
-
-            Alert.alert('¡Foto actualizada!', 'Tu foto de perfil se guardó correctamente.');
-
-        } catch (error: any) {
-            console.log('Error subiendo foto:', error);
-            Alert.alert(
-                'Error',
-                'No se pudo subir la foto. Detalle: ' + (error.message || 'Error desconocido')
-            );
-        } finally {
-            setSubiendoFoto(false);
-        }
+        return AVATARS[index] || AVATARS[0];
     }
 
 
@@ -381,6 +331,8 @@ export default function PerfilScreen({ navigation }: any) {
 
     return (
 
+        <>
+
         <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.container}
@@ -406,7 +358,7 @@ export default function PerfilScreen({ navigation }: any) {
 
 
             {/* =================================
-                PERFIL CON FOTO
+                PERFIL CON AVATAR
             ================================= */}
 
             <View style={styles.profileCard}>
@@ -416,19 +368,8 @@ export default function PerfilScreen({ navigation }: any) {
                     {data.fotoPerfil ? (
 
                         <Image
-                            source={{
-                                uri: `${data.fotoPerfil}${data.fotoPerfil.includes('?')
-                                        ? '&'
-                                        : '?'
-                                    }cache=${fotoCacheKey}`,
-                            }}
+                            source={getAvatarSource(data.fotoPerfil)}
                             style={styles.avatarImage}
-                            onError={(e) =>
-                                console.log(
-                                    'Error cargando foto de perfil:',
-                                    e.nativeEvent?.error
-                                )
-                            }
                         />
 
                     ) : (
@@ -454,27 +395,15 @@ export default function PerfilScreen({ navigation }: any) {
 
                     <TouchableOpacity
                         style={styles.cameraButton}
-                        onPress={seleccionarFoto}
-                        disabled={subiendoFoto}
+                        onPress={abrirSelectorAvatar}
                         activeOpacity={0.8}
                     >
 
-                        {subiendoFoto ? (
-
-                            <ActivityIndicator
-                                size="small"
-                                color="#FFFFFF"
-                            />
-
-                        ) : (
-
-                            <Ionicons
-                                name="camera"
-                                size={17}
-                                color="#FFFFFF"
-                            />
-
-                        )}
+                        <Ionicons
+                            name="camera"
+                            size={17}
+                            color="#FFFFFF"
+                        />
 
                     </TouchableOpacity>
 
@@ -482,9 +411,7 @@ export default function PerfilScreen({ navigation }: any) {
 
 
                 <Text style={styles.changePhotoText}>
-                    {subiendoFoto
-                        ? 'Subiendo foto...'
-                        : 'Toca la cámara para cambiar tu foto'}
+                    Toca la cámara para elegir un avatar
                 </Text>
 
 
@@ -925,6 +852,67 @@ export default function PerfilScreen({ navigation }: any) {
             </Text>
 
         </ScrollView>
+
+
+        {/* =================================
+            MODAL SELECCIONAR AVATAR
+        ================================= */}
+
+        <Modal
+            visible={modalAvatarVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setModalAvatarVisible(false)}
+        >
+
+            <View style={styles.modalOverlay}>
+
+                <View style={styles.modalBox}>
+
+                    <Text style={styles.modalTitulo}>
+                        Elige tu avatar
+                    </Text>
+
+                    <View style={styles.avatarGrid}>
+
+                        {AVATARS.map((src, i) => (
+
+                            <TouchableOpacity
+                                key={i}
+                                onPress={() => seleccionarAvatar(i + 1)}
+                                activeOpacity={0.8}
+                            >
+
+                                <Image
+                                    source={src}
+                                    style={styles.avatarOpcion}
+                                />
+
+                            </TouchableOpacity>
+
+                        ))}
+
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.btnCerrarModal}
+                        onPress={() => setModalAvatarVisible(false)}
+                    >
+
+                        <Text style={styles.btnCerrarModalText}>
+                            Cancelar
+                        </Text>
+
+                    </TouchableOpacity>
+
+                </View>
+
+            </View>
+
+        </Modal>
+
+        </>
+
     );
 }
 
@@ -1339,6 +1327,54 @@ const styles = StyleSheet.create({
         color: COLOR_TEXTO_SUAVE,
         fontSize: 11,
         marginTop: 10,
+    },
+
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    modalBox: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 18,
+        padding: 22,
+        width: '85%',
+        alignItems: 'center',
+    },
+
+    modalTitulo: {
+        fontSize: 16,
+        fontWeight: '800',
+        marginBottom: 15,
+        color: '#171A19',
+    },
+
+    avatarGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: 12,
+        marginBottom: 15,
+    },
+
+    avatarOpcion: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        borderWidth: 2,
+        borderColor: COLOR_BORDE,
+    },
+
+    btnCerrarModal: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+    },
+
+    btnCerrarModalText: {
+        color: COLOR_TEXTO_SUAVE,
+        fontWeight: '700',
     },
 
 });
