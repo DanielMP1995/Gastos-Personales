@@ -20,6 +20,9 @@
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
+    "@expo/metro-config": "^57.0.8",
+    "@react-native-community/cli": "^20.2.0",
+    "@react-native/metro-config": "^0.86.2",
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
   },
