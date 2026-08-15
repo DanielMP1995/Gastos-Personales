@@ -138,7 +138,7 @@ export default function LoginScreen({ navigation }: any) {
                     <View style={styles.logoContainer}>
 
                         <Image
-                            source={require('../../assets/img/logov2.png')}
+                            source={require('../../assets/img/logov3.png')}
                             style={styles.logo}
                             resizeMode="contain"
                         />
@@ -406,8 +406,8 @@ const styles = StyleSheet.create({
     },
 
     logoContainer: {
-        width: 76,
-        height: 76,
+        width: 160,
+        height: 155,
 
         borderRadius: 20,
 
@@ -420,8 +420,11 @@ const styles = StyleSheet.create({
     },
 
     logo: {
-        width: 52,
-        height: 52,
+        width: 135,
+        height: 115,
+        borderRadius: 20,
+        justifyContent: 'center',
+        
     },
 
     titulo: {
