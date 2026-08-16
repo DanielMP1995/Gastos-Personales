@@ -34,6 +34,8 @@ const AVATARS = [
     require('../../assets/AVATARES/AVATAR3.png'),
     require('../../assets/AVATARES/AVATAR4.png'),
     require('../../assets/AVATARES/AVATAR5.png'),
+    require('../../assets/AVATARES/avatar1Dani.png'),
+    require('../../assets/AVATARES/avatar2Dani.png'),
 ];
 
 
@@ -333,223 +335,170 @@ export default function PerfilScreen({ navigation }: any) {
 
         <>
 
-        <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.container}
-            showsVerticalScrollIndicator={false}
-        >
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.container}
+                showsVerticalScrollIndicator={false}
+            >
 
 
-            {/* =================================
+                {/* =================================
                 HEADER
             ================================= */}
 
-            <View style={styles.header}>
+                <View style={styles.header}>
 
-                <Text style={styles.headerSmall}>
-                    CUENTA PERSONAL
-                </Text>
+                    <Text style={styles.headerSmall}>
+                        CUENTA PERSONAL
+                    </Text>
 
-                <Text style={styles.titulo}>
-                    Perfil y pareja
-                </Text>
+                    <Text style={styles.titulo}>
+                        Perfil y pareja
+                    </Text>
 
-            </View>
+                </View>
 
 
-            {/* =================================
+                {/* =================================
                 PERFIL CON AVATAR
             ================================= */}
 
-            <View style={styles.profileCard}>
+                <View style={styles.profileCard}>
 
-                <View style={styles.avatarContainer}>
+                    <View style={styles.avatarContainer}>
 
-                    {data.fotoPerfil ? (
+                        {data.fotoPerfil ? (
 
-                        <Image
-                            source={getAvatarSource(data.fotoPerfil)}
-                            style={styles.avatarImage}
-                        />
+                            <Image
+                                source={getAvatarSource(data.fotoPerfil)}
+                                style={styles.avatarImage}
+                            />
 
-                    ) : (
+                        ) : (
 
-                        <View style={styles.avatar}>
+                            <View style={styles.avatar}>
 
-                            <Text style={styles.avatarText}>
+                                <Text style={styles.avatarText}>
 
-                                {data.nombre
-                                    ? data.nombre
-                                        .charAt(0)
-                                        .toUpperCase()
-                                    : 'U'}
+                                    {data.nombre
+                                        ? data.nombre
+                                            .charAt(0)
+                                            .toUpperCase()
+                                        : 'U'}
 
-                            </Text>
+                                </Text>
 
-                        </View>
+                            </View>
 
-                    )}
+                        )}
 
 
-                    {/* BOTÓN CÁMARA */}
+                        {/* BOTÓN CÁMARA */}
+
+                        <TouchableOpacity
+                            style={styles.cameraButton}
+                            onPress={abrirSelectorAvatar}
+                            activeOpacity={0.8}
+                        >
+
+                            <Ionicons
+                                name="camera"
+                                size={17}
+                                color="#FFFFFF"
+                            />
+
+                        </TouchableOpacity>
+
+                    </View>
+
+
+                    <Text style={styles.changePhotoText}>
+                        Toca la cámara para elegir un avatar
+                    </Text>
+
+
+                    <Text style={styles.profileName}>
+                        {data.nombre || 'Usuario'}{' '}
+                        {data.apellido || ''}
+                    </Text>
+
+
+                    <Text style={styles.profileEmail}>
+                        {data.correo || 'Sin correo'}
+                    </Text>
+
+                </View>
+
+
+                {/* =================================
+                CÓDIGO DE PAREJA
+            ================================= */}
+
+                <View style={styles.sectionHeader}>
+
+                    <Ionicons
+                        name="key-outline"
+                        size={18}
+                        color={COLOR_PRINCIPAL}
+                    />
+
+                    <Text style={styles.sectionTitle}>
+                        Código de pareja
+                    </Text>
+
+                </View>
+
+
+                <View style={styles.codeCard}>
+
+                    <Text style={styles.codeLabel}>
+                        TU CÓDIGO ÚNICO
+                    </Text>
+
+
+                    <Text style={styles.roleName}>
+                        {data.idPareja || '------'}
+                    </Text>
+
+
+                    <Text style={styles.codeDescription}>
+                        Comparte este código con tu pareja
+                        para sincronizar sus finanzas.
+                    </Text>
+
 
                     <TouchableOpacity
-                        style={styles.cameraButton}
-                        onPress={abrirSelectorAvatar}
-                        activeOpacity={0.8}
+                        style={styles.copiarBtn}
+                        onPress={copiarCodigo}
+                        activeOpacity={0.85}
                     >
 
                         <Ionicons
-                            name="camera"
+                            name="copy-outline"
                             size={17}
                             color="#FFFFFF"
                         />
+
+                        <Text style={styles.copiarText}>
+                            Copiar código
+                        </Text>
 
                     </TouchableOpacity>
 
                 </View>
 
 
-                <Text style={styles.changePhotoText}>
-                    Toca la cámara para elegir un avatar
-                </Text>
-
-
-                <Text style={styles.profileName}>
-                    {data.nombre || 'Usuario'}{' '}
-                    {data.apellido || ''}
-                </Text>
-
-
-                <Text style={styles.profileEmail}>
-                    {data.correo || 'Sin correo'}
-                </Text>
-
-            </View>
-
-
-            {/* =================================
-                CÓDIGO DE PAREJA
-            ================================= */}
-
-            <View style={styles.sectionHeader}>
-
-                <Ionicons
-                    name="key-outline"
-                    size={18}
-                    color={COLOR_PRINCIPAL}
-                />
-
-                <Text style={styles.sectionTitle}>
-                    Código de pareja
-                </Text>
-
-            </View>
-
-
-            <View style={styles.codeCard}>
-
-                <Text style={styles.codeLabel}>
-                    TU CÓDIGO ÚNICO
-                </Text>
-
-
-                <Text style={styles.roleName}>
-                    {data.idPareja || '------'}
-                </Text>
-
-
-                <Text style={styles.codeDescription}>
-                    Comparte este código con tu pareja
-                    para sincronizar sus finanzas.
-                </Text>
-
-
-                <TouchableOpacity
-                    style={styles.copiarBtn}
-                    onPress={copiarCodigo}
-                    activeOpacity={0.85}
-                >
-
-                    <Ionicons
-                        name="copy-outline"
-                        size={17}
-                        color="#FFFFFF"
-                    />
-
-                    <Text style={styles.copiarText}>
-                        Copiar código
-                    </Text>
-
-                </TouchableOpacity>
-
-            </View>
-
-
-            {/* =================================
+                {/* =================================
                 PAREJA VINCULADA
             ================================= */}
 
-            <View style={styles.partnerCard}>
+                <View style={styles.partnerCard}>
 
-                <View style={styles.partnerIcon}>
-
-                    <Ionicons
-                        name="heart"
-                        size={18}
-                        color={COLOR_PRINCIPAL}
-                    />
-
-                </View>
-
-
-                <View style={{ flex: 1 }}>
-
-                    <Text style={styles.labelVinculo}>
-                        PAREJA VINCULADA
-                    </Text>
-
-
-                    <Text
-                        style={styles.valueVinculo}
-                        numberOfLines={1}
-                    >
-                        {nombreParejaVinculada}
-                    </Text>
-
-                </View>
-
-
-                <Ionicons
-                    name={
-                        parejaEncontrada
-                            ? 'checkmark-circle'
-                            : 'ellipse-outline'
-                    }
-                    size={20}
-                    color={
-                        parejaEncontrada
-                            ? COLOR_VERDE
-                            : '#B7BDBB'
-                    }
-                />
-
-            </View>
-
-
-            {/* =================================
-                VINCULAR PAREJA
-            ================================= */}
-
-            <View style={styles.vincularCard}>
-
-                <View style={styles.vincularHeader}>
-
-                    <View style={styles.vincularIcon}>
+                    <View style={styles.partnerIcon}>
 
                         <Ionicons
-                            name="link-outline"
-                            size={19}
+                            name="heart"
+                            size={18}
                             color={COLOR_PRINCIPAL}
                         />
 
@@ -558,358 +507,411 @@ export default function PerfilScreen({ navigation }: any) {
 
                     <View style={{ flex: 1 }}>
 
-                        <Text
-                            style={
-                                styles.vincularCardTitulo
-                            }
-                        >
-                            Vincular pareja
+                        <Text style={styles.labelVinculo}>
+                            PAREJA VINCULADA
                         </Text>
 
 
                         <Text
-                            style={
-                                styles.vincularCardSub
-                            }
+                            style={styles.valueVinculo}
+                            numberOfLines={1}
                         >
-                            ¿Tu pareja ya tiene un código?
+                            {nombreParejaVinculada}
                         </Text>
 
                     </View>
 
+
+                    <Ionicons
+                        name={
+                            parejaEncontrada
+                                ? 'checkmark-circle'
+                                : 'ellipse-outline'
+                        }
+                        size={20}
+                        color={
+                            parejaEncontrada
+                                ? COLOR_VERDE
+                                : '#B7BDBB'
+                        }
+                    />
+
                 </View>
 
 
-                <Text style={styles.vincularDescription}>
-                    Ingresa el código de conexión de tu
-                    pareja para sincronizar la
-                    información financiera.
-                </Text>
+                {/* =================================
+                VINCULAR PAREJA
+            ================================= */}
+
+                <View style={styles.vincularCard}>
+
+                    <View style={styles.vincularHeader}>
+
+                        <View style={styles.vincularIcon}>
+
+                            <Ionicons
+                                name="link-outline"
+                                size={19}
+                                color={COLOR_PRINCIPAL}
+                            />
+
+                        </View>
 
 
-                {!modoVincular ? (
+                        <View style={{ flex: 1 }}>
 
-                    <TouchableOpacity
-                        style={
-                            styles.btnAbrirVincular
-                        }
-                        onPress={() =>
-                            setModoVincular(true)
-                        }
-                        activeOpacity={0.85}
-                    >
-
-                        <Ionicons
-                            name="link"
-                            size={17}
-                            color="#FFFFFF"
-                        />
-
-                        <Text
-                            style={
-                                styles.btnAbrirVincularText
-                            }
-                        >
-                            Registrar código de pareja
-                        </Text>
-
-                    </TouchableOpacity>
-
-                ) : (
-
-                    <View style={styles.vincularBox}>
-
-                        <TextInput
-                            style={styles.inputVinculo}
-                            placeholder="Ej. ABC123"
-                            placeholderTextColor="#9AA1A0"
-                            value={codigoNuevo}
-                            onChangeText={
-                                setCodigoNuevo
-                            }
-                            autoCapitalize="characters"
-                            maxLength={20}
-                        />
-
-
-                        <View
-                            style={
-                                styles.rowBotonesVinculo
-                            }
-                        >
-
-                            <TouchableOpacity
+                            <Text
                                 style={
-                                    styles.btnGuardarVinculo
+                                    styles.vincularCardTitulo
                                 }
-                                onPress={
-                                    guardarNuevoCodigoPareja
-                                }
-                                activeOpacity={0.85}
                             >
-
-                                <Ionicons
-                                    name="checkmark"
-                                    size={17}
-                                    color="#FFFFFF"
-                                />
-
-                                <Text
-                                    style={
-                                        styles.btnGuardarVinculoText
-                                    }
-                                >
-                                    Guardar
-                                </Text>
-
-                            </TouchableOpacity>
+                                Vincular pareja
+                            </Text>
 
 
-                            <TouchableOpacity
+                            <Text
                                 style={
-                                    styles.btnCancelarVinculo
+                                    styles.vincularCardSub
                                 }
-                                onPress={() => {
-
-                                    setModoVincular(
-                                        false
-                                    );
-
-                                    setCodigoNuevo('');
-
-                                }}
-                                activeOpacity={0.85}
                             >
-
-                                <Ionicons
-                                    name="close"
-                                    size={17}
-                                    color="#5A615E"
-                                />
-
-                                <Text
-                                    style={
-                                        styles.btnCancelarVinculoText
-                                    }
-                                >
-                                    Cancelar
-                                </Text>
-
-                            </TouchableOpacity>
+                                ¿Tu pareja ya tiene un código?
+                            </Text>
 
                         </View>
 
                     </View>
 
-                )}
 
-            </View>
+                    <Text style={styles.vincularDescription}>
+                        Ingresa el código de conexión de tu
+                        pareja para sincronizar la
+                        información financiera.
+                    </Text>
 
 
-            {/* =================================
+                    {!modoVincular ? (
+
+                        <TouchableOpacity
+                            style={
+                                styles.btnAbrirVincular
+                            }
+                            onPress={() =>
+                                setModoVincular(true)
+                            }
+                            activeOpacity={0.85}
+                        >
+
+                            <Ionicons
+                                name="link"
+                                size={17}
+                                color="#FFFFFF"
+                            />
+
+                            <Text
+                                style={
+                                    styles.btnAbrirVincularText
+                                }
+                            >
+                                Registrar código de pareja
+                            </Text>
+
+                        </TouchableOpacity>
+
+                    ) : (
+
+                        <View style={styles.vincularBox}>
+
+                            <TextInput
+                                style={styles.inputVinculo}
+                                placeholder="Ej. ABC123"
+                                placeholderTextColor="#9AA1A0"
+                                value={codigoNuevo}
+                                onChangeText={
+                                    setCodigoNuevo
+                                }
+                                autoCapitalize="characters"
+                                maxLength={20}
+                            />
+
+
+                            <View
+                                style={
+                                    styles.rowBotonesVinculo
+                                }
+                            >
+
+                                <TouchableOpacity
+                                    style={
+                                        styles.btnGuardarVinculo
+                                    }
+                                    onPress={
+                                        guardarNuevoCodigoPareja
+                                    }
+                                    activeOpacity={0.85}
+                                >
+
+                                    <Ionicons
+                                        name="checkmark"
+                                        size={17}
+                                        color="#FFFFFF"
+                                    />
+
+                                    <Text
+                                        style={
+                                            styles.btnGuardarVinculoText
+                                        }
+                                    >
+                                        Guardar
+                                    </Text>
+
+                                </TouchableOpacity>
+
+
+                                <TouchableOpacity
+                                    style={
+                                        styles.btnCancelarVinculo
+                                    }
+                                    onPress={() => {
+
+                                        setModoVincular(
+                                            false
+                                        );
+
+                                        setCodigoNuevo('');
+
+                                    }}
+                                    activeOpacity={0.85}
+                                >
+
+                                    <Ionicons
+                                        name="close"
+                                        size={17}
+                                        color="#5A615E"
+                                    />
+
+                                    <Text
+                                        style={
+                                            styles.btnCancelarVinculoText
+                                        }
+                                    >
+                                        Cancelar
+                                    </Text>
+
+                                </TouchableOpacity>
+
+                            </View>
+
+                        </View>
+
+                    )}
+
+                </View>
+
+
+                {/* =================================
                 DATOS PERSONALES
             ================================= */}
 
-            <View style={styles.sectionHeader}>
-
-                <Ionicons
-                    name="person-outline"
-                    size={18}
-                    color={COLOR_PRINCIPAL}
-                />
-
-                <Text style={styles.sectionTitle}>
-                    Datos personales
-                </Text>
-
-            </View>
-
-
-            <View style={styles.infoBox}>
-
-                <View style={styles.infoIcon}>
+                <View style={styles.sectionHeader}>
 
                     <Ionicons
                         name="person-outline"
-                        size={17}
+                        size={18}
                         color={COLOR_PRINCIPAL}
                     />
 
-                </View>
-
-
-                <View style={styles.infoContent}>
-
-                    <Text style={styles.label}>
-                        Nombre completo
-                    </Text>
-
-                    <Text style={styles.value}>
-                        {data.nombre} {data.apellido}
+                    <Text style={styles.sectionTitle}>
+                        Datos personales
                     </Text>
 
                 </View>
 
-            </View>
+
+                <View style={styles.infoBox}>
+
+                    <View style={styles.infoIcon}>
+
+                        <Ionicons
+                            name="person-outline"
+                            size={17}
+                            color={COLOR_PRINCIPAL}
+                        />
+
+                    </View>
 
 
-            <View style={styles.infoBox}>
+                    <View style={styles.infoContent}>
 
-                <View style={styles.infoIcon}>
+                        <Text style={styles.label}>
+                            Nombre completo
+                        </Text>
 
-                    <Ionicons
-                        name="male-female-outline"
-                        size={17}
-                        color={COLOR_PRINCIPAL}
-                    />
+                        <Text style={styles.value}>
+                            {data.nombre} {data.apellido}
+                        </Text>
 
-                </View>
-
-
-                <View style={styles.infoContent}>
-
-                    <Text style={styles.label}>
-                        Género
-                    </Text>
-
-                    <Text style={styles.value}>
-                        {data.genero || 'No especificado'}
-                    </Text>
-
-                </View>
-
-            </View>
-
-
-            <View style={styles.infoBox}>
-
-                <View style={styles.infoIcon}>
-
-                    <Ionicons
-                        name="mail-outline"
-                        size={17}
-                        color={COLOR_PRINCIPAL}
-                    />
+                    </View>
 
                 </View>
 
 
-                <View style={styles.infoContent}>
+                <View style={styles.infoBox}>
 
-                    <Text style={styles.label}>
-                        Correo electrónico
-                    </Text>
+                    <View style={styles.infoIcon}>
 
-                    <Text
-                        style={styles.value}
-                        numberOfLines={1}
-                    >
-                        {data.correo}
-                    </Text>
+                        <Ionicons
+                            name="male-female-outline"
+                            size={17}
+                            color={COLOR_PRINCIPAL}
+                        />
+
+                    </View>
+
+
+                    <View style={styles.infoContent}>
+
+                        <Text style={styles.label}>
+                            Género
+                        </Text>
+
+                        <Text style={styles.value}>
+                            {data.genero || 'No especificado'}
+                        </Text>
+
+                    </View>
 
                 </View>
 
-            </View>
+
+                <View style={styles.infoBox}>
+
+                    <View style={styles.infoIcon}>
+
+                        <Ionicons
+                            name="mail-outline"
+                            size={17}
+                            color={COLOR_PRINCIPAL}
+                        />
+
+                    </View>
 
 
-            {/* =================================
+                    <View style={styles.infoContent}>
+
+                        <Text style={styles.label}>
+                            Correo electrónico
+                        </Text>
+
+                        <Text
+                            style={styles.value}
+                            numberOfLines={1}
+                        >
+                            {data.correo}
+                        </Text>
+
+                    </View>
+
+                </View>
+
+
+                {/* =================================
                 CERRAR SESIÓN
             ================================= */}
 
-            <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={cerrarSesion}
-                activeOpacity={0.85}
-            >
+                <TouchableOpacity
+                    style={styles.logoutButton}
+                    onPress={cerrarSesion}
+                    activeOpacity={0.85}
+                >
 
-                <View style={styles.logoutIcon}>
+                    <View style={styles.logoutIcon}>
+
+                        <Ionicons
+                            name="log-out-outline"
+                            size={18}
+                            color={COLOR_ROJO}
+                        />
+
+                    </View>
+
+
+                    <Text style={styles.logoutText}>
+                        Cerrar sesión
+                    </Text>
+
 
                     <Ionicons
-                        name="log-out-outline"
+                        name="chevron-forward"
                         size={18}
                         color={COLOR_ROJO}
                     />
 
-                </View>
+                </TouchableOpacity>
 
 
-                <Text style={styles.logoutText}>
-                    Cerrar sesión
+                <Text style={styles.footerText}>
+                    Finanzas en Pareja
                 </Text>
 
-
-                <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color={COLOR_ROJO}
-                />
-
-            </TouchableOpacity>
+            </ScrollView>
 
 
-            <Text style={styles.footerText}>
-                Finanzas en Pareja
-            </Text>
-
-        </ScrollView>
-
-
-        {/* =================================
+            {/* =================================
             MODAL SELECCIONAR AVATAR
         ================================= */}
 
-        <Modal
-            visible={modalAvatarVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setModalAvatarVisible(false)}
-        >
+            <Modal
+                visible={modalAvatarVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setModalAvatarVisible(false)}
+            >
 
-            <View style={styles.modalOverlay}>
+                <View style={styles.modalOverlay}>
 
-                <View style={styles.modalBox}>
+                    <View style={styles.modalBox}>
 
-                    <Text style={styles.modalTitulo}>
-                        Elige tu avatar
-                    </Text>
+                        <Text style={styles.modalTitulo}>
+                            Elige tu avatar
+                        </Text>
 
-                    <View style={styles.avatarGrid}>
+                        <View style={styles.avatarGrid}>
 
-                        {AVATARS.map((src, i) => (
+                            {AVATARS.map((src, i) => (
 
-                            <TouchableOpacity
-                                key={i}
-                                onPress={() => seleccionarAvatar(i + 1)}
-                                activeOpacity={0.8}
-                            >
+                                <TouchableOpacity
+                                    key={i}
+                                    onPress={() => seleccionarAvatar(i + 1)}
+                                    activeOpacity={0.8}
+                                >
 
-                                <Image
-                                    source={src}
-                                    style={styles.avatarOpcion}
-                                />
+                                    <Image
+                                        source={src}
+                                        style={styles.avatarOpcion}
+                                    />
 
-                            </TouchableOpacity>
+                                </TouchableOpacity>
 
-                        ))}
+                            ))}
+
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.btnCerrarModal}
+                            onPress={() => setModalAvatarVisible(false)}
+                        >
+
+                            <Text style={styles.btnCerrarModalText}>
+                                Cancelar
+                            </Text>
+
+                        </TouchableOpacity>
 
                     </View>
 
-                    <TouchableOpacity
-                        style={styles.btnCerrarModal}
-                        onPress={() => setModalAvatarVisible(false)}
-                    >
-
-                        <Text style={styles.btnCerrarModalText}>
-                            Cancelar
-                        </Text>
-
-                    </TouchableOpacity>
-
                 </View>
 
-            </View>
-
-        </Modal>
+            </Modal>
 
         </>
 

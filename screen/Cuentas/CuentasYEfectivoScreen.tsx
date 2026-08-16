@@ -106,11 +106,16 @@ export default function CuentasYEfectivoScreen({
         useState(true);
 
     // ========================================================
-    // MODAL CREAR CUENTA
+    // MODAL CREAR / EDITAR CUENTA
     // ========================================================
 
     const [modalCuentaVisible, setModalCuentaVisible] =
         useState(false);
+
+    // Si tiene un id, el modal está en modo EDICIÓN.
+    // Si es null, el modal está en modo CREACIÓN.
+    const [cuentaEditandoId, setCuentaEditandoId] =
+        useState<string | null>(null);
 
     const [nombreCuenta, setNombreCuenta] =
         useState('');
@@ -379,6 +384,46 @@ export default function CuentasYEfectivoScreen({
 
 
     // ========================================================
+    // ABRIR MODAL EN MODO EDICIÓN
+    // ========================================================
+
+    const abrirEdicionCuenta = (cuenta: Cuenta) => {
+
+        setCuentaEditandoId(cuenta.id);
+
+        setNombreCuenta(cuenta.nombre || '');
+        setTipoCuenta(cuenta.tipo || 'banco');
+        setSaldoInicial(
+            cuenta.saldo != null
+                ? String(cuenta.saldo)
+                : ''
+        );
+        setNombreBanco(cuenta.banco || '');
+        setNumeroCuenta(cuenta.numero || '');
+
+        setModalCuentaVisible(true);
+
+    };
+
+
+    // ========================================================
+    // GUARDAR CUENTA
+    // Crea una cuenta nueva, o actualiza una existente
+    // si cuentaEditandoId tiene valor.
+    // ========================================================
+
+    const guardarCuenta = async () => {
+
+        if (cuentaEditandoId) {
+            await actualizarCuenta();
+        } else {
+            await crearCuenta();
+        }
+
+    };
+
+
+    // ========================================================
     // CREAR CUENTA
     // ========================================================
 
@@ -518,6 +563,159 @@ export default function CuentasYEfectivoScreen({
             Alert.alert(
                 'Error',
                 'No se pudo crear la cuenta.'
+            );
+
+        }
+
+    };
+
+
+    // ========================================================
+    // ACTUALIZAR CUENTA (EDITAR)
+    // ========================================================
+
+    const actualizarCuenta = async () => {
+
+        if (!idPareja || !cuentaEditandoId) {
+            return;
+        }
+
+        if (!nombreCuenta.trim()) {
+
+            Alert.alert(
+                'Falta información',
+                'Escribe el nombre de la cuenta.'
+            );
+
+            return;
+        }
+
+        const nuevoSaldo =
+            Number(
+                saldoInicial.replace(',', '.')
+            ) || 0;
+
+
+        if (nuevoSaldo < 0) {
+
+            Alert.alert(
+                'Saldo incorrecto',
+                'El saldo no puede ser negativo.'
+            );
+
+            return;
+        }
+
+
+        const cuentaOriginal =
+            cuentas.find(
+                cuenta =>
+                    cuenta.id ===
+                    cuentaEditandoId
+            );
+
+
+        try {
+
+            await update(
+                ref(
+                    db,
+                    `parejas/${idPareja}/cuentas/${cuentaEditandoId}`
+                ),
+                {
+
+                    nombre:
+                        nombreCuenta.trim(),
+
+                    tipo:
+                        tipoCuenta,
+
+                    saldo:
+                        nuevoSaldo,
+
+                    banco:
+                        tipoCuenta === 'banco'
+                            ? nombreBanco.trim()
+                            : '',
+
+                    numero:
+                        tipoCuenta === 'banco'
+                            ? numeroCuenta.trim()
+                            : '',
+
+                }
+            );
+
+
+            // Si el saldo cambió respecto al original,
+            // dejamos un registro del ajuste para que
+            // quede trazabilidad de por qué cambió.
+
+            if (
+                cuentaOriginal &&
+                Number(cuentaOriginal.saldo) !==
+                    nuevoSaldo
+            ) {
+
+                const diferencia =
+                    nuevoSaldo -
+                    Number(cuentaOriginal.saldo);
+
+                const movimientosRef =
+                    ref(
+                        db,
+                        `parejas/${idPareja}/movimientosCuentas`
+                    );
+
+                const nuevoMovimiento =
+                    push(movimientosRef);
+
+                await set(
+                    nuevoMovimiento,
+                    {
+
+                        tipo: 'ajuste_saldo',
+
+                        cuentaDestinoId:
+                            cuentaEditandoId,
+
+                        cuentaDestinoNombre:
+                            nombreCuenta.trim(),
+
+                        monto:
+                            Math.abs(diferencia),
+
+                        descripcion:
+                            diferencia > 0
+                                ? 'Corrección: saldo aumentado'
+                                : 'Corrección: saldo disminuido',
+
+                        fecha:
+                            new Date().toISOString(),
+
+                        autor:
+                            nombreUsuario,
+
+                    }
+                );
+
+            }
+
+
+            limpiarFormularioCuenta();
+
+            Alert.alert(
+                'Cuenta actualizada',
+                'Los cambios se guardaron correctamente.'
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            Alert.alert(
+                'Error',
+                'No se pudo actualizar la cuenta.'
             );
 
         }
@@ -1087,6 +1285,8 @@ export default function CuentasYEfectivoScreen({
 
         setModalCuentaVisible(false);
 
+        setCuentaEditandoId(null);
+
         setNombreCuenta('');
         setSaldoInicial('');
         setNombreBanco('');
@@ -1184,14 +1384,7 @@ export default function CuentasYEfectivoScreen({
 
     return (
 
-        <KeyboardAvoidingView
-            style={styles.root}
-            behavior={
-                Platform.OS === 'ios'
-                    ? 'padding'
-                    : undefined
-            }
-        >
+        <View style={styles.root}>
 
             <ScrollView
                 style={styles.scrollView}
@@ -1352,9 +1545,12 @@ export default function CuentasYEfectivoScreen({
                     <TouchableOpacity
                         style={styles.operationButton}
                         activeOpacity={0.85}
-                        onPress={() =>
-                            setModalCuentaVisible(true)
-                        }
+                        onPress={() => {
+
+                            setCuentaEditandoId(null);
+                            setModalCuentaVisible(true);
+
+                        }}
                     >
 
                         <View
@@ -1516,7 +1712,7 @@ export default function CuentasYEfectivoScreen({
                         </Text>
 
                         <Text style={styles.sectionSubtitle}>
-                            Saldos disponibles actualmente
+                            Toca el lápiz para editar
                         </Text>
 
                     </View>
@@ -1559,11 +1755,12 @@ export default function CuentasYEfectivoScreen({
 
                         <TouchableOpacity
                             style={styles.emptyButton}
-                            onPress={() =>
-                                setModalCuentaVisible(
-                                    true
-                                )
-                            }
+                            onPress={() => {
+
+                                setCuentaEditandoId(null);
+                                setModalCuentaVisible(true);
+
+                            }}
                         >
 
                             <Ionicons
@@ -1680,6 +1877,32 @@ export default function CuentasYEfectivoScreen({
 
                             </View>
 
+
+                            <TouchableOpacity
+                                style={
+                                    styles.editButton
+                                }
+                                onPress={() =>
+                                    abrirEdicionCuenta(
+                                        cuenta
+                                    )
+                                }
+                                hitSlop={{
+                                    top: 8,
+                                    bottom: 8,
+                                    left: 8,
+                                    right: 8,
+                                }}
+                            >
+
+                                <Ionicons
+                                    name="pencil-outline"
+                                    size={16}
+                                    color={COLOR_GRIS}
+                                />
+
+                            </TouchableOpacity>
+
                         </View>
 
                     ))
@@ -1749,7 +1972,9 @@ export default function CuentasYEfectivoScreen({
 
                             const esSaldoInicial =
                                 movimiento.tipo ===
-                                'saldo_inicial';
+                                'saldo_inicial' ||
+                                movimiento.tipo ===
+                                'ajuste_saldo';
 
 
                             return (
@@ -1776,7 +2001,10 @@ export default function CuentasYEfectivoScreen({
 
                                         <Ionicons
                                             name={
-                                                esSaldoInicial
+                                                movimiento.tipo ===
+                                                'ajuste_saldo'
+                                                    ? 'create-outline'
+                                                    : esSaldoInicial
                                                     ? 'add-circle-outline'
                                                     : esRetiro
                                                     ? 'arrow-down'
@@ -1946,7 +2174,7 @@ export default function CuentasYEfectivoScreen({
 
 
             {/* ==================================================== */}
-            {/* MODAL NUEVA CUENTA */}
+            {/* MODAL NUEVA / EDITAR CUENTA */}
             {/* ==================================================== */}
 
             <Modal
@@ -1958,13 +2186,29 @@ export default function CuentasYEfectivoScreen({
                 }
             >
 
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    style={styles.modalOverlay}
+                    behavior={
+                        Platform.OS === 'ios'
+                            ? 'padding'
+                            : 'height'
+                    }
+                    keyboardVerticalOffset={
+                        Platform.OS === 'ios'
+                            ? 0
+                            : 20
+                    }
+                >
 
                     <View style={styles.modalContainer}>
 
                         <ScrollView
                             showsVerticalScrollIndicator={
                                 false
+                            }
+                            keyboardShouldPersistTaps="handled"
+                            contentContainerStyle={
+                                styles.modalScrollContent
                             }
                         >
 
@@ -1977,7 +2221,9 @@ export default function CuentasYEfectivoScreen({
                                             styles.modalTitle
                                         }
                                     >
-                                        Nueva cuenta
+                                        {cuentaEditandoId
+                                            ? 'Editar cuenta'
+                                            : 'Nueva cuenta'}
                                     </Text>
 
                                     <Text
@@ -1985,7 +2231,9 @@ export default function CuentasYEfectivoScreen({
                                             styles.modalSubtitle
                                         }
                                     >
-                                        Registra dónde tienes tu dinero
+                                        {cuentaEditandoId
+                                            ? 'Corrige los datos de tu cuenta'
+                                            : 'Registra dónde tienes tu dinero'}
                                     </Text>
 
                                 </View>
@@ -2209,7 +2457,9 @@ export default function CuentasYEfectivoScreen({
 
 
                             <Text style={styles.inputLabel}>
-                                Saldo inicial
+                                {cuentaEditandoId
+                                    ? 'Saldo actual'
+                                    : 'Saldo inicial'}
                             </Text>
 
                             <TextInput
@@ -2223,10 +2473,24 @@ export default function CuentasYEfectivoScreen({
                                 keyboardType="decimal-pad"
                             />
 
+                            {cuentaEditandoId ? (
+
+                                <Text
+                                    style={
+                                        styles.helperText
+                                    }
+                                >
+                                    Si cambias el saldo, se
+                                    guardará una nota de
+                                    corrección en tus movimientos.
+                                </Text>
+
+                            ) : null}
+
 
                             <TouchableOpacity
                                 style={styles.primaryButton}
-                                onPress={crearCuenta}
+                                onPress={guardarCuenta}
                             >
 
                                 <Ionicons
@@ -2240,7 +2504,9 @@ export default function CuentasYEfectivoScreen({
                                         styles.primaryButtonText
                                     }
                                 >
-                                    Crear cuenta
+                                    {cuentaEditandoId
+                                        ? 'Guardar cambios'
+                                        : 'Crear cuenta'}
                                 </Text>
 
                             </TouchableOpacity>
@@ -2249,7 +2515,7 @@ export default function CuentasYEfectivoScreen({
 
                     </View>
 
-                </View>
+                </KeyboardAvoidingView>
 
             </Modal>
 
@@ -2269,9 +2535,31 @@ export default function CuentasYEfectivoScreen({
                 }
             >
 
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    style={styles.modalOverlay}
+                    behavior={
+                        Platform.OS === 'ios'
+                            ? 'padding'
+                            : 'height'
+                    }
+                    keyboardVerticalOffset={
+                        Platform.OS === 'ios'
+                            ? 0
+                            : 20
+                    }
+                >
 
                     <View style={styles.modalContainer}>
+
+                        <ScrollView
+                            showsVerticalScrollIndicator={
+                                false
+                            }
+                            keyboardShouldPersistTaps="handled"
+                            contentContainerStyle={
+                                styles.modalScrollContent
+                            }
+                        >
 
                         <View style={styles.modalHeader}>
 
@@ -2498,9 +2786,11 @@ export default function CuentasYEfectivoScreen({
 
                         </TouchableOpacity>
 
+                        </ScrollView>
+
                     </View>
 
-                </View>
+                </KeyboardAvoidingView>
 
             </Modal>
 
@@ -2522,9 +2812,31 @@ export default function CuentasYEfectivoScreen({
                 }}
             >
 
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    style={styles.modalOverlay}
+                    behavior={
+                        Platform.OS === 'ios'
+                            ? 'padding'
+                            : 'height'
+                    }
+                    keyboardVerticalOffset={
+                        Platform.OS === 'ios'
+                            ? 0
+                            : 20
+                    }
+                >
 
                     <View style={styles.modalContainer}>
+
+                        <ScrollView
+                            showsVerticalScrollIndicator={
+                                false
+                            }
+                            keyboardShouldPersistTaps="handled"
+                            contentContainerStyle={
+                                styles.modalScrollContent
+                            }
+                        >
 
                         <View style={styles.modalHeader}>
 
@@ -2704,9 +3016,11 @@ export default function CuentasYEfectivoScreen({
 
                         </TouchableOpacity>
 
+                        </ScrollView>
+
                     </View>
 
-                </View>
+                </KeyboardAvoidingView>
 
             </Modal>
 
@@ -2730,9 +3044,31 @@ export default function CuentasYEfectivoScreen({
                 }}
             >
 
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    style={styles.modalOverlay}
+                    behavior={
+                        Platform.OS === 'ios'
+                            ? 'padding'
+                            : 'height'
+                    }
+                    keyboardVerticalOffset={
+                        Platform.OS === 'ios'
+                            ? 0
+                            : 20
+                    }
+                >
 
                     <View style={styles.modalContainer}>
+
+                        <ScrollView
+                            showsVerticalScrollIndicator={
+                                false
+                            }
+                            keyboardShouldPersistTaps="handled"
+                            contentContainerStyle={
+                                styles.modalScrollContent
+                            }
+                        >
 
                         <View style={styles.modalHeader}>
 
@@ -2913,13 +3249,15 @@ export default function CuentasYEfectivoScreen({
 
                         </TouchableOpacity>
 
+                        </ScrollView>
+
                     </View>
 
-                </View>
+                </KeyboardAvoidingView>
 
             </Modal>
 
-        </KeyboardAvoidingView>
+        </View>
     );
 }
 
@@ -3221,6 +3559,7 @@ const styles = StyleSheet.create({
 
     accountAmountContainer: {
         alignItems: 'flex-end',
+        marginRight: 6,
     },
 
     accountAmount: {
@@ -3233,6 +3572,15 @@ const styles = StyleSheet.create({
         color: '#999F9C',
         fontSize: 8,
         marginTop: 3,
+    },
+
+    editButton: {
+        width: 30,
+        height: 30,
+        borderRadius: 9,
+        backgroundColor: COLOR_MUY_SUAVE,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
 
@@ -3460,11 +3808,19 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 24,
         paddingHorizontal: 20,
         paddingTop: 20,
+        // Deja siempre un espacio libre arriba (notch / status bar)
+        // para que el modal nunca quede pegado al filo de la pantalla.
+        marginTop: 70,
+        maxHeight: '82%',
+        // El propio contenido interno hace scroll, así el
+        // modal se ajusta y no lo tapa el teclado.
+    },
+
+    modalScrollContent: {
         paddingBottom:
             Platform.OS === 'ios'
                 ? 35
                 : 25,
-        maxHeight: '90%',
     },
 
     modalHeader: {
@@ -3518,6 +3874,14 @@ const styles = StyleSheet.create({
         fontSize: 13,
         backgroundColor: '#FFFFFF',
         marginBottom: 7,
+    },
+
+    helperText: {
+        color: '#9A9F9D',
+        fontSize: 9,
+        marginTop: -2,
+        marginBottom: 6,
+        lineHeight: 14,
     },
 
 

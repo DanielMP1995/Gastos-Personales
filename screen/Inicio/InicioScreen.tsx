@@ -201,8 +201,7 @@ export default function InicioScreen({ navigation }: any) {
                             esDeuda: false,
                             monto: 0,
                             descripcion:
-                                `${deuda.marcaTarjeta || 'Tarjeta'} - ${
-                                    deuda.entidad || 'Banco'
+                                `${deuda.marcaTarjeta || 'Tarjeta'} - ${deuda.entidad || 'Banco'
                                 }`,
                         };
                     }
@@ -227,14 +226,12 @@ export default function InicioScreen({ navigation }: any) {
                             monto: montoConsumo,
                             descripcion:
                                 deuda.descripcion &&
-                                deuda.descripcion !== 'N/A'
+                                    deuda.descripcion !== 'N/A'
                                     ? deuda.descripcion
-                                    : `Consumo ${
-                                          deuda.tarjetaMarca ||
-                                          'Tarjeta'
-                                      } - ${
-                                          deuda.tarjetaBanco || ''
-                                      }`,
+                                    : `Consumo ${deuda.tarjetaMarca ||
+                                    'Tarjeta'
+                                    } - ${deuda.tarjetaBanco || ''
+                                    }`,
                         };
                     }
 
@@ -258,8 +255,8 @@ export default function InicioScreen({ navigation }: any) {
                                 const descripcionMovimiento =
                                     String(
                                         mov.descripcion ||
-                                            mov.entidadDeuda ||
-                                            ''
+                                        mov.entidadDeuda ||
+                                        ''
                                     ).toLowerCase();
 
                                 const entidadDeuda =
@@ -294,7 +291,7 @@ export default function InicioScreen({ navigation }: any) {
                                     (
                                         categoriaDeuda &&
                                         categoriaMovimiento ===
-                                            categoriaDeuda &&
+                                        categoriaDeuda &&
                                         esPago
                                     )
                                 );
@@ -331,8 +328,7 @@ export default function InicioScreen({ navigation }: any) {
                             montoRestante: saldoPendiente,
                             descripcion:
                                 deuda.descripcion ||
-                                `${deuda.categoria || 'Deuda'} - ${
-                                    deuda.entidad || ''
+                                `${deuda.categoria || 'Deuda'} - ${deuda.entidad || ''
                                 }`,
                         };
                     }
@@ -363,16 +359,16 @@ export default function InicioScreen({ navigation }: any) {
             listaMovimientos.sort((a, b) => {
                 const fechaA = new Date(
                     a.fechaRegistro ||
-                        a.fecha ||
-                        a.createdAt ||
-                        0
+                    a.fecha ||
+                    a.createdAt ||
+                    0
                 ).getTime();
 
                 const fechaB = new Date(
                     b.fechaRegistro ||
-                        b.fecha ||
-                        b.createdAt ||
-                        0
+                    b.fecha ||
+                    b.createdAt ||
+                    0
                 ).getTime();
 
                 return fechaB - fechaA;
@@ -426,9 +422,9 @@ export default function InicioScreen({ navigation }: any) {
 
                 const lista = data
                     ? Object.keys(data).map((key) => ({
-                          id: key,
-                          ...data[key],
-                      }))
+                        id: key,
+                        ...data[key],
+                    }))
                     : [];
 
                 setCuentas(lista);
@@ -447,9 +443,6 @@ export default function InicioScreen({ navigation }: any) {
     // BALANCE
     // ============================================================
 
-    const balanceNeto =
-        totalIngresos - totalGastos;
-
     const totalEnBancos = cuentas
         .filter((c) => c.tipo === 'banco')
         .reduce((acc, c) => acc + (Number(c.saldo) || 0), 0);
@@ -462,6 +455,9 @@ export default function InicioScreen({ navigation }: any) {
         (acc, c) => acc + (Number(c.saldo) || 0),
         0
     );
+
+    // DINERO REAL DISPONIBLE - GASTOS
+    const balanceNeto = totalEnCuentas + totalIngresos - totalGastos;
 
     const iniciales = nombreCuenta
         .trim()
@@ -534,7 +530,7 @@ export default function InicioScreen({ navigation }: any) {
                             style={[
                                 styles.balanceStatusChip,
                                 balanceNeto < 0 &&
-                                    styles.balanceStatusChipNegativo,
+                                styles.balanceStatusChipNegativo,
                             ]}
                         >
                             <Ionicons
@@ -880,8 +876,8 @@ export default function InicioScreen({ navigation }: any) {
                                         esIngreso
                                             ? styles.transactionIncome
                                             : esDeuda
-                                            ? styles.transactionDebt
-                                            : styles.transactionExpense,
+                                                ? styles.transactionDebt
+                                                : styles.transactionExpense,
                                     ]}
                                 >
 
@@ -890,16 +886,16 @@ export default function InicioScreen({ navigation }: any) {
                                             esIngreso
                                                 ? 'arrow-up'
                                                 : esDeuda
-                                                ? 'card-outline'
-                                                : 'arrow-down'
+                                                    ? 'card-outline'
+                                                    : 'arrow-down'
                                         }
                                         size={18}
                                         color={
                                             esIngreso
                                                 ? COLOR_VERDE
                                                 : esDeuda
-                                                ? COLOR_PRINCIPAL
-                                                : COLOR_ROJO
+                                                    ? COLOR_PRINCIPAL
+                                                    : COLOR_ROJO
                                         }
                                     />
 
@@ -1013,21 +1009,21 @@ export default function InicioScreen({ navigation }: any) {
                                             esIngreso
                                                 ? styles.textGreen
                                                 : esDeuda
-                                                ? styles.textTeal
-                                                : styles.textRed,
+                                                    ? styles.textTeal
+                                                    : styles.textRed,
                                         ]}
                                     >
                                         {esIngreso
                                             ? `+$${Number(
-                                                  item.monto
-                                              ).toFixed(2)}`
+                                                item.monto
+                                            ).toFixed(2)}`
                                             : esDeuda
-                                            ? `$${Number(
-                                                  item.monto
-                                              ).toFixed(2)}`
-                                            : `-$${Number(
-                                                  item.monto
-                                              ).toFixed(2)}`}
+                                                ? `$${Number(
+                                                    item.monto
+                                                ).toFixed(2)}`
+                                                : `-$${Number(
+                                                    item.monto
+                                                ).toFixed(2)}`}
                                     </Text>
 
                                     <Text
@@ -1038,8 +1034,8 @@ export default function InicioScreen({ navigation }: any) {
                                         {esIngreso
                                             ? 'Ingreso'
                                             : esDeuda
-                                            ? 'Deuda'
-                                            : 'Gasto'}
+                                                ? 'Deuda'
+                                                : 'Gasto'}
                                     </Text>
 
                                 </View>

@@ -770,7 +770,7 @@ export default function ReporteDeudasRegistradas({ navigation }: any) {
                             Alert.alert(
                                 'Error',
                                 error?.message ||
-                                    'No se pudo eliminar el movimiento.'
+                                'No se pudo eliminar el movimiento.'
                             );
                         }
                     },
@@ -1147,7 +1147,7 @@ const styles = StyleSheet.create({
     },
     container: {
         paddingHorizontal: 16,
-        paddingTop: 20,
+        paddingTop: 40,
         paddingBottom: 40,
     },
     titulo: {

@@ -104,11 +104,11 @@ export default function RegistroGastosDetallados({
                                 setDeudasFirebase(
                                     data
                                         ? Object.keys(
-                                              data
-                                          ).map((key) => ({
-                                              id: key,
-                                              ...data[key],
-                                          }))
+                                            data
+                                        ).map((key) => ({
+                                            id: key,
+                                            ...data[key],
+                                        }))
                                         : []
                                 );
                             }
@@ -124,11 +124,11 @@ export default function RegistroGastosDetallados({
                                 setMovimientosFirebase(
                                     data
                                         ? Object.keys(
-                                              data
-                                          ).map((key) => ({
-                                              id: key,
-                                              ...data[key],
-                                          }))
+                                            data
+                                        ).map((key) => ({
+                                            id: key,
+                                            ...data[key],
+                                        }))
                                         : []
                                 );
                             }
@@ -144,11 +144,11 @@ export default function RegistroGastosDetallados({
                                 setGastosFijosFirebase(
                                     data
                                         ? Object.keys(
-                                              data
-                                          ).map((key) => ({
-                                              id: key,
-                                              ...data[key],
-                                          }))
+                                            data
+                                        ).map((key) => ({
+                                            id: key,
+                                            ...data[key],
+                                        }))
                                         : []
                                 );
                             }
@@ -164,11 +164,11 @@ export default function RegistroGastosDetallados({
 
                                 const lista = data
                                     ? Object.keys(data).map(
-                                          (key) => ({
-                                              id: key,
-                                              ...data[key],
-                                          })
-                                      )
+                                        (key) => ({
+                                            id: key,
+                                            ...data[key],
+                                        })
+                                    )
                                     : [];
 
                                 setCuentasFirebase(lista);
@@ -387,15 +387,14 @@ export default function RegistroGastosDetallados({
                     const nombreEntidad =
                         deudaSeleccionada
                             ? deudaSeleccionada.entidad ||
-                              deudaSeleccionada.nombre ||
-                              'Deuda'
+                            deudaSeleccionada.nombre ||
+                            'Deuda'
                             : '';
 
-                    nombreConcepto = `Pago Deuda (${subCategoria})${
-                        nombreEntidad
+                    nombreConcepto = `Pago Deuda (${subCategoria})${nombreEntidad
                             ? ' - ' + nombreEntidad
                             : ''
-                    }`;
+                        }`;
 
                     datosMovimiento.deudaId =
                         deudaSeleccionada.id;
@@ -406,7 +405,7 @@ export default function RegistroGastosDetallados({
                     const nombreFijo =
                         gastoFijoSeleccionado
                             ? gastoFijoSeleccionado.nombre ||
-                              'Servicio'
+                            'Servicio'
                             : subCategoria;
 
                     nombreConcepto = `Gasto Fijo (${subCategoria}) - ${nombreFijo}`;
@@ -544,7 +543,7 @@ export default function RegistroGastosDetallados({
                         style={[
                             styles.tipoBtn,
                             tipoGasto === 'deuda' &&
-                                styles.tipoBtnActive,
+                            styles.tipoBtnActive,
                         ]}
                         onPress={() => {
                             setTipoGasto('deuda');
@@ -573,7 +572,7 @@ export default function RegistroGastosDetallados({
                             style={[
                                 styles.tipoBtnText,
                                 tipoGasto === 'deuda' &&
-                                    styles.tipoBtnTextActive,
+                                styles.tipoBtnTextActive,
                             ]}
                         >
                             Pagar Deuda
@@ -584,7 +583,7 @@ export default function RegistroGastosDetallados({
                         style={[
                             styles.tipoBtn,
                             tipoGasto === 'fijo' &&
-                                styles.tipoBtnActive,
+                            styles.tipoBtnActive,
                         ]}
                         onPress={() => {
                             setTipoGasto('fijo');
@@ -611,7 +610,7 @@ export default function RegistroGastosDetallados({
                             style={[
                                 styles.tipoBtnText,
                                 tipoGasto === 'fijo' &&
-                                    styles.tipoBtnTextActive,
+                                styles.tipoBtnTextActive,
                             ]}
                         >
                             Servicios / Fijos
@@ -648,7 +647,7 @@ export default function RegistroGastosDetallados({
                             style={[
                                 styles.subBtn,
                                 subCategoria === item &&
-                                    styles.subBtnActive,
+                                styles.subBtnActive,
                             ]}
                             onPress={() => {
                                 setSubCategoria(item);
@@ -664,8 +663,8 @@ export default function RegistroGastosDetallados({
                                 style={[
                                     styles.subText,
                                     subCategoria ===
-                                        item &&
-                                        styles.subTextActive,
+                                    item &&
+                                    styles.subTextActive,
                                 ]}
                             >
                                 {item}
@@ -715,8 +714,8 @@ export default function RegistroGastosDetallados({
                                             style={[
                                                 styles.deudaItemCard,
                                                 isSelected &&
-                                                    styles
-                                                        .deudaCardActive,
+                                                styles
+                                                    .deudaCardActive,
                                             ]}
                                             onPress={() => {
                                                 setDeudaSeleccionada(
@@ -819,8 +818,8 @@ export default function RegistroGastosDetallados({
                                         style={[
                                             styles.deudaItemCard,
                                             isSelected &&
-                                                styles
-                                                    .deudaCardActive,
+                                            styles
+                                                .deudaCardActive,
                                         ]}
                                         onPress={() => {
                                             setGastoFijoSeleccionado(
@@ -921,7 +920,7 @@ export default function RegistroGastosDetallados({
                                         style={[
                                             styles.cuentaChip,
                                             seleccionada &&
-                                                styles.cuentaChipActive,
+                                            styles.cuentaChipActive,
                                         ]}
                                         onPress={() =>
                                             setCuentaOrigenId(
@@ -932,7 +931,7 @@ export default function RegistroGastosDetallados({
                                         <Ionicons
                                             name={
                                                 cuenta.tipo ===
-                                                'efectivo'
+                                                    'efectivo'
                                                     ? 'cash-outline'
                                                     : 'card-outline'
                                             }
@@ -950,13 +949,13 @@ export default function RegistroGastosDetallados({
                                             style={[
                                                 styles.cuentaChipText,
                                                 seleccionada &&
-                                                    styles.cuentaChipTextActive,
+                                                styles.cuentaChipTextActive,
                                             ]}
                                         >
                                             {cuenta.nombre} · $
                                             {Number(
                                                 cuenta.saldo ||
-                                                    0
+                                                0
                                             ).toFixed(2)}
                                         </Text>
                                     </TouchableOpacity>
