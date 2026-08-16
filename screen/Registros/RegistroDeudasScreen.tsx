@@ -60,6 +60,7 @@ export default function RegistroDeudasScreen({
     const [cuotaPagar, setCuotaPagar] = useState('');
     const [numeroCuotas, setNumeroCuotas] = useState('');
     const [fechaMaxPago, setFechaMaxPago] = useState('');
+    const [cupoDisponible, setCupoDisponible] = useState('');
 
     // ========================================================
     // CUENTA POR COBRAR
@@ -743,7 +744,7 @@ export default function RegistroDeudasScreen({
 
                 uidPersona:
                     usarCodigoPersona &&
-                    personaEncontrada
+                        personaEncontrada
                         ? personaEncontrada.uid
                         : null,
 
@@ -1391,7 +1392,7 @@ export default function RegistroDeudasScreen({
 
         if (
             categoriaSeleccionada !==
-                'Deuda Familiar' &&
+            'Deuda Familiar' &&
             (
                 isNaN(cuotaNumero) ||
                 cuotaNumero <= 0
@@ -1420,9 +1421,7 @@ export default function RegistroDeudasScreen({
             push(deudasRef);
 
         const datosDeuda = {
-
-            tipo:
-                'deuda',
+            tipo: 'deuda',
 
             categoria:
                 categoriaSeleccionada,
@@ -1437,18 +1436,19 @@ export default function RegistroDeudasScreen({
                 cuotaNumero,
 
             numeroCuotas:
-                categoriaSeleccionada ===
-                    'Préstamo Bancario' ||
-                categoriaSeleccionada ===
-                    'Casa Comercial'
-                    ? parseInt(
-                        numeroCuotas
-                    ) || 1
+                categoriaSeleccionada === 'Préstamo Bancario' ||
+                    categoriaSeleccionada === 'Casa Comercial'
+                    ? parseInt(numeroCuotas) || 1
                     : 1,
 
+            cupoDisponible:
+                categoriaSeleccionada === 'Casa Comercial' &&
+                    cupoDisponible.trim() !== ''
+                    ? Number(parseFloat(cupoDisponible).toFixed(2))
+                    : null,
+
             fechaMaxPago:
-                fechaMaxPago ||
-                'N/A',
+                fechaMaxPago || 'N/A',
 
             fechaRegistro:
                 new Date().toISOString(),
@@ -1475,7 +1475,6 @@ export default function RegistroDeudasScreen({
             );
 
             limpiarFormulario();
-
             navigation.goBack();
 
         } catch (error: any) {
@@ -1686,27 +1685,13 @@ export default function RegistroDeudasScreen({
                 >
 
                     {[
-                        {
-                            id: 'Tarjeta de Crédito',
-                            label: 'Tarjeta de Crédito',
-                            icon: '💳',
-                        },
-                        {
-                            id: 'Préstamo Bancario',
-                            label: 'Préstamo Bancario',
-                            icon: '🏦',
-                        },
-                        {
-                            id: 'Casa Comercial',
-                            label: 'Casa Comercial',
-                            icon: '🏬',
-                        },
-                        {
-                            id: 'Operadora Celular',
-                            label: 'Planes Celular',
-                            icon: '📱',
-                        },
-                    ].map(item => {
+                        { id: 'Tarjeta de Crédito', label: 'Tarjeta de Crédito', icon: '💳' },
+                        { id: 'Préstamo Bancario', label: 'Préstamo Bancario', icon: '🏦' },
+                        { id: 'Casa Comercial', label: 'Casa Comercial', icon: '🏬' },
+                        { id: 'Operadora Celular', label: 'Planes Celular', icon: '📱' },
+                        { id: 'Deuda Familiar', label: 'Cuentas por Pagar', icon: '💸' },
+                        { id: 'Cuenta por Cobrar', label: 'Cuentas por Cobrar', icon: '💰' },
+                    ].map((item) => {
 
                         const selected =
                             categoriaSeleccionada ===
@@ -1778,65 +1763,7 @@ export default function RegistroDeudasScreen({
                         );
                     })}
 
-                    {/* CUENTAS POR PAGAR */}
 
-                    <TouchableOpacity
-                        style={[
-                            styles.categoryCardWide,
-                            categoriaSeleccionada ===
-                                'Deuda Familiar' &&
-                            styles.categoryCardSelected,
-                        ]}
-                        onPress={() =>
-                            seleccionarCategoria(
-                                'Deuda Familiar'
-                            )
-                        }
-                    >
-
-                        <View
-                            style={[
-                                styles.categoryIconBox,
-                                categoriaSeleccionada ===
-                                    'Deuda Familiar' &&
-                                styles.categoryIconBoxSelected,
-                            ]}
-                        >
-
-                            <Text
-                                style={
-                                    styles.categoryEmoji
-                                }
-                            >
-                                💸
-                            </Text>
-
-                        </View>
-
-                        <View>
-
-                            <Text
-                                style={[
-                                    styles.categoryText,
-                                    categoriaSeleccionada ===
-                                        'Deuda Familiar' &&
-                                    styles.categoryTextSelected,
-                                ]}
-                            >
-                                Cuentas por Pagar
-                            </Text>
-
-                            <Text
-                                style={
-                                    styles.categorySubText
-                                }
-                            >
-                                Dinero que tú debes
-                            </Text>
-
-                        </View>
-
-                    </TouchableOpacity>
 
                     {/* CUENTAS POR COBRAR */}
 
@@ -1844,7 +1771,7 @@ export default function RegistroDeudasScreen({
                         style={[
                             styles.categoryCardWide,
                             categoriaSeleccionada ===
-                                'Cuenta por Cobrar' &&
+                            'Cuenta por Cobrar' &&
                             styles.categoryCardSelected,
                         ]}
                         onPress={() =>
@@ -1858,7 +1785,7 @@ export default function RegistroDeudasScreen({
                             style={[
                                 styles.categoryIconBox,
                                 categoriaSeleccionada ===
-                                    'Cuenta por Cobrar' &&
+                                'Cuenta por Cobrar' &&
                                 styles.categoryIconBoxSelected,
                             ]}
                         >
@@ -1879,7 +1806,7 @@ export default function RegistroDeudasScreen({
                                 style={[
                                     styles.categoryText,
                                     categoriaSeleccionada ===
-                                        'Cuenta por Cobrar' &&
+                                    'Cuenta por Cobrar' &&
                                     styles.categoryTextSelected,
                                 ]}
                             >
@@ -1907,640 +1834,640 @@ export default function RegistroDeudasScreen({
                 {categoriaSeleccionada ===
                     'Tarjeta de Crédito' && (
 
-                    <View
-                        style={
-                            styles.subFlowContainer
-                        }
-                    >
-
                         <View
                             style={
-                                styles.sectionHeader
+                                styles.subFlowContainer
                             }
                         >
 
                             <View
                                 style={
-                                    styles.stepBadge
+                                    styles.sectionHeader
                                 }
                             >
-
-                                <Text
-                                    style={
-                                        styles.stepBadgeText
-                                    }
-                                >
-                                    02
-                                </Text>
-
-                            </View>
-
-                            <Text
-                                style={
-                                    styles.sectionTitle
-                                }
-                            >
-                                Tarjeta de Crédito
-                            </Text>
-
-                        </View>
-
-                        <View
-                            style={
-                                styles.modeRow
-                            }
-                        >
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.tarjetaModeButton,
-                                    modoTarjeta === 'nueva' &&
-                                    styles.tarjetaModeButtonSelected,
-                                ]}
-                                onPress={() =>
-                                    setModoTarjeta('nueva')
-                                }
-                            >
-
-                                <Text
-                                    style={
-                                        styles.tarjetaModeIcon
-                                    }
-                                >
-                                    ➕
-                                </Text>
-
-                                <Text
-                                    style={[
-                                        styles.tarjetaModeText,
-                                        modoTarjeta === 'nueva' &&
-                                        styles.tarjetaModeTextSelected,
-                                    ]}
-                                >
-                                    Nueva tarjeta
-                                </Text>
-
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.tarjetaModeButton,
-                                    modoTarjeta === 'consumo' &&
-                                    styles.tarjetaModeButtonSelected,
-                                ]}
-                                onPress={() =>
-                                    setModoTarjeta('consumo')
-                                }
-                            >
-
-                                <Text
-                                    style={
-                                        styles.tarjetaModeIcon
-                                    }
-                                >
-                                    🛒
-                                </Text>
-
-                                <Text
-                                    style={[
-                                        styles.tarjetaModeText,
-                                        modoTarjeta === 'consumo' &&
-                                        styles.tarjetaModeTextSelected,
-                                    ]}
-                                >
-                                    Registrar consumo
-                                </Text>
-
-                            </TouchableOpacity>
-
-                        </View>
-
-                        {/* NUEVA TARJETA */}
-
-                        {modoTarjeta === 'nueva' && (
-
-                            <View
-                                style={
-                                    styles.formCard
-                                }
-                            >
-
-                                <Text
-                                    style={
-                                        styles.inputLabel
-                                    }
-                                >
-                                    Banco / Entidad
-                                </Text>
-
-                                <TextInput
-                                    style={
-                                        styles.input
-                                    }
-                                    placeholder="Ej. Banco Pichincha"
-                                    placeholderTextColor="#94A3B8"
-                                    value={
-                                        bancoTarjeta
-                                    }
-                                    onChangeText={
-                                        setBancoTarjeta
-                                    }
-                                />
-
-                                <Text
-                                    style={
-                                        styles.inputLabel
-                                    }
-                                >
-                                    Marca de la tarjeta
-                                </Text>
 
                                 <View
                                     style={
-                                        styles.marcasContainer
-                                    }
-                                >
-
-                                    {[
-                                        'Visa',
-                                        'Mastercard',
-                                        'Diners',
-                                        'American Express',
-                                        'Discover',
-                                    ].map(marca => {
-
-                                        const selected =
-                                            marcaTarjeta ===
-                                            marca;
-
-                                        return (
-
-                                            <TouchableOpacity
-                                                key={marca}
-                                                style={[
-                                                    styles.marcaButton,
-                                                    selected &&
-                                                    styles.marcaButtonSelected,
-                                                ]}
-                                                onPress={() =>
-                                                    setMarcaTarjeta(
-                                                        marca
-                                                    )
-                                                }
-                                            >
-
-                                                <Text
-                                                    style={[
-                                                        styles.marcaButtonText,
-                                                        selected &&
-                                                        styles.marcaButtonTextSelected,
-                                                    ]}
-                                                >
-                                                    {marca}
-                                                </Text>
-
-                                                {selected && (
-                                                    <Text
-                                                        style={
-                                                            styles.marcaCheck
-                                                        }
-                                                    >
-                                                        ✓
-                                                    </Text>
-                                                )}
-
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-
-                                </View>
-
-                                <Text
-                                    style={
-                                        styles.inputLabel
-                                    }
-                                >
-                                    Cupo Total ($)
-                                </Text>
-
-                                <TextInput
-                                    style={
-                                        styles.input
-                                    }
-                                    placeholder="Ej. 3000"
-                                    placeholderTextColor="#94A3B8"
-                                    keyboardType="numeric"
-                                    value={
-                                        cupoTotal
-                                    }
-                                    onChangeText={
-                                        setCupoTotal
-                                    }
-                                />
-
-                                <Text
-                                    style={
-                                        styles.inputLabel
-                                    }
-                                >
-                                    Fecha de Caducidad
-                                </Text>
-
-                                <TextInput
-                                    style={
-                                        styles.input
-                                    }
-                                    placeholder="Ej. 08/29"
-                                    placeholderTextColor="#94A3B8"
-                                    value={
-                                        fechaCaducidad
-                                    }
-                                    onChangeText={
-                                        setFechaCaducidad
-                                    }
-                                />
-
-                                <TouchableOpacity
-                                    style={
-                                        styles.submitButton
-                                    }
-                                    onPress={
-                                        guardarTarjetaNueva
+                                        styles.stepBadge
                                     }
                                 >
 
                                     <Text
                                         style={
-                                            styles.submitButtonText
+                                            styles.stepBadgeText
                                         }
                                     >
-                                        💳 Registrar Tarjeta
+                                        02
+                                    </Text>
+
+                                </View>
+
+                                <Text
+                                    style={
+                                        styles.sectionTitle
+                                    }
+                                >
+                                    Tarjeta de Crédito
+                                </Text>
+
+                            </View>
+
+                            <View
+                                style={
+                                    styles.modeRow
+                                }
+                            >
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.tarjetaModeButton,
+                                        modoTarjeta === 'nueva' &&
+                                        styles.tarjetaModeButtonSelected,
+                                    ]}
+                                    onPress={() =>
+                                        setModoTarjeta('nueva')
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.tarjetaModeIcon
+                                        }
+                                    >
+                                        ➕
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.tarjetaModeText,
+                                            modoTarjeta === 'nueva' &&
+                                            styles.tarjetaModeTextSelected,
+                                        ]}
+                                    >
+                                        Nueva tarjeta
+                                    </Text>
+
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.tarjetaModeButton,
+                                        modoTarjeta === 'consumo' &&
+                                        styles.tarjetaModeButtonSelected,
+                                    ]}
+                                    onPress={() =>
+                                        setModoTarjeta('consumo')
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.tarjetaModeIcon
+                                        }
+                                    >
+                                        🛒
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.tarjetaModeText,
+                                            modoTarjeta === 'consumo' &&
+                                            styles.tarjetaModeTextSelected,
+                                        ]}
+                                    >
+                                        Registrar consumo
                                     </Text>
 
                                 </TouchableOpacity>
 
                             </View>
-                        )}
 
-                        {/* CONSUMO */}
+                            {/* NUEVA TARJETA */}
 
-                        {modoTarjeta === 'consumo' && (
+                            {modoTarjeta === 'nueva' && (
 
-                            <View
-                                style={
-                                    styles.formCard
-                                }
-                            >
-
-                                <Text
+                                <View
                                     style={
-                                        styles.inputLabel
+                                        styles.formCard
                                     }
                                 >
-                                    Selecciona la tarjeta
-                                </Text>
 
-                                {tarjetasDisponibles.length === 0 ? (
+                                    <Text
+                                        style={
+                                            styles.inputLabel
+                                        }
+                                    >
+                                        Banco / Entidad
+                                    </Text>
+
+                                    <TextInput
+                                        style={
+                                            styles.input
+                                        }
+                                        placeholder="Ej. Banco Pichincha"
+                                        placeholderTextColor="#94A3B8"
+                                        value={
+                                            bancoTarjeta
+                                        }
+                                        onChangeText={
+                                            setBancoTarjeta
+                                        }
+                                    />
+
+                                    <Text
+                                        style={
+                                            styles.inputLabel
+                                        }
+                                    >
+                                        Marca de la tarjeta
+                                    </Text>
 
                                     <View
                                         style={
-                                            styles.emptyCard
+                                            styles.marcasContainer
+                                        }
+                                    >
+
+                                        {[
+                                            'Visa',
+                                            'Mastercard',
+                                            'Diners',
+                                            'American Express',
+                                            'Discover',
+                                        ].map(marca => {
+
+                                            const selected =
+                                                marcaTarjeta ===
+                                                marca;
+
+                                            return (
+
+                                                <TouchableOpacity
+                                                    key={marca}
+                                                    style={[
+                                                        styles.marcaButton,
+                                                        selected &&
+                                                        styles.marcaButtonSelected,
+                                                    ]}
+                                                    onPress={() =>
+                                                        setMarcaTarjeta(
+                                                            marca
+                                                        )
+                                                    }
+                                                >
+
+                                                    <Text
+                                                        style={[
+                                                            styles.marcaButtonText,
+                                                            selected &&
+                                                            styles.marcaButtonTextSelected,
+                                                        ]}
+                                                    >
+                                                        {marca}
+                                                    </Text>
+
+                                                    {selected && (
+                                                        <Text
+                                                            style={
+                                                                styles.marcaCheck
+                                                            }
+                                                        >
+                                                            ✓
+                                                        </Text>
+                                                    )}
+
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+
+                                    </View>
+
+                                    <Text
+                                        style={
+                                            styles.inputLabel
+                                        }
+                                    >
+                                        Cupo Total ($)
+                                    </Text>
+
+                                    <TextInput
+                                        style={
+                                            styles.input
+                                        }
+                                        placeholder="Ej. 3000"
+                                        placeholderTextColor="#94A3B8"
+                                        keyboardType="numeric"
+                                        value={
+                                            cupoTotal
+                                        }
+                                        onChangeText={
+                                            setCupoTotal
+                                        }
+                                    />
+
+                                    <Text
+                                        style={
+                                            styles.inputLabel
+                                        }
+                                    >
+                                        Fecha de Caducidad
+                                    </Text>
+
+                                    <TextInput
+                                        style={
+                                            styles.input
+                                        }
+                                        placeholder="Ej. 08/29"
+                                        placeholderTextColor="#94A3B8"
+                                        value={
+                                            fechaCaducidad
+                                        }
+                                        onChangeText={
+                                            setFechaCaducidad
+                                        }
+                                    />
+
+                                    <TouchableOpacity
+                                        style={
+                                            styles.submitButton
+                                        }
+                                        onPress={
+                                            guardarTarjetaNueva
                                         }
                                     >
 
                                         <Text
                                             style={
-                                                styles.emptyCardIcon
+                                                styles.submitButtonText
                                             }
                                         >
-                                            💳
+                                            💳 Registrar Tarjeta
                                         </Text>
 
-                                        <Text
-                                            style={
-                                                styles.emptyCardTitle
-                                            }
-                                        >
-                                            No tienes tarjetas registradas
-                                        </Text>
+                                    </TouchableOpacity>
 
-                                        <Text
-                                            style={
-                                                styles.emptyCardText
-                                            }
-                                        >
-                                            Primero registra una tarjeta para poder agregar consumos.
-                                        </Text>
+                                </View>
+                            )}
 
-                                    </View>
+                            {/* CONSUMO */}
 
-                                ) : (
+                            {modoTarjeta === 'consumo' && (
 
-                                    tarjetasDisponibles.map(
-                                        tarjeta => {
+                                <View
+                                    style={
+                                        styles.formCard
+                                    }
+                                >
 
-                                            const selected =
-                                                tarjetaConsumoId ===
-                                                tarjeta.id;
-
-                                            return (
-
-                                                <TouchableOpacity
-                                                    key={
-                                                        tarjeta.id
-                                                    }
-                                                    style={[
-                                                        styles.tarjetaItem,
-                                                        selected &&
-                                                        styles.tarjetaItemSelected,
-                                                    ]}
-                                                    onPress={() =>
-                                                        setTarjetaConsumoId(
-                                                            tarjeta.id
-                                                        )
-                                                    }
-                                                >
-
-                                                    <View
-                                                        style={
-                                                            styles.tarjetaItemIcon
-                                                        }
-                                                    >
-                                                        <Text
-                                                            style={{
-                                                                fontSize: 22,
-                                                            }}
-                                                        >
-                                                            💳
-                                                        </Text>
-                                                    </View>
-
-                                                    <View
-                                                        style={{
-                                                            flex: 1,
-                                                        }}
-                                                    >
-
-                                                        <Text
-                                                            style={
-                                                                styles.tarjetaItemTitle
-                                                            }
-                                                        >
-                                                            {tarjeta.banco}
-                                                        </Text>
-
-                                                        <Text
-                                                            style={
-                                                                styles.tarjetaItemSubtitle
-                                                            }
-                                                        >
-                                                            {tarjeta.marca}
-                                                            {' • '}
-                                                            Cupo $
-                                                            {tarjeta.cupoTotal.toFixed(
-                                                                2
-                                                            )}
-                                                        </Text>
-
-                                                    </View>
-
-                                                    <View
-                                                        style={[
-                                                            styles.radioIndicator,
-                                                            selected &&
-                                                            styles.radioIndicatorSelected,
-                                                        ]}
-                                                    >
-
-                                                        {selected && (
-                                                            <View
-                                                                style={
-                                                                    styles.radioDot
-                                                                }
-                                                            />
-                                                        )}
-
-                                                    </View>
-
-                                                </TouchableOpacity>
-                                            );
+                                    <Text
+                                        style={
+                                            styles.inputLabel
                                         }
-                                    )
-                                )}
+                                    >
+                                        Selecciona la tarjeta
+                                    </Text>
 
-                                {tarjetasDisponibles.length > 0 && (
-
-                                    <>
-
-                                        <Text
-                                            style={
-                                                styles.inputLabel
-                                            }
-                                        >
-                                            Monto del Consumo ($)
-                                        </Text>
-
-                                        <TextInput
-                                            style={
-                                                styles.input
-                                            }
-                                            placeholder="Ej. 120"
-                                            placeholderTextColor="#94A3B8"
-                                            keyboardType="numeric"
-                                            value={
-                                                montoConsumo
-                                            }
-                                            onChangeText={
-                                                setMontoConsumo
-                                            }
-                                        />
-
-                                        <Text
-                                            style={
-                                                styles.inputLabel
-                                            }
-                                        >
-                                            Forma de pago
-                                        </Text>
+                                    {tarjetasDisponibles.length === 0 ? (
 
                                         <View
                                             style={
-                                                styles.modeRow
-                                            }
-                                        >
-
-                                            <TouchableOpacity
-                                                style={[
-                                                    styles.subModeButton,
-                                                    esDiferido === false &&
-                                                    styles.subModeButtonSelected,
-                                                ]}
-                                                onPress={() =>
-                                                    setEsDiferido(false)
-                                                }
-                                            >
-
-                                                <Text
-                                                    style={[
-                                                        styles.subModeText,
-                                                        esDiferido === false &&
-                                                        styles.subModeTextSelected,
-                                                    ]}
-                                                >
-                                                    Corriente
-                                                </Text>
-
-                                            </TouchableOpacity>
-
-                                            <TouchableOpacity
-                                                style={[
-                                                    styles.subModeButton,
-                                                    esDiferido === true &&
-                                                    styles.subModeButtonSelected,
-                                                ]}
-                                                onPress={() =>
-                                                    setEsDiferido(true)
-                                                }
-                                            >
-
-                                                <Text
-                                                    style={[
-                                                        styles.subModeText,
-                                                        esDiferido === true &&
-                                                        styles.subModeTextSelected,
-                                                    ]}
-                                                >
-                                                    Diferido
-                                                </Text>
-
-                                            </TouchableOpacity>
-
-                                        </View>
-
-                                        {esDiferido === true && (
-
-                                            <>
-
-                                                <Text
-                                                    style={
-                                                        styles.inputLabel
-                                                    }
-                                                >
-                                                    Número de Cuotas
-                                                </Text>
-
-                                                <TextInput
-                                                    style={
-                                                        styles.input
-                                                    }
-                                                    placeholder="Ej. 6"
-                                                    placeholderTextColor="#94A3B8"
-                                                    keyboardType="numeric"
-                                                    value={
-                                                        numeroCuotasConsumo
-                                                    }
-                                                    onChangeText={
-                                                        setNumeroCuotasConsumo
-                                                    }
-                                                />
-
-                                                <Text
-                                                    style={
-                                                        styles.inputLabel
-                                                    }
-                                                >
-                                                    Valor de la Cuota ($)
-                                                </Text>
-
-                                                <TextInput
-                                                    style={
-                                                        styles.input
-                                                    }
-                                                    placeholder="Ej. 20"
-                                                    placeholderTextColor="#94A3B8"
-                                                    keyboardType="numeric"
-                                                    value={
-                                                        valorCuotaConsumo
-                                                    }
-                                                    onChangeText={
-                                                        setValorCuotaConsumo
-                                                    }
-                                                />
-
-                                            </>
-                                        )}
-
-                                        <Text
-                                            style={
-                                                styles.inputLabel
-                                            }
-                                        >
-                                            Descripción
-                                        </Text>
-
-                                        <TextInput
-                                            style={
-                                                styles.input
-                                            }
-                                            placeholder="Ej. Compra supermercado"
-                                            placeholderTextColor="#94A3B8"
-                                            value={
-                                                descripcionConsumo
-                                            }
-                                            onChangeText={
-                                                setDescripcionConsumo
-                                            }
-                                        />
-
-                                        <Text
-                                            style={
-                                                styles.inputLabel
-                                            }
-                                        >
-                                            Fecha / Día de Pago
-                                        </Text>
-
-                                        <TextInput
-                                            style={
-                                                styles.input
-                                            }
-                                            placeholder="Ej. 15 de cada mes"
-                                            placeholderTextColor="#94A3B8"
-                                            value={
-                                                fechaConsumo
-                                            }
-                                            onChangeText={
-                                                setFechaConsumo
-                                            }
-                                        />
-
-                                        <TouchableOpacity
-                                            style={
-                                                styles.submitButton
-                                            }
-                                            onPress={
-                                                guardarConsumo
+                                                styles.emptyCard
                                             }
                                         >
 
                                             <Text
                                                 style={
-                                                    styles.submitButtonText
+                                                    styles.emptyCardIcon
                                                 }
                                             >
-                                                🛒 Registrar Consumo
+                                                💳
                                             </Text>
 
-                                        </TouchableOpacity>
+                                            <Text
+                                                style={
+                                                    styles.emptyCardTitle
+                                                }
+                                            >
+                                                No tienes tarjetas registradas
+                                            </Text>
 
-                                    </>
-                                )}
+                                            <Text
+                                                style={
+                                                    styles.emptyCardText
+                                                }
+                                            >
+                                                Primero registra una tarjeta para poder agregar consumos.
+                                            </Text>
 
-                            </View>
-                        )}
+                                        </View>
 
-                    </View>
-                )}
+                                    ) : (
+
+                                        tarjetasDisponibles.map(
+                                            tarjeta => {
+
+                                                const selected =
+                                                    tarjetaConsumoId ===
+                                                    tarjeta.id;
+
+                                                return (
+
+                                                    <TouchableOpacity
+                                                        key={
+                                                            tarjeta.id
+                                                        }
+                                                        style={[
+                                                            styles.tarjetaItem,
+                                                            selected &&
+                                                            styles.tarjetaItemSelected,
+                                                        ]}
+                                                        onPress={() =>
+                                                            setTarjetaConsumoId(
+                                                                tarjeta.id
+                                                            )
+                                                        }
+                                                    >
+
+                                                        <View
+                                                            style={
+                                                                styles.tarjetaItemIcon
+                                                            }
+                                                        >
+                                                            <Text
+                                                                style={{
+                                                                    fontSize: 22,
+                                                                }}
+                                                            >
+                                                                💳
+                                                            </Text>
+                                                        </View>
+
+                                                        <View
+                                                            style={{
+                                                                flex: 1,
+                                                            }}
+                                                        >
+
+                                                            <Text
+                                                                style={
+                                                                    styles.tarjetaItemTitle
+                                                                }
+                                                            >
+                                                                {tarjeta.banco}
+                                                            </Text>
+
+                                                            <Text
+                                                                style={
+                                                                    styles.tarjetaItemSubtitle
+                                                                }
+                                                            >
+                                                                {tarjeta.marca}
+                                                                {' • '}
+                                                                Cupo $
+                                                                {tarjeta.cupoTotal.toFixed(
+                                                                    2
+                                                                )}
+                                                            </Text>
+
+                                                        </View>
+
+                                                        <View
+                                                            style={[
+                                                                styles.radioIndicator,
+                                                                selected &&
+                                                                styles.radioIndicatorSelected,
+                                                            ]}
+                                                        >
+
+                                                            {selected && (
+                                                                <View
+                                                                    style={
+                                                                        styles.radioDot
+                                                                    }
+                                                                />
+                                                            )}
+
+                                                        </View>
+
+                                                    </TouchableOpacity>
+                                                );
+                                            }
+                                        )
+                                    )}
+
+                                    {tarjetasDisponibles.length > 0 && (
+
+                                        <>
+
+                                            <Text
+                                                style={
+                                                    styles.inputLabel
+                                                }
+                                            >
+                                                Monto del Consumo ($)
+                                            </Text>
+
+                                            <TextInput
+                                                style={
+                                                    styles.input
+                                                }
+                                                placeholder="Ej. 120"
+                                                placeholderTextColor="#94A3B8"
+                                                keyboardType="numeric"
+                                                value={
+                                                    montoConsumo
+                                                }
+                                                onChangeText={
+                                                    setMontoConsumo
+                                                }
+                                            />
+
+                                            <Text
+                                                style={
+                                                    styles.inputLabel
+                                                }
+                                            >
+                                                Forma de pago
+                                            </Text>
+
+                                            <View
+                                                style={
+                                                    styles.modeRow
+                                                }
+                                            >
+
+                                                <TouchableOpacity
+                                                    style={[
+                                                        styles.subModeButton,
+                                                        esDiferido === false &&
+                                                        styles.subModeButtonSelected,
+                                                    ]}
+                                                    onPress={() =>
+                                                        setEsDiferido(false)
+                                                    }
+                                                >
+
+                                                    <Text
+                                                        style={[
+                                                            styles.subModeText,
+                                                            esDiferido === false &&
+                                                            styles.subModeTextSelected,
+                                                        ]}
+                                                    >
+                                                        Corriente
+                                                    </Text>
+
+                                                </TouchableOpacity>
+
+                                                <TouchableOpacity
+                                                    style={[
+                                                        styles.subModeButton,
+                                                        esDiferido === true &&
+                                                        styles.subModeButtonSelected,
+                                                    ]}
+                                                    onPress={() =>
+                                                        setEsDiferido(true)
+                                                    }
+                                                >
+
+                                                    <Text
+                                                        style={[
+                                                            styles.subModeText,
+                                                            esDiferido === true &&
+                                                            styles.subModeTextSelected,
+                                                        ]}
+                                                    >
+                                                        Diferido
+                                                    </Text>
+
+                                                </TouchableOpacity>
+
+                                            </View>
+
+                                            {esDiferido === true && (
+
+                                                <>
+
+                                                    <Text
+                                                        style={
+                                                            styles.inputLabel
+                                                        }
+                                                    >
+                                                        Número de Cuotas
+                                                    </Text>
+
+                                                    <TextInput
+                                                        style={
+                                                            styles.input
+                                                        }
+                                                        placeholder="Ej. 6"
+                                                        placeholderTextColor="#94A3B8"
+                                                        keyboardType="numeric"
+                                                        value={
+                                                            numeroCuotasConsumo
+                                                        }
+                                                        onChangeText={
+                                                            setNumeroCuotasConsumo
+                                                        }
+                                                    />
+
+                                                    <Text
+                                                        style={
+                                                            styles.inputLabel
+                                                        }
+                                                    >
+                                                        Valor de la Cuota ($)
+                                                    </Text>
+
+                                                    <TextInput
+                                                        style={
+                                                            styles.input
+                                                        }
+                                                        placeholder="Ej. 20"
+                                                        placeholderTextColor="#94A3B8"
+                                                        keyboardType="numeric"
+                                                        value={
+                                                            valorCuotaConsumo
+                                                        }
+                                                        onChangeText={
+                                                            setValorCuotaConsumo
+                                                        }
+                                                    />
+
+                                                </>
+                                            )}
+
+                                            <Text
+                                                style={
+                                                    styles.inputLabel
+                                                }
+                                            >
+                                                Descripción
+                                            </Text>
+
+                                            <TextInput
+                                                style={
+                                                    styles.input
+                                                }
+                                                placeholder="Ej. Compra supermercado"
+                                                placeholderTextColor="#94A3B8"
+                                                value={
+                                                    descripcionConsumo
+                                                }
+                                                onChangeText={
+                                                    setDescripcionConsumo
+                                                }
+                                            />
+
+                                            <Text
+                                                style={
+                                                    styles.inputLabel
+                                                }
+                                            >
+                                                Fecha / Día de Pago
+                                            </Text>
+
+                                            <TextInput
+                                                style={
+                                                    styles.input
+                                                }
+                                                placeholder="Ej. 15 de cada mes"
+                                                placeholderTextColor="#94A3B8"
+                                                value={
+                                                    fechaConsumo
+                                                }
+                                                onChangeText={
+                                                    setFechaConsumo
+                                                }
+                                            />
+
+                                            <TouchableOpacity
+                                                style={
+                                                    styles.submitButton
+                                                }
+                                                onPress={
+                                                    guardarConsumo
+                                                }
+                                            >
+
+                                                <Text
+                                                    style={
+                                                        styles.submitButtonText
+                                                    }
+                                                >
+                                                    🛒 Registrar Consumo
+                                                </Text>
+
+                                            </TouchableOpacity>
+
+                                        </>
+                                    )}
+
+                                </View>
+                            )}
+
+                        </View>
+                    )}
 
                 {/* ==================================================
                     CUENTA POR COBRAR
@@ -2549,487 +2476,487 @@ export default function RegistroDeudasScreen({
                 {categoriaSeleccionada ===
                     'Cuenta por Cobrar' && (
 
-                    <View
-                        style={
-                            styles.subFlowContainer
-                        }
-                    >
-
                         <View
                             style={
-                                styles.sectionHeader
+                                styles.subFlowContainer
                             }
                         >
 
                             <View
                                 style={
-                                    styles.stepBadge
+                                    styles.sectionHeader
                                 }
                             >
+
+                                <View
+                                    style={
+                                        styles.stepBadge
+                                    }
+                                >
+                                    <Text
+                                        style={
+                                            styles.stepBadgeText
+                                        }
+                                    >
+                                        02
+                                    </Text>
+                                </View>
+
                                 <Text
                                     style={
-                                        styles.stepBadgeText
+                                        styles.sectionTitle
                                     }
                                 >
-                                    02
+                                    Persona que te debe
                                 </Text>
+
                             </View>
-
-                            <Text
-                                style={
-                                    styles.sectionTitle
-                                }
-                            >
-                                Persona que te debe
-                            </Text>
-
-                        </View>
-
-                        <View
-                            style={
-                                styles.formCard
-                            }
-                        >
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Nombre
-                            </Text>
-
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. Juan"
-                                placeholderTextColor="#94A3B8"
-                                value={
-                                    nombrePersona
-                                }
-                                onChangeText={
-                                    setNombrePersona
-                                }
-                            />
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Apellido
-                            </Text>
-
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. Pérez"
-                                placeholderTextColor="#94A3B8"
-                                value={
-                                    apellidoPersona
-                                }
-                                onChangeText={
-                                    setApellidoPersona
-                                }
-                            />
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Parentesco / Relación
-                            </Text>
-
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. Hermano, amigo, compañero"
-                                placeholderTextColor="#94A3B8"
-                                value={
-                                    parentescoPersona
-                                }
-                                onChangeText={
-                                    setParentescoPersona
-                                }
-                            />
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                ¿Tiene código de cuenta?
-                            </Text>
 
                             <View
                                 style={
-                                    styles.modeRow
+                                    styles.formCard
                                 }
                             >
 
-                                <TouchableOpacity
-                                    style={[
-                                        styles.subModeButton,
-                                        !usarCodigoPersona &&
-                                        styles.subModeButtonSelected,
-                                    ]}
-                                    onPress={() => {
-
-                                        setUsarCodigoPersona(false);
-                                        setPersonaEncontrada(null);
-                                        setCodigoPersona('');
-
-                                    }}
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
                                 >
+                                    Nombre
+                                </Text>
 
-                                    <Text
-                                        style={[
-                                            styles.subModeText,
-                                            !usarCodigoPersona &&
-                                            styles.subModeTextSelected,
-                                        ]}
-                                    >
-                                        No
-                                    </Text>
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. Juan"
+                                    placeholderTextColor="#94A3B8"
+                                    value={
+                                        nombrePersona
+                                    }
+                                    onChangeText={
+                                        setNombrePersona
+                                    }
+                                />
 
-                                </TouchableOpacity>
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Apellido
+                                </Text>
 
-                                <TouchableOpacity
-                                    style={[
-                                        styles.subModeButton,
-                                        usarCodigoPersona &&
-                                        styles.subModeButtonSelected,
-                                    ]}
-                                    onPress={() =>
-                                        setUsarCodigoPersona(true)
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. Pérez"
+                                    placeholderTextColor="#94A3B8"
+                                    value={
+                                        apellidoPersona
+                                    }
+                                    onChangeText={
+                                        setApellidoPersona
+                                    }
+                                />
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Parentesco / Relación
+                                </Text>
+
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. Hermano, amigo, compañero"
+                                    placeholderTextColor="#94A3B8"
+                                    value={
+                                        parentescoPersona
+                                    }
+                                    onChangeText={
+                                        setParentescoPersona
+                                    }
+                                />
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    ¿Tiene código de cuenta?
+                                </Text>
+
+                                <View
+                                    style={
+                                        styles.modeRow
                                     }
                                 >
 
-                                    <Text
+                                    <TouchableOpacity
                                         style={[
-                                            styles.subModeText,
-                                            usarCodigoPersona &&
-                                            styles.subModeTextSelected,
+                                            styles.subModeButton,
+                                            !usarCodigoPersona &&
+                                            styles.subModeButtonSelected,
                                         ]}
-                                    >
-                                        Sí, vincular
-                                    </Text>
+                                        onPress={() => {
 
-                                </TouchableOpacity>
-
-                            </View>
-
-                            {usarCodigoPersona && (
-
-                                <View>
-
-                                    <Text
-                                        style={
-                                            styles.inputLabel
-                                        }
-                                    >
-                                        Código de cuenta de la persona
-                                    </Text>
-
-                                    <TextInput
-                                        style={
-                                            styles.input
-                                        }
-                                        placeholder="Ej. XK72P4"
-                                        placeholderTextColor="#94A3B8"
-                                        autoCapitalize="characters"
-                                        value={
-                                            codigoPersona
-                                        }
-                                        onChangeText={text => {
-
-                                            setCodigoPersona(
-                                                text.toUpperCase()
-                                            );
-
-                                            setPersonaEncontrada(
-                                                null
-                                            );
+                                            setUsarCodigoPersona(false);
+                                            setPersonaEncontrada(null);
+                                            setCodigoPersona('');
 
                                         }}
-                                    />
-
-                                    <TouchableOpacity
-                                        style={
-                                            styles.verifyButton
-                                        }
-                                        onPress={
-                                            buscarPersonaPorCodigo
-                                        }
                                     >
 
-                                        {buscandoCodigo ? (
-
-                                            <ActivityIndicator
-                                                color="#FFFFFF"
-                                            />
-
-                                        ) : (
-
-                                            <Text
-                                                style={
-                                                    styles.verifyButtonText
-                                                }
-                                            >
-                                                🔍 Validar código
-                                            </Text>
-
-                                        )}
+                                        <Text
+                                            style={[
+                                                styles.subModeText,
+                                                !usarCodigoPersona &&
+                                                styles.subModeTextSelected,
+                                            ]}
+                                        >
+                                            No
+                                        </Text>
 
                                     </TouchableOpacity>
 
-                                    {personaEncontrada && (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.subModeButton,
+                                            usarCodigoPersona &&
+                                            styles.subModeButtonSelected,
+                                        ]}
+                                        onPress={() =>
+                                            setUsarCodigoPersona(true)
+                                        }
+                                    >
 
-                                        <View
+                                        <Text
+                                            style={[
+                                                styles.subModeText,
+                                                usarCodigoPersona &&
+                                                styles.subModeTextSelected,
+                                            ]}
+                                        >
+                                            Sí, vincular
+                                        </Text>
+
+                                    </TouchableOpacity>
+
+                                </View>
+
+                                {usarCodigoPersona && (
+
+                                    <View>
+
+                                        <Text
                                             style={
-                                                styles.personaEncontrada
+                                                styles.inputLabel
+                                            }
+                                        >
+                                            Código de cuenta de la persona
+                                        </Text>
+
+                                        <TextInput
+                                            style={
+                                                styles.input
+                                            }
+                                            placeholder="Ej. XK72P4"
+                                            placeholderTextColor="#94A3B8"
+                                            autoCapitalize="characters"
+                                            value={
+                                                codigoPersona
+                                            }
+                                            onChangeText={text => {
+
+                                                setCodigoPersona(
+                                                    text.toUpperCase()
+                                                );
+
+                                                setPersonaEncontrada(
+                                                    null
+                                                );
+
+                                            }}
+                                        />
+
+                                        <TouchableOpacity
+                                            style={
+                                                styles.verifyButton
+                                            }
+                                            onPress={
+                                                buscarPersonaPorCodigo
                                             }
                                         >
 
-                                            <Text
+                                            {buscandoCodigo ? (
+
+                                                <ActivityIndicator
+                                                    color="#FFFFFF"
+                                                />
+
+                                            ) : (
+
+                                                <Text
+                                                    style={
+                                                        styles.verifyButtonText
+                                                    }
+                                                >
+                                                    🔍 Validar código
+                                                </Text>
+
+                                            )}
+
+                                        </TouchableOpacity>
+
+                                        {personaEncontrada && (
+
+                                            <View
                                                 style={
-                                                    styles.personaEncontradaTitulo
+                                                    styles.personaEncontrada
                                                 }
                                             >
-                                                ✅ Cuenta encontrada
-                                            </Text>
 
-                                            <Text
-                                                style={
-                                                    styles.personaEncontradaTexto
-                                                }
-                                            >
-                                                {
-                                                    personaEncontrada.nombre
-                                                }{' '}
-                                                {
-                                                    personaEncontrada.apellido
-                                                }
-                                            </Text>
+                                                <Text
+                                                    style={
+                                                        styles.personaEncontradaTitulo
+                                                    }
+                                                >
+                                                    ✅ Cuenta encontrada
+                                                </Text>
 
-                                            <Text
-                                                style={
-                                                    styles.personaEncontradaCodigo
-                                                }
-                                            >
-                                                Código: {codigoPersona}
-                                            </Text>
+                                                <Text
+                                                    style={
+                                                        styles.personaEncontradaTexto
+                                                    }
+                                                >
+                                                    {
+                                                        personaEncontrada.nombre
+                                                    }{' '}
+                                                    {
+                                                        personaEncontrada.apellido
+                                                    }
+                                                </Text>
 
-                                            <Text
-                                                style={
-                                                    styles.personaEncontradaInfo
-                                                }
-                                            >
-                                                El préstamo se registrará en ambas cuentas.
-                                            </Text>
+                                                <Text
+                                                    style={
+                                                        styles.personaEncontradaCodigo
+                                                    }
+                                                >
+                                                    Código: {codigoPersona}
+                                                </Text>
 
-                                        </View>
-                                    )}
+                                                <Text
+                                                    style={
+                                                        styles.personaEncontradaInfo
+                                                    }
+                                                >
+                                                    El préstamo se registrará en ambas cuentas.
+                                                </Text>
+
+                                            </View>
+                                        )}
+
+                                    </View>
+                                )}
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Monto Prestado ($)
+                                </Text>
+
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. 300"
+                                    placeholderTextColor="#94A3B8"
+                                    keyboardType="numeric"
+                                    value={
+                                        monto
+                                    }
+                                    onChangeText={
+                                        setMonto
+                                    }
+                                />
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Forma de Pago
+                                </Text>
+
+                                <View
+                                    style={
+                                        styles.modeRow
+                                    }
+                                >
+
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.subModeButton,
+                                            formaPagoCobrar ===
+                                            'corriente' &&
+                                            styles.subModeButtonSelected,
+                                        ]}
+                                        onPress={() =>
+                                            setFormaPagoCobrar(
+                                                'corriente'
+                                            )
+                                        }
+                                    >
+
+                                        <Text
+                                            style={[
+                                                styles.subModeText,
+                                                formaPagoCobrar ===
+                                                'corriente' &&
+                                                styles.subModeTextSelected,
+                                            ]}
+                                        >
+                                            Corriente
+                                        </Text>
+
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.subModeButton,
+                                            formaPagoCobrar ===
+                                            'diferido' &&
+                                            styles.subModeButtonSelected,
+                                        ]}
+                                        onPress={() =>
+                                            setFormaPagoCobrar(
+                                                'diferido'
+                                            )
+                                        }
+                                    >
+
+                                        <Text
+                                            style={[
+                                                styles.subModeText,
+                                                formaPagoCobrar ===
+                                                'diferido' &&
+                                                styles.subModeTextSelected,
+                                            ]}
+                                        >
+                                            Diferido
+                                        </Text>
+
+                                    </TouchableOpacity>
 
                                 </View>
-                            )}
 
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Monto Prestado ($)
-                            </Text>
+                                {formaPagoCobrar ===
+                                    'diferido' && (
 
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. 300"
-                                placeholderTextColor="#94A3B8"
-                                keyboardType="numeric"
-                                value={
-                                    monto
-                                }
-                                onChangeText={
-                                    setMonto
-                                }
-                            />
+                                        <>
 
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Forma de Pago
-                            </Text>
+                                            <Text
+                                                style={
+                                                    styles.inputLabel
+                                                }
+                                            >
+                                                Número de Cuotas
+                                            </Text>
 
-                            <View
-                                style={
-                                    styles.modeRow
-                                }
-                            >
+                                            <TextInput
+                                                style={
+                                                    styles.input
+                                                }
+                                                placeholder="Ej. 6"
+                                                placeholderTextColor="#94A3B8"
+                                                keyboardType="numeric"
+                                                value={
+                                                    cuotasCobrar
+                                                }
+                                                onChangeText={
+                                                    setCuotasCobrar
+                                                }
+                                            />
+
+                                            <Text
+                                                style={
+                                                    styles.inputLabel
+                                                }
+                                            >
+                                                Valor de la Cuota ($)
+                                            </Text>
+
+                                            <TextInput
+                                                style={
+                                                    styles.input
+                                                }
+                                                placeholder="Ej. 50"
+                                                placeholderTextColor="#94A3B8"
+                                                keyboardType="numeric"
+                                                value={
+                                                    valorCuotaCobrar
+                                                }
+                                                onChangeText={
+                                                    setValorCuotaCobrar
+                                                }
+                                            />
+
+                                        </>
+                                    )}
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Fecha / Día de Pago
+                                </Text>
+
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. 15 de cada mes"
+                                    placeholderTextColor="#94A3B8"
+                                    value={
+                                        fechaMaxPago
+                                    }
+                                    onChangeText={
+                                        setFechaMaxPago
+                                    }
+                                />
 
                                 <TouchableOpacity
-                                    style={[
-                                        styles.subModeButton,
-                                        formaPagoCobrar ===
-                                            'corriente' &&
-                                        styles.subModeButtonSelected,
-                                    ]}
-                                    onPress={() =>
-                                        setFormaPagoCobrar(
-                                            'corriente'
-                                        )
+                                    style={
+                                        styles.submitButton
+                                    }
+                                    onPress={
+                                        guardarCuentaPorCobrar
                                     }
                                 >
 
                                     <Text
-                                        style={[
-                                            styles.subModeText,
-                                            formaPagoCobrar ===
-                                                'corriente' &&
-                                            styles.subModeTextSelected,
-                                        ]}
+                                        style={
+                                            styles.submitButtonText
+                                        }
                                     >
-                                        Corriente
-                                    </Text>
-
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[
-                                        styles.subModeButton,
-                                        formaPagoCobrar ===
-                                            'diferido' &&
-                                        styles.subModeButtonSelected,
-                                    ]}
-                                    onPress={() =>
-                                        setFormaPagoCobrar(
-                                            'diferido'
-                                        )
-                                    }
-                                >
-
-                                    <Text
-                                        style={[
-                                            styles.subModeText,
-                                            formaPagoCobrar ===
-                                                'diferido' &&
-                                            styles.subModeTextSelected,
-                                        ]}
-                                    >
-                                        Diferido
+                                        💰 Registrar Préstamo
                                     </Text>
 
                                 </TouchableOpacity>
 
                             </View>
 
-                            {formaPagoCobrar ===
-                                'diferido' && (
-
-                                <>
-
-                                    <Text
-                                        style={
-                                            styles.inputLabel
-                                        }
-                                    >
-                                        Número de Cuotas
-                                    </Text>
-
-                                    <TextInput
-                                        style={
-                                            styles.input
-                                        }
-                                        placeholder="Ej. 6"
-                                        placeholderTextColor="#94A3B8"
-                                        keyboardType="numeric"
-                                        value={
-                                            cuotasCobrar
-                                        }
-                                        onChangeText={
-                                            setCuotasCobrar
-                                        }
-                                    />
-
-                                    <Text
-                                        style={
-                                            styles.inputLabel
-                                        }
-                                    >
-                                        Valor de la Cuota ($)
-                                    </Text>
-
-                                    <TextInput
-                                        style={
-                                            styles.input
-                                        }
-                                        placeholder="Ej. 50"
-                                        placeholderTextColor="#94A3B8"
-                                        keyboardType="numeric"
-                                        value={
-                                            valorCuotaCobrar
-                                        }
-                                        onChangeText={
-                                            setValorCuotaCobrar
-                                        }
-                                    />
-
-                                </>
-                            )}
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Fecha / Día de Pago
-                            </Text>
-
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. 15 de cada mes"
-                                placeholderTextColor="#94A3B8"
-                                value={
-                                    fechaMaxPago
-                                }
-                                onChangeText={
-                                    setFechaMaxPago
-                                }
-                            />
-
-                            <TouchableOpacity
-                                style={
-                                    styles.submitButton
-                                }
-                                onPress={
-                                    guardarCuentaPorCobrar
-                                }
-                            >
-
-                                <Text
-                                    style={
-                                        styles.submitButtonText
-                                    }
-                                >
-                                    💰 Registrar Préstamo
-                                </Text>
-
-                            </TouchableOpacity>
-
                         </View>
-
-                    </View>
-                )}
+                    )}
 
                 {/* ==================================================
                     DEUDAS GENERALES
@@ -3037,200 +2964,222 @@ export default function RegistroDeudasScreen({
 
                 {categoriaSeleccionada &&
                     categoriaSeleccionada !==
-                        'Tarjeta de Crédito' &&
+                    'Tarjeta de Crédito' &&
                     categoriaSeleccionada !==
-                        'Cuenta por Cobrar' && (
-
-                    <View
-                        style={
-                            styles.subFlowContainer
-                        }
-                    >
+                    'Cuenta por Cobrar' && (
 
                         <View
                             style={
-                                styles.sectionHeader
+                                styles.subFlowContainer
                             }
                         >
 
                             <View
                                 style={
-                                    styles.stepBadge
+                                    styles.sectionHeader
                                 }
                             >
 
-                                <Text
+                                <View
                                     style={
-                                        styles.stepBadgeText
+                                        styles.stepBadge
                                     }
                                 >
-                                    02
+
+                                    <Text
+                                        style={
+                                            styles.stepBadgeText
+                                        }
+                                    >
+                                        02
+                                    </Text>
+
+                                </View>
+
+                                <Text
+                                    style={
+                                        styles.sectionTitle
+                                    }
+                                >
+                                    Información de la Deuda
                                 </Text>
 
                             </View>
 
-                            <Text
+                            <View
                                 style={
-                                    styles.sectionTitle
-                                }
-                            >
-                                Información de la Deuda
-                            </Text>
-
-                        </View>
-
-                        <View
-                            style={
-                                styles.formCard
-                            }
-                        >
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Entidad o Acreedor
-                            </Text>
-
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. Banco, almacén, familiar"
-                                placeholderTextColor="#94A3B8"
-                                value={
-                                    subEntidad
-                                }
-                                onChangeText={
-                                    setSubEntidad
-                                }
-                            />
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Monto Total de la Deuda ($)
-                            </Text>
-
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. 2500"
-                                placeholderTextColor="#94A3B8"
-                                keyboardType="numeric"
-                                value={
-                                    monto
-                                }
-                                onChangeText={
-                                    setMonto
-                                }
-                            />
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Cuota Periódica
-                            </Text>
-
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. 120"
-                                placeholderTextColor="#94A3B8"
-                                keyboardType="numeric"
-                                value={
-                                    cuotaPagar
-                                }
-                                onChangeText={
-                                    setCuotaPagar
-                                }
-                            />
-
-                            {(categoriaSeleccionada ===
-                                'Préstamo Bancario' ||
-                                categoriaSeleccionada ===
-                                    'Casa Comercial') && (
-
-                                <>
-
-                                    <Text
-                                        style={
-                                            styles.inputLabel
-                                        }
-                                    >
-                                        Número Total de Cuotas
-                                    </Text>
-
-                                    <TextInput
-                                        style={
-                                            styles.input
-                                        }
-                                        placeholder="Ej. 24"
-                                        placeholderTextColor="#94A3B8"
-                                        keyboardType="numeric"
-                                        value={
-                                            numeroCuotas
-                                        }
-                                        onChangeText={
-                                            setNumeroCuotas
-                                        }
-                                    />
-
-                                </>
-                            )}
-
-                            <Text
-                                style={
-                                    styles.inputLabel
-                                }
-                            >
-                                Fecha Límite / Día de Pago
-                            </Text>
-
-                            <TextInput
-                                style={
-                                    styles.input
-                                }
-                                placeholder="Ej. 30 de cada mes"
-                                placeholderTextColor="#94A3B8"
-                                value={
-                                    fechaMaxPago
-                                }
-                                onChangeText={
-                                    setFechaMaxPago
-                                }
-                            />
-
-                            <TouchableOpacity
-                                style={
-                                    styles.submitButton
-                                }
-                                onPress={
-                                    guardarDeudaGeneral
+                                    styles.formCard
                                 }
                             >
 
                                 <Text
                                     style={
-                                        styles.submitButtonText
+                                        styles.inputLabel
                                     }
                                 >
-                                    💾 Guardar Obligación
+                                    Entidad o Acreedor
                                 </Text>
 
-                            </TouchableOpacity>
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. Banco, almacén, familiar"
+                                    placeholderTextColor="#94A3B8"
+                                    value={
+                                        subEntidad
+                                    }
+                                    onChangeText={
+                                        setSubEntidad
+                                    }
+                                />
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Monto Total de la Deuda ($)
+                                </Text>
+
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. 2500"
+                                    placeholderTextColor="#94A3B8"
+                                    keyboardType="numeric"
+                                    value={
+                                        monto
+                                    }
+                                    onChangeText={
+                                        setMonto
+                                    }
+                                />
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Cuota Periódica
+                                </Text>
+
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. 120"
+                                    placeholderTextColor="#94A3B8"
+                                    keyboardType="numeric"
+                                    value={
+                                        cuotaPagar
+                                    }
+                                    onChangeText={
+                                        setCuotaPagar
+                                    }
+                                />
+                                {(
+                                    categoriaSeleccionada === 'Préstamo Bancario' ||
+                                    categoriaSeleccionada === 'Casa Comercial'
+                                ) && (
+                                        <>
+                                            <Text
+                                                style={
+                                                    styles.inputLabel
+                                                }
+                                            >
+                                                Número Total de Cuotas
+                                            </Text>
+
+                                            <TextInput
+                                                style={
+                                                    styles.input
+                                                }
+                                                placeholder="Ej. 24"
+                                                placeholderTextColor="#94A3B8"
+                                                keyboardType="numeric"
+                                                value={
+                                                    numeroCuotas
+                                                }
+                                                onChangeText={
+                                                    setNumeroCuotas
+                                                }
+                                            />
+                                        </>
+                                    )}
+
+                                {categoriaSeleccionada === 'Casa Comercial' && (
+                                    <>
+                                        <Text
+                                            style={
+                                                styles.inputLabel
+                                            }
+                                        >
+                                            Cupo Disponible ($) - Opcional
+                                        </Text>
+
+                                        <TextInput
+                                            style={
+                                                styles.input
+                                            }
+                                            placeholder="Ej. 800"
+                                            placeholderTextColor="#94A3B8"
+                                            keyboardType="numeric"
+                                            value={
+                                                cupoDisponible
+                                            }
+                                            onChangeText={
+                                                setCupoDisponible
+                                            }
+                                        />
+                                    </>
+                                )}
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Fecha Límite / Día de Pago
+                                </Text>
+
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. 30 de cada mes"
+                                    placeholderTextColor="#94A3B8"
+                                    value={
+                                        fechaMaxPago
+                                    }
+                                    onChangeText={
+                                        setFechaMaxPago
+                                    }
+                                />
+
+                                <TouchableOpacity
+                                    style={
+                                        styles.submitButton
+                                    }
+                                    onPress={
+                                        guardarDeudaGeneral
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.submitButtonText
+                                        }
+                                    >
+                                        💾 Guardar Obligación
+                                    </Text>
+
+                                </TouchableOpacity>
+
+                            </View>
 
                         </View>
-
-                    </View>
-                )}
+                    )}
 
             </ScrollView>
 
@@ -3775,4 +3724,4 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 14,
     },
-});
+});    // nueva obligacion tarjetas bancos casa comercial planes

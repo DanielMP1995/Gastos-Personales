@@ -1,5 +1,5 @@
 import React from 'react';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'; // <-- Cambiado para soportar swipe en tabs
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +20,7 @@ import ConfigurarParejaScreen from '../config/ConfigurarParejaScreen';
 import RegistroGastosDetallados from '../screen/Registros/RegistroGastosDetallados';
 import CuentasYEfectivoScreen from '../screen/Cuentas/CuentasYEfectivoScreen';
 
-const Tab = createMaterialTopTabNavigator(); // <-- Usamos Top Tabs para permitir el gesto de swipe horizontal
+const Tab = createMaterialTopTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function MyTabs() {
@@ -28,19 +28,20 @@ function MyTabs() {
 
     return (
         <Tab.Navigator
-            tabBarPosition="bottom" // <-- Mantiene la barra de navegación en la parte inferior de la pantalla
+            tabBarPosition="bottom"
             screenOptions={({ route }) => ({
-                swipeEnabled: true, // <-- Permite deslizar de lado a lado para cambiar de pestaña
+                swipeEnabled: true,
                 tabBarStyle: {
                     backgroundColor: '#FFFFFF',
                     borderTopColor: '#E2E8F0',
                     elevation: 0,
-                    height: 60 + (insets.bottom > 0 ? insets.bottom : 10),
+                    // Aumentamos ligeramente la altura y el espacio superior para separar las letras de la línea
+                    height: 65 + (insets.bottom > 0 ? insets.bottom : 10),
                     paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
-                    paddingTop: 8,
+                    paddingTop: 12, // <-- Mayor separación para que la línea no tape el texto
                 },
                 tabBarIndicatorStyle: {
-                    backgroundColor: '#059669', // Línea o indicador activo arriba de los iconos
+                    backgroundColor: '#059669',
                     height: 3,
                 },
                 tabBarActiveTintColor: '#059669',
@@ -84,9 +85,9 @@ function MyStack() {
             initialRouteName="login" 
             screenOptions={{ 
                 headerShown: false,
-                gestureEnabled: true,          // Habilita el gesto de deslizar para volver atrás
-                fullScreenGestureEnabled: true, // Permite el gesto en toda la pantalla (muy útil en iOS/Android)
-                animation: 'slide_from_right',  // Transición fluida al cambiar de pantalla
+                gestureEnabled: true,
+                fullScreenGestureEnabled: true,
+                animation: 'slide_from_right',
             }}
         >
             <Stack.Screen name="login" component={LoginScreen} />

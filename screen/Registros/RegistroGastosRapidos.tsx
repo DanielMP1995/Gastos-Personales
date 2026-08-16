@@ -78,9 +78,9 @@ export default function RegistroGastosRapidos({
 
                 const lista = data
                     ? Object.keys(data).map((key) => ({
-                          id: key,
-                          ...data[key],
-                      }))
+                        id: key,
+                        ...data[key],
+                    }))
                     : [];
 
                 setCuentasFirebase(lista);
@@ -105,6 +105,9 @@ export default function RegistroGastosRapidos({
         { id: 'Farmacia', label: 'Farmacia', icon: 'medical-outline' },
         { id: 'Comida', label: 'Comida', icon: 'fast-food-outline' },
         { id: 'Transporte', label: 'Transporte', icon: 'car-outline' },
+        { id: 'Compras', label: 'Compras', icon: 'cart-outline' },
+        { id: 'Antojo', label: 'Antojo', icon: 'cafe-outline' },
+        { id: 'Otros', label: 'Otros', icon: 'ellipsis-horizontal-circle-outline' },
     ];
 
     // ============================================================

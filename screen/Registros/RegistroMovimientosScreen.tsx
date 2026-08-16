@@ -138,7 +138,7 @@ export default function RegistroMovimientosScreen({ navigation }: any) {
                     </View>
 
                     <View style={styles.cardContent}>
-                        <Text style={styles.cardTitle}>Gastos Fijos</Text>
+                        <Text style={styles.cardTitle}>Fijos</Text>
                         <Text style={styles.cardDesc}>
                             Gestiona servicios, arriendo, suscripciones y pagos recurrentes.
                         </Text>

@@ -9,13 +9,15 @@ import {
     Platform,
 } from 'react-native';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 import { auth, db } from '../../firebase/FirebaseConfig';
 
 import { ref, onValue } from 'firebase/database';
 
 import { Ionicons } from '@expo/vector-icons';
+
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function InicioScreen({ navigation }: any) {
     const usuarioActual = auth.currentUser;
@@ -88,356 +90,358 @@ export default function InicioScreen({ navigation }: any) {
     // CARGAR DATOS
     // ============================================================
 
-    useEffect(() => {
-        if (!idPareja) {
-            return;
-        }
+    useFocusEffect(
+        useCallback(() => {
+            if (!idPareja) {
+                return;
+            }
 
-        const movimientosRef = ref(
-            db,
-            `parejas/${idPareja}/movimientos`
-        );
+            const movimientosRef = ref(
+                db,
+                `parejas/${idPareja}/movimientos`
+            );
 
-        const ingresosRef = ref(
-            db,
-            `parejas/${idPareja}/ingresos`
-        );
+            const ingresosRef = ref(
+                db,
+                `parejas/${idPareja}/ingresos`
+            );
 
-        const deudasRef = ref(
-            db,
-            `parejas/${idPareja}/deudas`
-        );
+            const deudasRef = ref(
+                db,
+                `parejas/${idPareja}/deudas`
+            );
 
-        let movimientosData: any = null;
-        let ingresosData: any = null;
-        let deudasData: any = null;
+            let movimientosData: any = null;
+            let ingresosData: any = null;
+            let deudasData: any = null;
 
-        const procesarDatos = () => {
-            let listaMovimientos: any[] = [];
+            const procesarDatos = () => {
+                let listaMovimientos: any[] = [];
 
-            let ingresosAcc = 0;
-            let gastosAcc = 0;
-            let deudasAcc = 0;
+                let ingresosAcc = 0;
+                let gastosAcc = 0;
+                let deudasAcc = 0;
 
-            // ====================================================
-            // MOVIMIENTOS
-            // ====================================================
+                // ====================================================
+                // MOVIMIENTOS
+                // ====================================================
 
-            if (movimientosData) {
-                const listaMovimientosFirebase = Object.keys(
-                    movimientosData
-                ).map((key) => ({
-                    id: key,
-                    ...movimientosData[key],
-                }));
+                if (movimientosData) {
+                    const listaMovimientosFirebase = Object.keys(
+                        movimientosData
+                    ).map((key) => ({
+                        id: key,
+                        ...movimientosData[key],
+                    }));
 
-                listaMovimientosFirebase.forEach((item) => {
-                    const monto = Number(item.monto) || 0;
+                    listaMovimientosFirebase.forEach((item) => {
+                        const monto = Number(item.monto) || 0;
 
-                    if (item.tipo === 'ingreso') {
+                        if (item.tipo === 'ingreso') {
+                            ingresosAcc += monto;
+                        }
+
+                        if (
+                            item.tipo === 'gasto' ||
+                            item.tipo === 'gastos'
+                        ) {
+                            gastosAcc += monto;
+                        }
+                    });
+
+                    listaMovimientos = [
+                        ...listaMovimientos,
+                        ...listaMovimientosFirebase,
+                    ];
+                }
+
+                // ====================================================
+                // INGRESOS
+                // ====================================================
+
+                if (ingresosData) {
+                    const listaIngresos = Object.keys(
+                        ingresosData
+                    ).map((key) => ({
+                        id: `ingreso-${key}`,
+                        ...ingresosData[key],
+                        tipo: 'ingreso',
+                    }));
+
+                    listaIngresos.forEach((item) => {
+                        const monto = Number(item.monto) || 0;
+
                         ingresosAcc += monto;
-                    }
+                    });
 
-                    if (
-                        item.tipo === 'gasto' ||
-                        item.tipo === 'gastos'
-                    ) {
-                        gastosAcc += monto;
-                    }
-                });
+                    listaMovimientos = [
+                        ...listaMovimientos,
+                        ...listaIngresos,
+                    ];
+                }
 
-                listaMovimientos = [
-                    ...listaMovimientos,
-                    ...listaMovimientosFirebase,
-                ];
-            }
+                // ====================================================
+                // DEUDAS
+                // ====================================================
 
-            // ====================================================
-            // INGRESOS
-            // ====================================================
+                if (deudasData) {
+                    const listaDeudas = Object.keys(
+                        deudasData
+                    ).map((key) => {
+                        const deuda = deudasData[key];
 
-            if (ingresosData) {
-                const listaIngresos = Object.keys(
-                    ingresosData
-                ).map((key) => ({
-                    id: `ingreso-${key}`,
-                    ...ingresosData[key],
-                    tipo: 'ingreso',
-                }));
+                        // =================================================
+                        // TARJETA REGISTRADA
+                        // NO ES DEUDA
+                        // =================================================
 
-                listaIngresos.forEach((item) => {
-                    const monto = Number(item.monto) || 0;
-
-                    ingresosAcc += monto;
-                });
-
-                listaMovimientos = [
-                    ...listaMovimientos,
-                    ...listaIngresos,
-                ];
-            }
-
-            // ====================================================
-            // DEUDAS
-            // ====================================================
-
-            if (deudasData) {
-                const listaDeudas = Object.keys(
-                    deudasData
-                ).map((key) => {
-                    const deuda = deudasData[key];
-
-                    // =================================================
-                    // TARJETA REGISTRADA
-                    // NO ES DEUDA
-                    // =================================================
-
-                    if (deuda.tipo === 'tarjeta') {
-                        return {
-                            id: `tarjeta-${key}`,
-                            ...deuda,
-                            tipo: 'tarjeta',
-                            esTarjeta: true,
-                            esDeuda: false,
-                            monto: 0,
-                            descripcion:
-                                `${deuda.marcaTarjeta || 'Tarjeta'} - ${deuda.entidad || 'Banco'
-                                }`,
-                        };
-                    }
-
-                    // =================================================
-                    // CONSUMO TARJETA
-                    // SÍ ES DEUDA
-                    // =================================================
-
-                    if (deuda.tipo === 'consumoTarjeta') {
-                        const montoConsumo =
-                            Number(deuda.monto) || 0;
-
-                        deudasAcc += montoConsumo;
-
-                        return {
-                            id: `consumo-${key}`,
-                            ...deuda,
-                            tipo: 'consumoTarjeta',
-                            esTarjeta: true,
-                            esDeuda: true,
-                            monto: montoConsumo,
-                            descripcion:
-                                deuda.descripcion &&
-                                    deuda.descripcion !== 'N/A'
-                                    ? deuda.descripcion
-                                    : `Consumo ${deuda.tarjetaMarca ||
-                                    'Tarjeta'
-                                    } - ${deuda.tarjetaBanco || ''
+                        if (deuda.tipo === 'tarjeta') {
+                            return {
+                                id: `tarjeta-${key}`,
+                                ...deuda,
+                                tipo: 'tarjeta',
+                                esTarjeta: true,
+                                esDeuda: false,
+                                monto: 0,
+                                descripcion:
+                                    `${deuda.marcaTarjeta || 'Tarjeta'} - ${deuda.entidad || 'Banco'
                                     }`,
-                        };
-                    }
+                            };
+                        }
 
-                    // =================================================
-                    // DEUDA NORMAL
-                    // =================================================
+                        // =================================================
+                        // CONSUMO TARJETA
+                        // SÍ ES DEUDA
+                        // =================================================
 
-                    if (deuda.tipo === 'deuda') {
-                        const montoOriginal =
-                            Number(deuda.monto) || 0;
+                        if (deuda.tipo === 'consumoTarjeta') {
+                            const montoConsumo =
+                                Number(deuda.monto) || 0;
 
-                        const pagosAsociados =
-                            listaMovimientos.filter((mov) => {
-                                if (
-                                    mov.deudaId &&
-                                    mov.deudaId === key
-                                ) {
-                                    return true;
-                                }
+                            deudasAcc += montoConsumo;
 
-                                const descripcionMovimiento =
-                                    String(
-                                        mov.descripcion ||
-                                        mov.entidadDeuda ||
-                                        ''
-                                    ).toLowerCase();
+                            return {
+                                id: `consumo-${key}`,
+                                ...deuda,
+                                tipo: 'consumoTarjeta',
+                                esTarjeta: true,
+                                esDeuda: true,
+                                monto: montoConsumo,
+                                descripcion:
+                                    deuda.descripcion &&
+                                        deuda.descripcion !== 'N/A'
+                                        ? deuda.descripcion
+                                        : `Consumo ${deuda.tarjetaMarca ||
+                                        'Tarjeta'
+                                        } - ${deuda.tarjetaBanco || ''
+                                        }`,
+                            };
+                        }
 
-                                const entidadDeuda =
-                                    String(
-                                        deuda.entidad || ''
-                                    ).toLowerCase();
+                        // =================================================
+                        // DEUDA NORMAL
+                        // =================================================
 
-                                const categoriaMovimiento =
-                                    String(
-                                        mov.categoria || ''
-                                    ).toLowerCase();
+                        if (deuda.tipo === 'deuda') {
+                            const montoOriginal =
+                                Number(deuda.monto) || 0;
 
-                                const categoriaDeuda =
-                                    String(
-                                        deuda.categoria || ''
-                                    ).toLowerCase();
+                            const pagosAsociados =
+                                listaMovimientos.filter((mov) => {
+                                    if (
+                                        mov.deudaId &&
+                                        mov.deudaId === key
+                                    ) {
+                                        return true;
+                                    }
 
-                                const esPago =
-                                    String(
-                                        mov.tipo || ''
-                                    )
-                                        .toLowerCase()
-                                        .includes('pago');
+                                    const descripcionMovimiento =
+                                        String(
+                                            mov.descripcion ||
+                                            mov.entidadDeuda ||
+                                            ''
+                                        ).toLowerCase();
 
-                                return (
-                                    (
-                                        entidadDeuda &&
-                                        descripcionMovimiento.includes(
-                                            entidadDeuda
+                                    const entidadDeuda =
+                                        String(
+                                            deuda.entidad || ''
+                                        ).toLowerCase();
+
+                                    const categoriaMovimiento =
+                                        String(
+                                            mov.categoria || ''
+                                        ).toLowerCase();
+
+                                    const categoriaDeuda =
+                                        String(
+                                            deuda.categoria || ''
+                                        ).toLowerCase();
+
+                                    const esPago =
+                                        String(
+                                            mov.tipo || ''
                                         )
-                                    ) ||
-                                    (
-                                        categoriaDeuda &&
-                                        categoriaMovimiento ===
-                                        categoriaDeuda &&
-                                        esPago
-                                    )
-                                );
-                            });
+                                            .toLowerCase()
+                                            .includes('pago');
 
-                        const totalPagado =
-                            pagosAsociados.reduce(
-                                (total, movimiento) => {
                                     return (
-                                        total +
-                                        (Number(
-                                            movimiento.monto
-                                        ) || 0)
+                                        (
+                                            entidadDeuda &&
+                                            descripcionMovimiento.includes(
+                                                entidadDeuda
+                                            )
+                                        ) ||
+                                        (
+                                            categoriaDeuda &&
+                                            categoriaMovimiento ===
+                                            categoriaDeuda &&
+                                            esPago
+                                        )
                                     );
-                                },
-                                0
+                                });
+
+                            const totalPagado =
+                                pagosAsociados.reduce(
+                                    (total, movimiento) => {
+                                        return (
+                                            total +
+                                            (Number(
+                                                movimiento.monto
+                                            ) || 0)
+                                        );
+                                    },
+                                    0
+                                );
+
+                            const saldoPendiente = Math.max(
+                                0,
+                                montoOriginal - totalPagado
                             );
 
-                        const saldoPendiente = Math.max(
-                            0,
-                            montoOriginal - totalPagado
-                        );
+                            deudasAcc += saldoPendiente;
 
-                        deudasAcc += saldoPendiente;
+                            return {
+                                id: `deuda-${key}`,
+                                deudaId: key,
+                                ...deuda,
+                                tipo: 'deuda',
+                                esDeuda: true,
+                                esTarjeta: false,
+                                monto: saldoPendiente,
+                                montoRestante: saldoPendiente,
+                                descripcion:
+                                    deuda.descripcion ||
+                                    `${deuda.categoria || 'Deuda'} - ${deuda.entidad || ''
+                                    }`,
+                            };
+                        }
 
                         return {
-                            id: `deuda-${key}`,
-                            deudaId: key,
+                            id: `otro-${key}`,
                             ...deuda,
-                            tipo: 'deuda',
-                            esDeuda: true,
-                            esTarjeta: false,
-                            monto: saldoPendiente,
-                            montoRestante: saldoPendiente,
-                            descripcion:
-                                deuda.descripcion ||
-                                `${deuda.categoria || 'Deuda'} - ${deuda.entidad || ''
-                                }`,
+                            tipo: deuda.tipo || 'otro',
                         };
-                    }
+                    });
 
-                    return {
-                        id: `otro-${key}`,
-                        ...deuda,
-                        tipo: deuda.tipo || 'otro',
-                    };
+                    const deudasParaActividad =
+                        listaDeudas.filter(
+                            (item) =>
+                                item.tipo !== 'tarjeta'
+                        );
+
+                    listaMovimientos = [
+                        ...listaMovimientos,
+                        ...deudasParaActividad,
+                    ];
+                }
+
+                // ====================================================
+                // ORDENAR
+                // ====================================================
+
+                listaMovimientos.sort((a, b) => {
+                    const fechaA = new Date(
+                        a.fechaRegistro ||
+                        a.fecha ||
+                        a.createdAt ||
+                        0
+                    ).getTime();
+
+                    const fechaB = new Date(
+                        b.fechaRegistro ||
+                        b.fecha ||
+                        b.createdAt ||
+                        0
+                    ).getTime();
+
+                    return fechaB - fechaA;
                 });
 
-                const deudasParaActividad =
-                    listaDeudas.filter(
-                        (item) =>
-                            item.tipo !== 'tarjeta'
-                    );
+                // ====================================================
+                // ACTUALIZAR
+                // ====================================================
 
-                listaMovimientos = [
-                    ...listaMovimientos,
-                    ...deudasParaActividad,
-                ];
-            }
+                setTotalIngresos(ingresosAcc);
+                setTotalGastos(gastosAcc);
+                setTotalDeudas(deudasAcc);
+                setMovimientos(listaMovimientos);
 
-            // ====================================================
-            // ORDENAR
-            // ====================================================
+                setLoading(false);
+            };
 
-            listaMovimientos.sort((a, b) => {
-                const fechaA = new Date(
-                    a.fechaRegistro ||
-                    a.fecha ||
-                    a.createdAt ||
-                    0
-                ).getTime();
+            const unsubscribeMovimientos = onValue(
+                movimientosRef,
+                (snapshot) => {
+                    movimientosData = snapshot.val();
+                    procesarDatos();
+                }
+            );
 
-                const fechaB = new Date(
-                    b.fechaRegistro ||
-                    b.fecha ||
-                    b.createdAt ||
-                    0
-                ).getTime();
+            const unsubscribeIngresos = onValue(
+                ingresosRef,
+                (snapshot) => {
+                    ingresosData = snapshot.val();
+                    procesarDatos();
+                }
+            );
 
-                return fechaB - fechaA;
-            });
+            const unsubscribeDeudas = onValue(
+                deudasRef,
+                (snapshot) => {
+                    deudasData = snapshot.val();
+                    procesarDatos();
+                }
+            );
 
-            // ====================================================
-            // ACTUALIZAR
-            // ====================================================
+            const cuentasRef = ref(
+                db,
+                `parejas/${idPareja}/cuentas`
+            );
 
-            setTotalIngresos(ingresosAcc);
-            setTotalGastos(gastosAcc);
-            setTotalDeudas(deudasAcc);
-            setMovimientos(listaMovimientos);
+            const unsubscribeCuentas = onValue(
+                cuentasRef,
+                (snapshot) => {
+                    const data = snapshot.val();
 
-            setLoading(false);
-        };
+                    const lista = data
+                        ? Object.keys(data).map((key) => ({
+                            id: key,
+                            ...data[key],
+                        }))
+                        : [];
 
-        const unsubscribeMovimientos = onValue(
-            movimientosRef,
-            (snapshot) => {
-                movimientosData = snapshot.val();
-                procesarDatos();
-            }
-        );
+                    setCuentas(lista);
+                }
+            );
 
-        const unsubscribeIngresos = onValue(
-            ingresosRef,
-            (snapshot) => {
-                ingresosData = snapshot.val();
-                procesarDatos();
-            }
-        );
-
-        const unsubscribeDeudas = onValue(
-            deudasRef,
-            (snapshot) => {
-                deudasData = snapshot.val();
-                procesarDatos();
-            }
-        );
-
-        const cuentasRef = ref(
-            db,
-            `parejas/${idPareja}/cuentas`
-        );
-
-        const unsubscribeCuentas = onValue(
-            cuentasRef,
-            (snapshot) => {
-                const data = snapshot.val();
-
-                const lista = data
-                    ? Object.keys(data).map((key) => ({
-                        id: key,
-                        ...data[key],
-                    }))
-                    : [];
-
-                setCuentas(lista);
-            }
-        );
-
-        return () => {
-            unsubscribeMovimientos();
-            unsubscribeIngresos();
-            unsubscribeDeudas();
-            unsubscribeCuentas();
-        };
-    }, [idPareja]);
+            return () => {
+                unsubscribeMovimientos();
+                unsubscribeIngresos();
+                unsubscribeDeudas();
+                unsubscribeCuentas();
+            };
+        }, [idPareja])
+    );
 
     // ============================================================
     // BALANCE
