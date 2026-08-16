@@ -1,8 +1,9 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'; // <-- Cambiado para soportar swipe en tabs
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'; // <-- 1. IMPORTAMOS
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LoginScreen from '../screen/Login/LoginScreen';
 import InicioScreen from '../screen/Inicio/InicioScreen';
@@ -19,31 +20,37 @@ import ConfigurarParejaScreen from '../config/ConfigurarParejaScreen';
 import RegistroGastosDetallados from '../screen/Registros/RegistroGastosDetallados';
 import CuentasYEfectivoScreen from '../screen/Cuentas/CuentasYEfectivoScreen';
 
-const Tab = createBottomTabNavigator();
+const Tab = createMaterialTopTabNavigator(); // <-- Usamos Top Tabs para permitir el gesto de swipe horizontal
 const Stack = createNativeStackNavigator();
 
 function MyTabs() {
-    const insets = useSafeAreaInsets(); // <-- 2. OBTENEMOS LOS INSETS DEL DISPOSITIVO
+    const insets = useSafeAreaInsets();
 
     return (
         <Tab.Navigator
+            tabBarPosition="bottom" // <-- Mantiene la barra de navegación en la parte inferior de la pantalla
             screenOptions={({ route }) => ({
-                headerShown: false,
+                swipeEnabled: true, // <-- Permite deslizar de lado a lado para cambiar de pestaña
                 tabBarStyle: {
                     backgroundColor: '#FFFFFF',
                     borderTopColor: '#E2E8F0',
                     elevation: 0,
-                    height: 60 + insets.bottom, // <-- 3. SUMAMOS EL INSET INFERIOR A LA ALTURA
-                    paddingBottom: insets.bottom > 0 ? insets.bottom : 8, // <-- 4. RESPETAMOS EL MARGEN SEGURO
+                    height: 60 + (insets.bottom > 0 ? insets.bottom : 10),
+                    paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
                     paddingTop: 8,
+                },
+                tabBarIndicatorStyle: {
+                    backgroundColor: '#059669', // Línea o indicador activo arriba de los iconos
+                    height: 3,
                 },
                 tabBarActiveTintColor: '#059669',
                 tabBarInactiveTintColor: '#64748B',
                 tabBarLabelStyle: {
                     fontSize: 11,
                     fontWeight: '600',
+                    textTransform: 'none',
                 },
-                tabBarIcon: ({ focused, color, size }) => {
+                tabBarIcon: ({ focused, color }) => {
                     let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
 
                     if (route.name === 'Inicio') {
@@ -52,6 +59,8 @@ function MyTabs() {
                         iconName = focused ? 'add-circle' : 'add-circle-outline';
                     } else if (route.name === 'Reportes') {
                         iconName = focused ? 'bar-chart' : 'bar-chart-outline';
+                    } else if (route.name === 'Cuentas') {
+                        iconName = focused ? 'wallet' : 'wallet-outline';
                     } else if (route.name === 'Perfil') {
                         iconName = focused ? 'person' : 'person-outline';
                     }
@@ -71,7 +80,15 @@ function MyTabs() {
 
 function MyStack() {
     return (
-        <Stack.Navigator initialRouteName="login" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator 
+            initialRouteName="login" 
+            screenOptions={{ 
+                headerShown: false,
+                gestureEnabled: true,          // Habilita el gesto de deslizar para volver atrás
+                fullScreenGestureEnabled: true, // Permite el gesto en toda la pantalla (muy útil en iOS/Android)
+                animation: 'slide_from_right',  // Transición fluida al cambiar de pantalla
+            }}
+        >
             <Stack.Screen name="login" component={LoginScreen} />
             <Stack.Screen name="registro" component={RegistroScreen} />
             <Stack.Screen name="configurarPareja" component={ConfigurarParejaScreen} />
@@ -88,10 +105,10 @@ function MyStack() {
 
 export const Navegador = () => {
     return (
-        <SafeAreaProvider> {/* <-- 5. ENVOLVEMOS TODO CON EL PROVIDER */}
+        <SafeAreaProvider>
             <NavigationContainer>
                 <MyStack />
             </NavigationContainer>
         </SafeAreaProvider>
     );
-}
+};

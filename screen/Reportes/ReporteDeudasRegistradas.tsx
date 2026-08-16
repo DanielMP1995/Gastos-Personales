@@ -1441,7 +1441,7 @@ export default function ReporteDeudasRegistradas({
                             );
 
                         } catch (
-                            error: any
+                        error: any
                         ) {
 
                             Alert.alert(
@@ -1602,7 +1602,7 @@ export default function ReporteDeudasRegistradas({
                             );
 
                         } catch (
-                            error: any
+                        error: any
                         ) {
 
                             Alert.alert(
@@ -2157,24 +2157,20 @@ export default function ReporteDeudasRegistradas({
                 'deudas'
                 ? item.tipo ===
                     'tarjeta'
-                    ? `${item.entidad || 'Banco'} ${
-                        item.marcaTarjeta
-                            ? `(${item.marcaTarjeta})`
-                            : ''
+                    ? `${item.entidad || 'Banco'} ${item.marcaTarjeta
+                        ? `(${item.marcaTarjeta})`
+                        : ''
                     }`
                     : item.tipo ===
                         'consumoTarjeta'
-                        ? `${
-                            item.tarjetaBanco ||
-                            'Tarjeta'
-                        } ${
-                            item.tarjetaMarca
-                                ? `(${item.tarjetaMarca})`
-                                : ''
+                        ? `${item.tarjetaBanco ||
+                        'Tarjeta'
+                        } ${item.tarjetaMarca
+                            ? `(${item.tarjetaMarca})`
+                            : ''
                         }`
-                        : `${
-                            item.entidad ||
-                            'Deuda'
+                        : `${item.entidad ||
+                        'Deuda'
                         }`
                 : item.nombre ||
                 'Gasto Fijo';
@@ -2314,13 +2310,11 @@ export default function ReporteDeudasRegistradas({
                                     styles.infoBox
                                 }
                             >
-                                <Text
-                                    style={
-                                        styles.infoLabel
-                                    }
-                                >
+                                <Text style={styles.infoLabel}>
                                     Consumido
                                 </Text>
+
+
 
                                 <Text
                                     style={[
@@ -2610,8 +2604,8 @@ export default function ReporteDeudasRegistradas({
                     style={[
                         styles.tipoVistaBtn,
                         tipoVista ===
-                            'deudas' &&
-                            styles.tipoVistaBtnActive,
+                        'deudas' &&
+                        styles.tipoVistaBtnActive,
                     ]}
                     onPress={() => {
 
@@ -2643,8 +2637,8 @@ export default function ReporteDeudasRegistradas({
                         style={[
                             styles.tipoVistaText,
                             tipoVista ===
-                                'deudas' &&
-                                styles.tipoVistaTextActive,
+                            'deudas' &&
+                            styles.tipoVistaTextActive,
                         ]}
                     >
                         Deudas
@@ -2658,8 +2652,8 @@ export default function ReporteDeudasRegistradas({
                     style={[
                         styles.tipoVistaBtn,
                         tipoVista ===
-                            'fijos' &&
-                            styles.tipoVistaBtnActive,
+                        'fijos' &&
+                        styles.tipoVistaBtnActive,
                     ]}
                     onPress={() => {
 
@@ -2691,8 +2685,8 @@ export default function ReporteDeudasRegistradas({
                         style={[
                             styles.tipoVistaText,
                             tipoVista ===
-                                'fijos' &&
-                                styles.tipoVistaTextActive,
+                            'fijos' &&
+                            styles.tipoVistaTextActive,
                         ]}
                     >
                         Gastos Fijos
@@ -2706,8 +2700,8 @@ export default function ReporteDeudasRegistradas({
                     style={[
                         styles.tipoVistaBtn,
                         tipoVista ===
-                            'cuentas' &&
-                            styles.tipoVistaBtnActive,
+                        'cuentas' &&
+                        styles.tipoVistaBtnActive,
                     ]}
                     onPress={() => {
 
@@ -2739,8 +2733,8 @@ export default function ReporteDeudasRegistradas({
                         style={[
                             styles.tipoVistaText,
                             tipoVista ===
-                                'cuentas' &&
-                                styles.tipoVistaTextActive,
+                            'cuentas' &&
+                            styles.tipoVistaTextActive,
                         ]}
                     >
                         Cuentas
@@ -2754,8 +2748,8 @@ export default function ReporteDeudasRegistradas({
                     style={[
                         styles.tipoVistaBtn,
                         tipoVista ===
-                            'rapidos' &&
-                            styles.tipoVistaBtnActive,
+                        'rapidos' &&
+                        styles.tipoVistaBtnActive,
                     ]}
                     onPress={() => {
 
@@ -2787,8 +2781,8 @@ export default function ReporteDeudasRegistradas({
                         style={[
                             styles.tipoVistaText,
                             tipoVista ===
-                                'rapidos' &&
-                                styles.tipoVistaTextActive,
+                            'rapidos' &&
+                            styles.tipoVistaTextActive,
                         ]}
                     >
                         Gastos Rápidos
@@ -2824,8 +2818,8 @@ export default function ReporteDeudasRegistradas({
                         style={[
                             styles.filterChip,
                             categoriaFiltro ===
-                                cat &&
-                                styles.filterChipSelected,
+                            cat &&
+                            styles.filterChipSelected,
                         ]}
                         onPress={() =>
                             setCategoriaFiltro(
@@ -2838,8 +2832,8 @@ export default function ReporteDeudasRegistradas({
                             style={[
                                 styles.filterText,
                                 categoriaFiltro ===
-                                    cat &&
-                                    styles.filterTextSelected,
+                                cat &&
+                                styles.filterTextSelected,
                             ]}
                         >
                             {cat}
@@ -3061,8 +3055,8 @@ export default function ReporteDeudasRegistradas({
                                                         style={[
                                                             styles.modalCategoriaBtn,
                                                             nuevaCategoria ===
-                                                                cat.id &&
-                                                                styles.modalCategoriaActive,
+                                                            cat.id &&
+                                                            styles.modalCategoriaActive,
                                                         ]}
                                                         onPress={() =>
                                                             setNuevaCategoria(
@@ -3090,8 +3084,8 @@ export default function ReporteDeudasRegistradas({
                                                             style={[
                                                                 styles.modalCategoriaText,
                                                                 nuevaCategoria ===
-                                                                    cat.id &&
-                                                                    styles.modalCategoriaTextActive,
+                                                                cat.id &&
+                                                                styles.modalCategoriaTextActive,
                                                             ]}
                                                         >
                                                             {
@@ -3158,7 +3152,7 @@ export default function ReporteDeudasRegistradas({
                                 <>
                                     {
                                         tipoVista ===
-                                            'fijos' && (
+                                        'fijos' && (
 
                                             <>
                                                 <Text
@@ -3217,9 +3211,9 @@ export default function ReporteDeudasRegistradas({
 
                                     {
                                         tipoVista ===
-                                            'deudas' &&
-                                            itemSeleccionado?.tipo !==
-                                            'tarjeta' && (
+                                        'deudas' &&
+                                        itemSeleccionado?.tipo !==
+                                        'tarjeta' && (
 
                                             <>
 
