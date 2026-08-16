@@ -9,6 +9,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
+    Modal,
 } from 'react-native';
 
 import React, { useState, useEffect } from 'react';
@@ -43,13 +44,15 @@ export default function RegistroDeudasScreen({
 }: any) {
 
     // ========================================================
-    // CATEGORIA
+    // CATEGORIA Y MODAL UNIFICADO
     // ========================================================
 
     const [
         categoriaSeleccionada,
         setCategoriaSeleccionada,
     ] = useState<string | null>(null);
+
+    const [modalCuentasVisible, setModalCuentasVisible] = useState(false);
 
     // ========================================================
     // DEUDAS GENERALES
@@ -1689,8 +1692,6 @@ export default function RegistroDeudasScreen({
                         { id: 'Préstamo Bancario', label: 'Préstamo Bancario', icon: '🏦' },
                         { id: 'Casa Comercial', label: 'Casa Comercial', icon: '🏬' },
                         { id: 'Operadora Celular', label: 'Planes Celular', icon: '📱' },
-                        { id: 'Deuda Familiar', label: 'Cuentas por Pagar', icon: '💸' },
-                        { id: 'Cuenta por Cobrar', label: 'Cuentas por Cobrar', icon: '💰' },
                     ].map((item) => {
 
                         const selected =
@@ -1763,29 +1764,21 @@ export default function RegistroDeudasScreen({
                         );
                     })}
 
-
-
-                    {/* CUENTAS POR COBRAR */}
+                    {/* BOTÓN ANCHO UNIFICADO: CUENTAS POR PAGAR Y COBRAR */}
 
                     <TouchableOpacity
                         style={[
                             styles.categoryCardWide,
-                            categoriaSeleccionada ===
-                            'Cuenta por Cobrar' &&
+                            (categoriaSeleccionada === 'Deuda Familiar' || categoriaSeleccionada === 'Cuenta por Cobrar') &&
                             styles.categoryCardSelected,
                         ]}
-                        onPress={() =>
-                            seleccionarCategoria(
-                                'Cuenta por Cobrar'
-                            )
-                        }
+                        onPress={() => setModalCuentasVisible(true)}
                     >
 
                         <View
                             style={[
                                 styles.categoryIconBox,
-                                categoriaSeleccionada ===
-                                'Cuenta por Cobrar' &&
+                                (categoriaSeleccionada === 'Deuda Familiar' || categoriaSeleccionada === 'Cuenta por Cobrar') &&
                                 styles.categoryIconBoxSelected,
                             ]}
                         >
@@ -1795,22 +1788,21 @@ export default function RegistroDeudasScreen({
                                     styles.categoryEmoji
                                 }
                             >
-                                💵
+                                💸💰
                             </Text>
 
                         </View>
 
-                        <View>
+                        <View style={{ flex: 1 }}>
 
                             <Text
                                 style={[
                                     styles.categoryText,
-                                    categoriaSeleccionada ===
-                                    'Cuenta por Cobrar' &&
+                                    (categoriaSeleccionada === 'Deuda Familiar' || categoriaSeleccionada === 'Cuenta por Cobrar') &&
                                     styles.categoryTextSelected,
                                 ]}
                             >
-                                Cuentas por Cobrar
+                                Cuentas por Pagar y Cobrar
                             </Text>
 
                             <Text
@@ -1818,7 +1810,11 @@ export default function RegistroDeudasScreen({
                                     styles.categorySubText
                                 }
                             >
-                                Dinero que te deben
+                                {categoriaSeleccionada === 'Deuda Familiar'
+                                    ? 'Seleccionado: Cuentas por Pagar'
+                                    : categoriaSeleccionada === 'Cuenta por Cobrar'
+                                    ? 'Seleccionado: Cuentas por Cobrar'
+                                    : 'Gestiona el dinero que debes y te deben'}
                             </Text>
 
                         </View>
@@ -2959,7 +2955,7 @@ export default function RegistroDeudasScreen({
                     )}
 
                 {/* ==================================================
-                    DEUDAS GENERALES
+                    DEUDAS GENERALES (Cuentas por Pagar / Deuda Familiar)
                 ================================================== */}
 
                 {categoriaSeleccionada &&
@@ -3001,7 +2997,7 @@ export default function RegistroDeudasScreen({
                                         styles.sectionTitle
                                     }
                                 >
-                                    Información de la Deuda
+                                    {categoriaSeleccionada === 'Deuda Familiar' ? 'Cuentas por Pagar' : 'Información de la Deuda'}
                                 </Text>
 
                             </View>
@@ -3182,6 +3178,61 @@ export default function RegistroDeudasScreen({
                     )}
 
             </ScrollView>
+
+            {/* ==================================================
+                MODAL DE SELECCIÓN: CUENTAS POR PAGAR Y COBRAR
+            ================================================== */}
+            <Modal
+                visible={modalCuentasVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setModalCuentasVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        
+                        <Text style={styles.modalMainTitle}>
+                            Cuentas por Pagar y Cobrar
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.modalOptionCard}
+                            onPress={() => {
+                                setModalCuentasVisible(false);
+                                seleccionarCategoria('Deuda Familiar');
+                            }}
+                        >
+                            <Text style={styles.modalOptionEmoji}>💸</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.modalOptionTitle}>Cuentas por Pagar</Text>
+                                <Text style={styles.modalOptionSubtitle}>Dinero que tú debes</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.modalOptionCard}
+                            onPress={() => {
+                                setModalCuentasVisible(false);
+                                seleccionarCategoria('Cuenta por Cobrar');
+                            }}
+                        >
+                            <Text style={styles.modalOptionEmoji}>💰</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.modalOptionTitle}>Cuentas por Cobrar</Text>
+                                <Text style={styles.modalOptionSubtitle}>Dinero que te deben</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.modalCancelButton}
+                            onPress={() => setModalCuentasVisible(false)}
+                        >
+                            <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+
+                    </View>
+                </View>
+            </Modal>
 
         </KeyboardAvoidingView>
     );
@@ -3724,4 +3775,77 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 14,
     },
-});    // nueva obligacion tarjetas bancos casa comercial planes
+
+    // ========================================================
+    // ESTILOS DEL MODAL DE CUENTAS
+    // ========================================================
+
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+
+    modalContainer: {
+        width: '100%',
+        maxWidth: 380,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
+        padding: 22,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        elevation: 5,
+    },
+
+    modalMainTitle: {
+        color: '#1E293B',
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 18,
+    },
+
+    modalOptionCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 12,
+    },
+
+    modalOptionEmoji: {
+        fontSize: 24,
+        marginRight: 14,
+    },
+
+    modalOptionTitle: {
+        color: '#1E293B',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+
+    modalOptionSubtitle: {
+        color: '#64748B',
+        fontSize: 11,
+        marginTop: 2,
+    },
+
+    modalCancelButton: {
+        backgroundColor: '#F1F5F9',
+        borderRadius: 14,
+        paddingVertical: 14,
+        alignItems: 'center',
+        marginTop: 6,
+    },
+
+    modalCancelButtonText: {
+        color: '#475569',
+        fontWeight: 'bold',
+        fontSize: 13,
+    },
+});
