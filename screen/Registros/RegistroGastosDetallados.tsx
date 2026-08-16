@@ -198,36 +198,16 @@ export default function RegistroGastosDetallados({
             });
         }
     }, [usuarioActual]);
+    const deudasConSaldo = deudasFirebase
+        .filter((deuda) => deuda.tipo !== 'tarjeta')
+        .map((deuda) => {
+            const esConsumoTarjeta =
+                deuda.tipo === 'consumoTarjeta';
 
-    const deudasConSaldo = deudasFirebase.map(
-        (deuda) => {
             const pagosAsociados =
-                movimientosFirebase.filter((mov) => {
-                    if (
-                        mov.deudaId &&
-                        mov.deudaId === deuda.id
-                    )
-                        return true;
-
-                    const desc = (
-                        mov.descripcion || ''
-                    ).toLowerCase();
-
-                    const ent = (
-                        deuda.entidad || ''
-                    ).toLowerCase();
-
-                    const cat = (
-                        deuda.categoria || ''
-                    ).toLowerCase();
-
-                    return (
-                        (ent && desc.includes(ent)) ||
-                        (cat &&
-                            desc.includes(cat) &&
-                            mov.tipo === 'gasto')
-                    );
-                });
+                movimientosFirebase.filter(
+                    (mov) => mov.deudaId === deuda.id
+                );
 
             const totalPagado =
                 pagosAsociados.reduce(
@@ -244,13 +224,40 @@ export default function RegistroGastosDetallados({
                 montoOriginal - totalPagado
             );
 
+            let nombreEntidad =
+                deuda.entidad ||
+                deuda.nombre ||
+                '';
+
+            if (esConsumoTarjeta) {
+                const tarjeta = deudasFirebase.find(
+                    (t) =>
+                        t.tipo === 'tarjeta' &&
+                        t.id === deuda.tarjetaId
+                );
+
+                const banco =
+                    deuda.tarjetaBanco ||
+                    tarjeta?.entidad ||
+                    'Banco';
+
+                const marca =
+                    deuda.tarjetaMarca ||
+                    tarjeta?.marcaTarjeta ||
+                    'Tarjeta';
+
+                nombreEntidad =
+                    `${banco} - ${marca}`;
+            }
+
             return {
                 ...deuda,
+                nombreEntidad,
                 saldoRestante,
+                totalPagado,
+                esConsumoTarjeta,
             };
-        }
-    );
-
+        });
     const deudasFiltradas = deudasConSaldo.filter(
         (deuda) => {
             const catBD = (
@@ -263,19 +270,24 @@ export default function RegistroGastosDetallados({
                 .trim()
                 .toLowerCase();
 
-            return catBD === catActual;
+            return (
+                deuda.saldoRestante > 0 &&
+                catBD === catActual
+            );
         }
     );
 
-    const fijosFiltrados = gastosFijosFirebase.filter(
-        (gasto) => {
-            const catBD = (
+    const fijosFiltrados =
+        gastosFijosFirebase.filter((gasto) => {
+            const catBD = String(
                 gasto.categoria || ''
             )
                 .trim()
                 .toLowerCase();
 
-            const catActual = subCategoria
+            const catActual = String(
+                subCategoria || ''
+            )
                 .trim()
                 .toLowerCase();
 
@@ -288,9 +300,7 @@ export default function RegistroGastosDetallados({
             }
 
             return catBD === catActual;
-        }
-    );
-
+        });
     function guardarPagoDetallado() {
         const montoNum = parseFloat(montoPagar);
 
@@ -392,8 +402,8 @@ export default function RegistroGastosDetallados({
                             : '';
 
                     nombreConcepto = `Pago Deuda (${subCategoria})${nombreEntidad
-                            ? ' - ' + nombreEntidad
-                            : ''
+                        ? ' - ' + nombreEntidad
+                        : ''
                         }`;
 
                     datosMovimiento.deudaId =
@@ -674,6 +684,7 @@ export default function RegistroGastosDetallados({
                 </ScrollView>
 
                 {/* Lista de Deudas o Fijos */}
+
                 {tipoGasto === 'deuda' && (
                     <View style={styles.seccionDeudasBox}>
                         <Text style={styles.labelBox}>
@@ -686,115 +697,97 @@ export default function RegistroGastosDetallados({
                                 bajo esta categoría exacta.
                             </Text>
                         ) : (
-                            deudasFiltradas.map(
-                                (deuda) => {
-                                    const nombreEntidad =
-                                        deuda.entidad ||
-                                        deuda.nombre ||
-                                        'Deuda sin nombre';
+                            deudasFiltradas.map((deuda) => {
+                                const nombreEntidad =
+                                    deuda.nombreEntidad ||
+                                    deuda.entidad ||
+                                    deuda.nombre ||
+                                    'Deuda sin nombre';
 
-                                    const valorCuota =
-                                        deuda.cuotaPagar ||
-                                        0;
+                                const valorCuota =
+                                    Number(deuda.cuotaPagar) ||
+                                    Number(deuda.valorCuota) ||
+                                    0;
 
-                                    const totalCuotas =
-                                        deuda.numeroCuotas ||
-                                        1;
+                                const saldoTotalRestante =
+                                    Number(deuda.saldoRestante) || 0;
 
-                                    const saldoTotalRestante =
-                                        deuda.saldoRestante;
+                                const totalCuotas =
+                                    deuda.numeroCuotas || 1;
 
-                                    const isSelected =
-                                        deudaSeleccionada?.id ===
-                                        deuda.id;
+                                const isSelected =
+                                    deudaSeleccionada?.id === deuda.id;
 
-                                    return (
-                                        <TouchableOpacity
-                                            key={deuda.id}
-                                            style={[
-                                                styles.deudaItemCard,
-                                                isSelected &&
-                                                styles
-                                                    .deudaCardActive,
-                                            ]}
-                                            onPress={() => {
-                                                setDeudaSeleccionada(
-                                                    deuda
+                                return (
+                                    <TouchableOpacity
+                                        key={deuda.id}
+                                        style={[
+                                            styles.deudaItemCard,
+                                            isSelected &&
+                                            styles.deudaCardActive,
+                                        ]}
+                                        onPress={() => {
+                                            setDeudaSeleccionada(deuda);
+
+                                            if (valorCuota) {
+                                                setMontoPagar(
+                                                    valorCuota.toString()
                                                 );
-                                                if (
-                                                    valorCuota
-                                                )
-                                                    setMontoPagar(
-                                                        valorCuota.toString()
-                                                    );
-                                            }}
-                                            activeOpacity={
-                                                0.8
                                             }
-                                        >
-                                            <View
-                                                style={{
-                                                    flex: 1,
-                                                }}
-                                            >
-                                                <Text
-                                                    style={
-                                                        styles.deudaNombre
-                                                    }
-                                                >
-                                                    {
-                                                        nombreEntidad
-                                                    }
-                                                </Text>
-                                                <Text
-                                                    style={
-                                                        styles.deudaMonto
-                                                    }
-                                                >
-                                                    Cuota:
-                                                    ${
-                                                        valorCuota
-                                                    }{' '}
-                                                    (
-                                                    {
-                                                        totalCuotas
-                                                    }{' '}
-                                                    cuotas)
-                                                </Text>
-                                                <Text
-                                                    style={
-                                                        styles
-                                                            .deudaTotalRestante
-                                                    }
-                                                >
-                                                    Total a
-                                                    deber: $
-                                                    {saldoTotalRestante.toFixed(
-                                                        2
-                                                    )}
-                                                </Text>
-                                            </View>
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.deudaNombre}>
+                                                {nombreEntidad}
+                                            </Text>
 
-                                            {isSelected && (
-                                                <Ionicons
-                                                    name="checkmark-circle"
-                                                    size={22}
-                                                    color="#059669"
-                                                />
+                                            {deuda.esConsumoTarjeta && (
+                                                <Text style={styles.deudaMonto}>
+                                                    Consumido: $
+                                                    {Number(
+                                                        deuda.monto || 0
+                                                    ).toFixed(2)}
+                                                </Text>
                                             )}
-                                        </TouchableOpacity>
-                                    );
-                                }
-                            )
+
+                                            <Text style={styles.deudaMonto}>
+                                                Cuota: $
+                                                {valorCuota.toFixed(2)} (
+                                                {totalCuotas} cuotas)
+                                            </Text>
+
+                                            <Text
+                                                style={
+                                                    styles.deudaTotalRestante
+                                                }
+                                            >
+                                                Total a deber: $
+                                                {saldoTotalRestante.toFixed(2)}
+                                            </Text>
+                                        </View>
+
+                                        {isSelected && (
+                                            <Ionicons
+                                                name="checkmark-circle"
+                                                size={22}
+                                                color="#059669"
+                                            />
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })
                         )}
                     </View>
                 )}
 
+
+
+
                 {tipoGasto === 'fijo' && (
                     <View style={styles.seccionDeudasBox}>
                         <Text style={styles.labelBox}>
-                            Servicios fijos en "
-                            {subCategoria}":
+                            Servicios fijos en "{subCategoria}":
                         </Text>
 
                         {fijosFiltrados.length === 0 ? (
@@ -805,11 +798,11 @@ export default function RegistroGastosDetallados({
                         ) : (
                             fijosFiltrados.map((gasto) => {
                                 const isSelected =
-                                    gastoFijoSeleccionado?.id ===
-                                    gasto.id;
+                                    gastoFijoSeleccionado?.id === gasto.id;
+
                                 const montoVal =
-                                    gasto.monto ||
-                                    gasto.montoEstimado ||
+                                    Number(gasto.monto) ||
+                                    Number(gasto.montoEstimado) ||
                                     0;
 
                                 return (
@@ -818,44 +811,32 @@ export default function RegistroGastosDetallados({
                                         style={[
                                             styles.deudaItemCard,
                                             isSelected &&
-                                            styles
-                                                .deudaCardActive,
+                                            styles.deudaCardActive,
                                         ]}
                                         onPress={() => {
-                                            setGastoFijoSeleccionado(
-                                                gasto
-                                            );
-                                            if (
-                                                montoVal
-                                            )
+                                            setGastoFijoSeleccionado(gasto);
+
+                                            if (montoVal) {
                                                 setMontoPagar(
                                                     montoVal.toString()
                                                 );
+                                            }
                                         }}
-                                        activeOpacity={
-                                            0.8
-                                        }
+                                        activeOpacity={0.8}
                                     >
-                                        <View
-                                            style={{
-                                                flex: 1,
-                                            }}
-                                        >
+                                        <View style={{ flex: 1 }}>
                                             <Text
-                                                style={
-                                                    styles.deudaNombre
-                                                }
+                                                style={styles.deudaNombre}
                                             >
                                                 {gasto.nombre ||
                                                     'Servicio sin nombre'}
                                             </Text>
+
                                             <Text
-                                                style={
-                                                    styles.deudaMonto
-                                                }
+                                                style={styles.deudaMonto}
                                             >
                                                 Monto: $
-                                                {montoVal}
+                                                {montoVal.toFixed(2)}
                                             </Text>
                                         </View>
 
