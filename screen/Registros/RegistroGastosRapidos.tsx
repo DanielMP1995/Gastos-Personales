@@ -8,6 +8,8 @@ import {
     TextInput,
 } from 'react-native';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import React, { useState, useEffect } from 'react';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -279,199 +281,68 @@ export default function RegistroGastosRapidos({
     // ============================================================
 
     return (
-        <View style={styles.rootContainer}>
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.container}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-            >
-                {/* HEADER */}
-                <View style={styles.topHeader}>
-                    <TouchableOpacity
-                        style={styles.backButtonTop}
-                        onPress={() => navigation.goBack()}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="arrow-back" size={20} color="#059669" />
-                    </TouchableOpacity>
-                    <Text style={styles.topHeaderTitle}>Gasto Rápido</Text>
-                    <View style={{ width: 40 }} />
-                </View>
-
-                {/* HERO CARD */}
-                <View style={styles.heroCard}>
-                    <View style={styles.heroIconContainer}>
-                        <Ionicons name="flash" size={22} color="#059669" />
-                    </View>
-                    <View style={styles.heroTextContainer}>
-                        <Text style={styles.smallTitle}>REGISTRO VELOZ</Text>
-                        <Text style={styles.titulo}>Gastos al Instante</Text>
-                        <Text style={styles.subtitulo}>
-                            Anota compras menores en pocos segundos
-                        </Text>
-                    </View>
-                </View>
-
-                {/* PASO 1: CATEGORÍA */}
-                <View style={styles.sectionHeader}>
-                    <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>01</Text>
-                    </View>
-                    <Text style={styles.sectionTitle}>Selecciona la Categoría</Text>
-                </View>
-
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <View style={styles.rootContainer}>
                 <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.row}
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.container}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    {categorias.map((cat) => {
-                        const isSelected = categoria === cat.id;
-                        return (
-                            <TouchableOpacity
-                                key={cat.id}
-                                style={[
-                                    styles.catBtn,
-                                    isSelected && styles.catActive,
-                                ]}
-                                onPress={() => setCategoria(cat.id)}
-                                activeOpacity={0.8}
-                            >
-                                <Ionicons
-                                    name={cat.icon as any}
-                                    size={16}
-                                    color={isSelected ? '#FFFFFF' : '#059669'}
-                                    style={{ marginRight: 6 }}
-                                />
-                                <Text
-                                    style={[
-                                        styles.catText,
-                                        isSelected && styles.catTextActive,
-                                    ]}
-                                >
-                                    {cat.label}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
-
-                {/* PASO 2: MONTO (1 al 10) */}
-                <View style={styles.sectionHeader}>
-                    <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>02</Text>
+                    {/* HEADER */}
+                    <View style={styles.topHeader}>
+                        <TouchableOpacity
+                            style={styles.backButtonTop}
+                            onPress={() => navigation.goBack()}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="arrow-back" size={20} color="#059669" />
+                        </TouchableOpacity>
+                        <Text style={styles.topHeaderTitle}>Gasto Rápido</Text>
+                        <View style={{ width: 40 }} />
                     </View>
-                    <Text style={styles.sectionTitle}>Selecciona o Escribe el Monto</Text>
-                </View>
 
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.row}
-                >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => {
-                        const isSelected = monto === val.toString();
-                        return (
-                            <TouchableOpacity
-                                key={val}
-                                style={[
-                                    styles.montoBtn,
-                                    isSelected && styles.montoActive,
-                                ]}
-                                onPress={() => setMonto(val.toString())}
-                                activeOpacity={0.8}
-                            >
-                                <Text
-                                    style={[
-                                        styles.montoText,
-                                        isSelected && styles.montoTextActive,
-                                    ]}
-                                >
-                                    ${val}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
-
-                <View style={styles.inputWrapper}>
-                    <Text style={styles.currency}>$</Text>
-                    <TextInput
-                        style={styles.inputMontoCustom}
-                        placeholder="Otro monto..."
-                        placeholderTextColor="#94A3B8"
-                        keyboardType="numeric"
-                        value={monto}
-                        onChangeText={setMonto}
-                    />
-                </View>
-
-                {/* PASO 3: MOTIVO */}
-                <View style={styles.sectionHeader}>
-                    <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>03</Text>
+                    {/* HERO CARD */}
+                    <View style={styles.heroCard}>
+                        <View style={styles.heroIconContainer}>
+                            <Ionicons name="flash" size={22} color="#059669" />
+                        </View>
+                        <View style={styles.heroTextContainer}>
+                            <Text style={styles.smallTitle}>REGISTRO VELOZ</Text>
+                            <Text style={styles.titulo}>Gastos al Instante</Text>
+                            <Text style={styles.subtitulo}>
+                                Anota compras menores en pocos segundos
+                            </Text>
+                        </View>
                     </View>
-                    <Text style={styles.sectionTitle}>Detalle Opcional</Text>
-                </View>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ej. Pan, pasaje, café..."
-                    placeholderTextColor="#94A3B8"
-                    value={motivo}
-                    onChangeText={setMotivo}
-                />
-
-                {/* PASO 4: CUENTA DE ORIGEN */}
-                <View style={styles.sectionHeader}>
-                    <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>04</Text>
+                    {/* PASO 1: CATEGORÍA */}
+                    <View style={styles.sectionHeader}>
+                        <View style={styles.stepBadge}>
+                            <Text style={styles.stepBadgeText}>01</Text>
+                        </View>
+                        <Text style={styles.sectionTitle}>Selecciona la Categoría</Text>
                     </View>
-                    <Text style={styles.sectionTitle}>¿De qué cuenta sale?</Text>
-                </View>
 
-                {cuentasFirebase.length === 0 ? (
-                    <TouchableOpacity
-                        style={styles.avisoSinCuentas}
-                        onPress={() =>
-                            navigation.navigate('tabs', { screen: 'Cuentas' })
-                        }
-                    >
-                        <Ionicons
-                            name="alert-circle-outline"
-                            size={16}
-                            color="#B85C5C"
-                        />
-                        <Text style={styles.avisoSinCuentasText}>
-                            No tienes cuentas creadas. Toca aquí para crear una
-                            (banco o efectivo).
-                        </Text>
-                    </TouchableOpacity>
-                ) : (
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.row}
                     >
-                        {cuentasFirebase.map((cuenta) => {
-                            const isSelected = cuentaOrigenId === cuenta.id;
+                        {categorias.map((cat) => {
+                            const isSelected = categoria === cat.id;
                             return (
                                 <TouchableOpacity
-                                    key={cuenta.id}
+                                    key={cat.id}
                                     style={[
                                         styles.catBtn,
                                         isSelected && styles.catActive,
                                     ]}
-                                    onPress={() => setCuentaOrigenId(cuenta.id)}
+                                    onPress={() => setCategoria(cat.id)}
                                     activeOpacity={0.8}
                                 >
                                     <Ionicons
-                                        name={
-                                            cuenta.tipo === 'efectivo'
-                                                ? 'cash-outline'
-                                                : 'card-outline'
-                                        }
+                                        name={cat.icon as any}
                                         size={16}
                                         color={isSelected ? '#FFFFFF' : '#059669'}
                                         style={{ marginRight: 6 }}
@@ -482,67 +353,200 @@ export default function RegistroGastosRapidos({
                                             isSelected && styles.catTextActive,
                                         ]}
                                     >
-                                        {cuenta.nombre} · $
-                                        {Number(cuenta.saldo || 0).toFixed(2)}
+                                        {cat.label}
                                     </Text>
                                 </TouchableOpacity>
                             );
                         })}
                     </ScrollView>
-                )}
 
-                {/* RESUMEN DINÁMICO */}
-                {parseFloat(monto) > 0 && (
-                    <View style={styles.resumenCard}>
-                        <Text style={styles.resumenTitulo}>Resumen del Gasto</Text>
-                        <View style={styles.resumenFila}>
-                            <Text style={styles.resumenLabel}>Categoría</Text>
-                            <Text style={styles.resumenValor}>{categoria}</Text>
+                    {/* PASO 2: MONTO (1 al 10) */}
+                    <View style={styles.sectionHeader}>
+                        <View style={styles.stepBadge}>
+                            <Text style={styles.stepBadgeText}>02</Text>
                         </View>
-                        <View style={styles.resumenFila}>
-                            <Text style={styles.resumenLabel}>Monto</Text>
-                            <Text style={styles.resumenMonto}>
-                                ${parseFloat(monto).toFixed(2)}
-                            </Text>
-                        </View>
-                        {motivo.trim() !== '' && (
-                            <View style={styles.resumenFila}>
-                                <Text style={styles.resumenLabel}>Motivo</Text>
-                                <Text style={styles.resumenValor}>{motivo.trim()}</Text>
-                            </View>
-                        )}
+                        <Text style={styles.sectionTitle}>Selecciona o Escribe el Monto</Text>
                     </View>
-                )}
 
-                {/* ACCIONES */}
-                <TouchableOpacity
-                    style={styles.btnGuardar}
-                    onPress={guardarGasto}
-                    activeOpacity={0.85}
-                >
-                    <Ionicons
-                        name="checkmark-circle-outline"
-                        size={18}
-                        color="#FFFFFF"
-                        style={{ marginRight: 6 }}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.row}
+                    >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => {
+                            const isSelected = monto === val.toString();
+                            return (
+                                <TouchableOpacity
+                                    key={val}
+                                    style={[
+                                        styles.montoBtn,
+                                        isSelected && styles.montoActive,
+                                    ]}
+                                    onPress={() => setMonto(val.toString())}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.montoText,
+                                            isSelected && styles.montoTextActive,
+                                        ]}
+                                    >
+                                        ${val}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+
+                    <View style={styles.inputWrapper}>
+                        <Text style={styles.currency}>$</Text>
+                        <TextInput
+                            style={styles.inputMontoCustom}
+                            placeholder="Otro monto..."
+                            placeholderTextColor="#94A3B8"
+                            keyboardType="numeric"
+                            value={monto}
+                            onChangeText={setMonto}
+                        />
+                    </View>
+
+                    {/* PASO 3: MOTIVO */}
+                    <View style={styles.sectionHeader}>
+                        <View style={styles.stepBadge}>
+                            <Text style={styles.stepBadgeText}>03</Text>
+                        </View>
+                        <Text style={styles.sectionTitle}>Detalle Opcional</Text>
+                    </View>
+
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ej. Pan, pasaje, café..."
+                        placeholderTextColor="#94A3B8"
+                        value={motivo}
+                        onChangeText={setMotivo}
                     />
-                    <Text style={styles.btnGuardarText}>
-                        Registrar Gasto Rápido
-                    </Text>
-                </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.btnVolver}
-                    onPress={() => navigation.goBack()}
-                    activeOpacity={0.85}
-                >
-                    <Text style={styles.btnVolverText}>
-                        Cancelar / Volver
-                    </Text>
-                </TouchableOpacity>
+                    {/* PASO 4: CUENTA DE ORIGEN */}
+                    <View style={styles.sectionHeader}>
+                        <View style={styles.stepBadge}>
+                            <Text style={styles.stepBadgeText}>04</Text>
+                        </View>
+                        <Text style={styles.sectionTitle}>¿De qué cuenta sale?</Text>
+                    </View>
 
-            </ScrollView>
-        </View>
+                    {cuentasFirebase.length === 0 ? (
+                        <TouchableOpacity
+                            style={styles.avisoSinCuentas}
+                            onPress={() =>
+                                navigation.navigate('tabs', { screen: 'Cuentas' })
+                            }
+                        >
+                            <Ionicons
+                                name="alert-circle-outline"
+                                size={16}
+                                color="#B85C5C"
+                            />
+                            <Text style={styles.avisoSinCuentasText}>
+                                No tienes cuentas creadas. Toca aquí para crear una
+                                (banco o efectivo).
+                            </Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.row}
+                        >
+                            {cuentasFirebase.map((cuenta) => {
+                                const isSelected = cuentaOrigenId === cuenta.id;
+                                return (
+                                    <TouchableOpacity
+                                        key={cuenta.id}
+                                        style={[
+                                            styles.catBtn,
+                                            isSelected && styles.catActive,
+                                        ]}
+                                        onPress={() => setCuentaOrigenId(cuenta.id)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons
+                                            name={
+                                                cuenta.tipo === 'efectivo'
+                                                    ? 'cash-outline'
+                                                    : 'card-outline'
+                                            }
+                                            size={16}
+                                            color={isSelected ? '#FFFFFF' : '#059669'}
+                                            style={{ marginRight: 6 }}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.catText,
+                                                isSelected && styles.catTextActive,
+                                            ]}
+                                        >
+                                            {cuenta.nombre} · $
+                                            {Number(cuenta.saldo || 0).toFixed(2)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    )}
+
+                    {/* RESUMEN DINÁMICO */}
+                    {parseFloat(monto) > 0 && (
+                        <View style={styles.resumenCard}>
+                            <Text style={styles.resumenTitulo}>Resumen del Gasto</Text>
+                            <View style={styles.resumenFila}>
+                                <Text style={styles.resumenLabel}>Categoría</Text>
+                                <Text style={styles.resumenValor}>{categoria}</Text>
+                            </View>
+                            <View style={styles.resumenFila}>
+                                <Text style={styles.resumenLabel}>Monto</Text>
+                                <Text style={styles.resumenMonto}>
+                                    ${parseFloat(monto).toFixed(2)}
+                                </Text>
+                            </View>
+                            {motivo.trim() !== '' && (
+                                <View style={styles.resumenFila}>
+                                    <Text style={styles.resumenLabel}>Motivo</Text>
+                                    <Text style={styles.resumenValor}>{motivo.trim()}</Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+
+                    {/* ACCIONES */}
+                    <TouchableOpacity
+                        style={styles.btnGuardar}
+                        onPress={guardarGasto}
+                        activeOpacity={0.85}
+                    >
+                        <Ionicons
+                            name="checkmark-circle-outline"
+                            size={18}
+                            color="#FFFFFF"
+                            style={{ marginRight: 6 }}
+                        />
+                        <Text style={styles.btnGuardarText}>
+                            Registrar Gasto Rápido
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.btnVolver}
+                        onPress={() => navigation.goBack()}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.btnVolverText}>
+                            Cancelar / Volver
+                        </Text>
+                    </TouchableOpacity>
+
+                </ScrollView>
+            </View>
+        </SafeAreaView>
     );
 }
 
@@ -560,7 +564,7 @@ const styles = StyleSheet.create({
     },
     container: {
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 12,
         paddingBottom: 40,
     },
     topHeader: {
@@ -840,4 +844,9 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         flex: 1,
     },
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#F8FAFC',
+    },
+
 });

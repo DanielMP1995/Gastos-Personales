@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "app-gastos-personales",
+    "name": "GASTOS PERSONALES",
     "slug": "app-gastos-personales",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/img/logov3.png",
     "userInterfaceStyle": "light",
 
-    "splash": {
-      "image": "./assets/img/logov3.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
+  "splash": {
+  "image": "./assets/img/logov3.1.png",
+  "resizeMode": "contain",
+  "backgroundColor": "#0B5D4B"
+},
 
     "ios": {
       "supportsTablet": true
@@ -23,7 +23,7 @@
     },
 
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/img/logov3.png"
     },
 
     "plugins": [

@@ -1,3 +1,4 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     StyleSheet,
     Text,
@@ -14,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { auth, db } from '../../firebase/FirebaseConfig';
 
+
 import {
     ref,
     onValue,
@@ -27,6 +29,7 @@ export default function RegistroGastosDetallados({
     navigation,
 }: any) {
 
+    const insets = useSafeAreaInsets();
     const [tipoGasto, setTipoGasto] =
         useState<'deuda' | 'fijo'>('deuda');
 
@@ -499,7 +502,12 @@ export default function RegistroGastosDetallados({
         <View style={styles.rootContainer}>
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.container}
+                contentContainerStyle={[
+                    styles.container,
+                    {
+                        paddingTop: insets.top + 10,
+                    },
+                ]}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
@@ -1013,7 +1021,7 @@ const styles = StyleSheet.create({
     },
     container: {
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 10,
         paddingBottom: 40,
     },
     topHeader: {

@@ -5,10 +5,16 @@ import {
     TouchableOpacity,
     StatusBar,
 } from 'react-native';
+
 import React, { useEffect } from 'react';
+
 import { Ionicons } from '@expo/vector-icons';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export default function RegistroGastosScreen({ navigation }: any) {
+
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         navigation.setOptions({
@@ -22,28 +28,44 @@ export default function RegistroGastosScreen({ navigation }: any) {
             <StatusBar
                 barStyle="dark-content"
                 backgroundColor="#F8FAFC"
+                translucent={false}
             />
 
             {/* DECORACIÓN SUPERIOR CLARA */}
+
             <View style={styles.decorCircleOne} />
+
             <View style={styles.decorCircleTwo} />
 
+            {/* ================================================= */}
             {/* HEADER */}
-            <View style={styles.header}>
+            {/* ================================================= */}
+
+            <View
+                style={[
+                    styles.header,
+                    {
+                        paddingTop: Math.max(insets.top, 12),
+                    },
+                ]}
+            >
 
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                     activeOpacity={0.8}
                 >
+
                     <Ionicons
                         name="arrow-back"
                         size={22}
                         color="#1E293B"
                     />
+
                 </TouchableOpacity>
 
                 <View style={styles.headerTextContainer}>
+
                     <Text style={styles.headerSmall}>
                         REGISTROS
                     </Text>
@@ -51,19 +73,25 @@ export default function RegistroGastosScreen({ navigation }: any) {
                     <Text style={styles.titulo}>
                         Gestión de Gastos
                     </Text>
+
                 </View>
 
                 <View style={styles.headerIcon}>
+
                     <Ionicons
                         name="wallet-outline"
                         size={24}
                         color="#059669"
                     />
+
                 </View>
 
             </View>
 
+            {/* ================================================= */}
             {/* INTRODUCCIÓN */}
+            {/* ================================================= */}
+
             <View style={styles.introContainer}>
 
                 <Text style={styles.subtitulo}>
@@ -75,10 +103,16 @@ export default function RegistroGastosScreen({ navigation }: any) {
 
             </View>
 
+            {/* ================================================= */}
             {/* OPCIONES */}
+            {/* ================================================= */}
+
             <View style={styles.optionsContainer}>
 
+                {/* ================================================= */}
                 {/* GASTOS RÁPIDOS */}
+                {/* ================================================= */}
+
                 <TouchableOpacity
                     activeOpacity={0.85}
                     style={styles.cardRapido}
@@ -88,11 +122,13 @@ export default function RegistroGastosScreen({ navigation }: any) {
                 >
 
                     <View style={styles.iconContainerRapido}>
+
                         <Ionicons
                             name="flash"
                             size={26}
                             color="#059669"
                         />
+
                     </View>
 
                     <View style={styles.cardContent}>
@@ -104,9 +140,11 @@ export default function RegistroGastosScreen({ navigation }: any) {
                             </Text>
 
                             <View style={styles.recommendedBadge}>
+
                                 <Text style={styles.recommendedText}>
                                     RÁPIDO
                                 </Text>
+
                             </View>
 
                         </View>
@@ -134,8 +172,10 @@ export default function RegistroGastosScreen({ navigation }: any) {
 
                 </TouchableOpacity>
 
-
+                {/* ================================================= */}
                 {/* GASTO DETALLADO */}
+                {/* ================================================= */}
+
                 <TouchableOpacity
                     activeOpacity={0.85}
                     style={styles.cardNormal}
@@ -145,11 +185,13 @@ export default function RegistroGastosScreen({ navigation }: any) {
                 >
 
                     <View style={styles.iconContainerNormal}>
+
                         <Ionicons
                             name="create-outline"
                             size={26}
                             color="#0284C7"
                         />
+
                     </View>
 
                     <View style={styles.cardContent}>
@@ -183,16 +225,20 @@ export default function RegistroGastosScreen({ navigation }: any) {
 
             </View>
 
-
+            {/* ================================================= */}
             {/* CONSEJO */}
+            {/* ================================================= */}
+
             <View style={styles.tipContainer}>
 
                 <View style={styles.tipIcon}>
+
                     <Ionicons
                         name="bulb-outline"
                         size={19}
                         color="#D97706"
                     />
+
                 </View>
 
                 <View style={styles.tipTextContainer}>
@@ -210,8 +256,10 @@ export default function RegistroGastosScreen({ navigation }: any) {
 
             </View>
 
-
+            {/* ================================================= */}
             {/* BOTÓN REGRESAR */}
+            {/* ================================================= */}
+
             <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.btnRegresar}
@@ -234,21 +282,23 @@ export default function RegistroGastosScreen({ navigation }: any) {
     );
 }
 
-
 const styles = StyleSheet.create({
+
+    // ============================================================
+    // CONTENEDOR
+    // ============================================================
 
     container: {
         flex: 1,
         backgroundColor: '#F8FAFC',
         paddingHorizontal: 20,
-        paddingTop: 20,
         paddingBottom: 25,
         overflow: 'hidden',
     },
 
-    /* =========================================
-       DECORACIÓN
-    ========================================= */
+    // ============================================================
+    // DECORACIÓN
+    // ============================================================
 
     decorCircleOne: {
         position: 'absolute',
@@ -272,9 +322,9 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
 
-    /* =========================================
-       HEADER
-    ========================================= */
+    // ============================================================
+    // HEADER
+    // ============================================================
 
     header: {
         flexDirection: 'row',
@@ -293,8 +343,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
+
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
         shadowOpacity: 0.05,
         shadowRadius: 2,
         elevation: 2,
@@ -329,9 +383,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 
-    /* =========================================
-       INTRO
-    ========================================= */
+    // ============================================================
+    // INTRO
+    // ============================================================
 
     introContainer: {
         marginBottom: 20,
@@ -352,17 +406,17 @@ const styles = StyleSheet.create({
         marginTop: 12,
     },
 
-    /* =========================================
-       OPCIONES
-    ========================================= */
+    // ============================================================
+    // OPCIONES
+    // ============================================================
 
     optionsContainer: {
         gap: 14,
     },
 
-    /* =========================================
-       GASTOS RÁPIDOS
-    ========================================= */
+    // ============================================================
+    // GASTOS RÁPIDOS
+    // ============================================================
 
     cardRapido: {
         backgroundColor: '#FFFFFF',
@@ -395,9 +449,9 @@ const styles = StyleSheet.create({
         marginRight: 14,
     },
 
-    /* =========================================
-       GASTO DETALLADO
-    ========================================= */
+    // ============================================================
+    // GASTO DETALLADO
+    // ============================================================
 
     cardNormal: {
         backgroundColor: '#FFFFFF',
@@ -430,9 +484,9 @@ const styles = StyleSheet.create({
         marginRight: 14,
     },
 
-    /* =========================================
-       CONTENIDO CARDS
-    ========================================= */
+    // ============================================================
+    // CONTENIDO CARDS
+    // ============================================================
 
     cardContent: {
         flex: 1,
@@ -508,9 +562,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
-    /* =========================================
-       CONSEJO
-    ========================================= */
+    // ============================================================
+    // CONSEJO
+    // ============================================================
 
     tipContainer: {
         flexDirection: 'row',
@@ -552,9 +606,9 @@ const styles = StyleSheet.create({
         lineHeight: 15,
     },
 
-    /* =========================================
-       REGRESAR
-    ========================================= */
+    // ============================================================
+    // REGRESAR
+    // ============================================================
 
     btnRegresar: {
         marginTop: 'auto',
@@ -575,4 +629,4 @@ const styles = StyleSheet.create({
         marginLeft: 6,
     },
 
-});  //pantalla /registros/pantalla de gastos adentro de esto esta gastos rapidos y detallados
+});    // aqui gastos rapiudo y detallados estan
