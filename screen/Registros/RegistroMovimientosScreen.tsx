@@ -41,7 +41,7 @@ export default function RegistroMovimientosScreen({ navigation }: any) {
                 <View style={styles.heroCard}>
                     <View style={styles.logoBackground}>
                         <Image
-                            source={require('../../assets/img/logov2.png')}
+                            source={require('../../assets/img/logov3.png')}
                             style={styles.logo}
                             resizeMode="contain"
                         />
@@ -268,19 +268,23 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     logoBackground: {
-        width: 70,
-        height: 70,
-        borderRadius: 18,
+        width: 120,
+        height: 105,
+        borderRadius: 22,
         backgroundColor: '#ECFDF5',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
         borderWidth: 1,
         borderColor: '#A7F3D0',
+        overflow: 'hidden',
     },
+
     logo: {
-        width: 45,
-        height: 45,
+        width: 125,
+        height: 145,
+        resizeMode: 'contain',
+        transform: [{ translateY: 2 }],
     },
     heroTextContainer: {
         alignItems: 'center',

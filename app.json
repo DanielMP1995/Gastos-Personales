@@ -6,16 +6,26 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+
+    "splash": {
+      "image": "./assets/img/logov3.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+
     "ios": {
       "supportsTablet": true
     },
-"android": {
-  "predictiveBackGestureEnabled": false,
-  "package": "com.anonymous.appgastospersonales"
-},
+
+    "android": {
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.appgastospersonales"
+    },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
+
     "plugins": [
       "expo-font",
       "expo-splash-screen"

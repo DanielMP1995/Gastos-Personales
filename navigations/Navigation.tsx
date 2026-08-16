@@ -62,9 +62,9 @@ function MyTabs() {
         >
             <Tab.Screen name="Inicio" component={InicioScreen} />
             <Tab.Screen name="Registros" component={RegistroMovimientosScreen} />
-            <Tab.Screen name="Reportes" component={ReporteDeudasRegistradas} />
-            <Tab.Screen name="Perfil" component={PerfilScreen} />
+            <Tab.Screen name="Reportes" component={ReporteDeudasRegistradas} />   
             <Tab.Screen name="Cuentas" component={CuentasYEfectivoScreen} />
+            <Tab.Screen name="Perfil" component={PerfilScreen} />
         </Tab.Navigator>
     );
 }

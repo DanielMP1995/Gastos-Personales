@@ -8,6 +8,7 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
+    ActivityIndicator,
 } from 'react-native';
 
 import React, { useState, useEffect } from 'react';
@@ -19,6 +20,7 @@ import {
     push,
     set,
     onValue,
+    get,
 } from 'firebase/database';
 
 type TarjetaRegistrada = {
@@ -29,22 +31,29 @@ type TarjetaRegistrada = {
     fechaCaducidad: string;
 };
 
+type PersonaCodigo = {
+    uid: string;
+    nombre: string;
+    apellido: string;
+    parentesco?: string;
+};
+
 export default function RegistroDeudasScreen({
     navigation,
 }: any) {
 
-    // ============================================================
+    // ========================================================
     // CATEGORIA
-    // ============================================================
+    // ========================================================
 
     const [
         categoriaSeleccionada,
         setCategoriaSeleccionada,
     ] = useState<string | null>(null);
 
-    // ============================================================
+    // ========================================================
     // DEUDAS GENERALES
-    // ============================================================
+    // ========================================================
 
     const [subEntidad, setSubEntidad] = useState('');
     const [monto, setMonto] = useState('');
@@ -52,26 +61,53 @@ export default function RegistroDeudasScreen({
     const [numeroCuotas, setNumeroCuotas] = useState('');
     const [fechaMaxPago, setFechaMaxPago] = useState('');
 
-    // ============================================================
+    // ========================================================
+    // CUENTA POR COBRAR
+    // ========================================================
+
+    const [nombrePersona, setNombrePersona] = useState('');
+    const [apellidoPersona, setApellidoPersona] = useState('');
+    const [parentescoPersona, setParentescoPersona] = useState('');
+
+    const [usarCodigoPersona, setUsarCodigoPersona] =
+        useState(false);
+
+    const [codigoPersona, setCodigoPersona] = useState('');
+
+    const [personaEncontrada, setPersonaEncontrada] =
+        useState<PersonaCodigo | null>(null);
+
+    const [buscandoCodigo, setBuscandoCodigo] =
+        useState(false);
+
+    const [formaPagoCobrar, setFormaPagoCobrar] =
+        useState<'corriente' | 'diferido' | null>(null);
+
+    const [cuotasCobrar, setCuotasCobrar] = useState('');
+    const [valorCuotaCobrar, setValorCuotaCobrar] =
+        useState('');
+
+    // ========================================================
+    // CODIGO DE MI CUENTA
+    // ========================================================
+
+    const [miCodigoCuenta, setMiCodigoCuenta] = useState('');
+
+    const [cargandoCodigo, setCargandoCodigo] =
+        useState(true);
+
+    // ========================================================
     // TARJETAS
-    // ============================================================
+    // ========================================================
 
     const [modoTarjeta, setModoTarjeta] = useState<
         'nueva' | 'consumo' | null
     >(null);
 
-    // ============================================================
-    // REGISTRAR TARJETA
-    // ============================================================
-
     const [bancoTarjeta, setBancoTarjeta] = useState('');
     const [marcaTarjeta, setMarcaTarjeta] = useState('');
     const [cupoTotal, setCupoTotal] = useState('');
     const [fechaCaducidad, setFechaCaducidad] = useState('');
-
-    // ============================================================
-    // CONSUMO TARJETA
-    // ============================================================
 
     const [tarjetasDisponibles, setTarjetasDisponibles] =
         useState<TarjetaRegistrada[]>([]);
@@ -96,16 +132,130 @@ export default function RegistroDeudasScreen({
     const [descripcionConsumo, setDescripcionConsumo] =
         useState('');
 
-    // ============================================================
+    // ========================================================
     // PAREJA
-    // ============================================================
+    // ========================================================
 
     const [idPareja, setIdPareja] =
         useState<string | null>(null);
 
-    // ============================================================
-    // OBTENER PAREJA
-    // ============================================================
+    const usuarioActual = auth.currentUser;
+
+    // ========================================================
+    // GENERAR CODIGO
+    // ========================================================
+
+    function generarCodigoCuenta() {
+
+        const caracteres =
+            'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+        let codigo = '';
+
+        for (let i = 0; i < 6; i++) {
+            codigo += caracteres.charAt(
+                Math.floor(
+                    Math.random() * caracteres.length
+                )
+            );
+        }
+
+        return codigo;
+    }
+
+    // ========================================================
+    // CARGAR / CREAR CODIGO PERSONAL
+    // ========================================================
+
+    async function cargarMiCodigoCuenta() {
+
+        if (!usuarioActual) {
+            setCargandoCodigo(false);
+            return;
+        }
+
+        try {
+
+            const usuarioRef = ref(
+                db,
+                `usuarios/${usuarioActual.uid}`
+            );
+
+            const snapshot = await get(usuarioRef);
+
+            if (!snapshot.exists()) {
+                setCargandoCodigo(false);
+                return;
+            }
+
+            const datos = snapshot.val();
+
+            if (datos.codigoCuenta) {
+
+                setMiCodigoCuenta(
+                    datos.codigoCuenta
+                );
+
+                setCargandoCodigo(false);
+                return;
+            }
+
+            let codigo = '';
+            let existe = true;
+
+            while (existe) {
+
+                codigo = generarCodigoCuenta();
+
+                const codigoRef = ref(
+                    db,
+                    `codigosCuentas/${codigo}`
+                );
+
+                const codigoSnapshot =
+                    await get(codigoRef);
+
+                existe = codigoSnapshot.exists();
+            }
+
+            await set(
+                ref(
+                    db,
+                    `usuarios/${usuarioActual.uid}/codigoCuenta`
+                ),
+                codigo
+            );
+
+            await set(
+                ref(
+                    db,
+                    `codigosCuentas/${codigo}`
+                ),
+                {
+                    uid: usuarioActual.uid,
+                    fechaRegistro:
+                        new Date().toISOString(),
+                }
+            );
+
+            setMiCodigoCuenta(codigo);
+
+        } catch (error) {
+
+            console.log(
+                'Error generando código:',
+                error
+            );
+
+        } finally {
+
+            setCargandoCodigo(false);
+        }
+    }
+
+    // ========================================================
+    // CARGAR USUARIO
+    // ========================================================
 
     useEffect(() => {
 
@@ -113,11 +263,11 @@ export default function RegistroDeudasScreen({
             headerShown: false,
         });
 
-        const usuarioActual = auth.currentUser;
-
         if (!usuarioActual) {
             return;
         }
+
+        cargarMiCodigoCuenta();
 
         const userRef = ref(
             db,
@@ -126,7 +276,7 @@ export default function RegistroDeudasScreen({
 
         const unsubscribe = onValue(
             userRef,
-            (snapshot) => {
+            snapshot => {
 
                 const data = snapshot.val();
 
@@ -143,9 +293,619 @@ export default function RegistroDeudasScreen({
 
     }, [navigation]);
 
-    // ============================================================
-    // CARGAR TARJETAS REGISTRADAS
-    // ============================================================
+    // ========================================================
+    // BUSCAR PERSONA
+    // ========================================================
+
+    async function buscarPersonaPorCodigo() {
+
+        const codigo = codigoPersona
+            .trim()
+            .toUpperCase();
+
+        if (!codigo) {
+
+            Alert.alert(
+                'Atención',
+                'Ingresa el código de la persona.'
+            );
+
+            return;
+        }
+
+        if (
+            codigo ===
+            miCodigoCuenta.toUpperCase()
+        ) {
+
+            Alert.alert(
+                'Código no válido',
+                'No puedes registrar un préstamo contigo mismo.'
+            );
+
+            return;
+        }
+
+        setBuscandoCodigo(true);
+        setPersonaEncontrada(null);
+
+        try {
+
+            const codigoRef = ref(
+                db,
+                `codigosCuentas/${codigo}`
+            );
+
+            const snapshot =
+                await get(codigoRef);
+
+            if (!snapshot.exists()) {
+
+                Alert.alert(
+                    'Código no encontrado',
+                    'No existe una cuenta registrada con ese código.'
+                );
+
+                return;
+            }
+
+            const datosCodigo =
+                snapshot.val();
+
+            const uidPersona =
+                datosCodigo?.uid;
+
+            if (!uidPersona) {
+
+                Alert.alert(
+                    'Error',
+                    'El código no está asociado correctamente.'
+                );
+
+                return;
+            }
+
+            const personaRef = ref(
+                db,
+                `usuarios/${uidPersona}`
+            );
+
+            const personaSnapshot =
+                await get(personaRef);
+
+            if (!personaSnapshot.exists()) {
+
+                Alert.alert(
+                    'Error',
+                    'No se encontró la cuenta de la persona.'
+                );
+
+                return;
+            }
+
+            const datosPersona =
+                personaSnapshot.val();
+
+            const persona: PersonaCodigo = {
+                uid: uidPersona,
+                nombre:
+                    datosPersona.nombre ||
+                    'Usuario',
+                apellido:
+                    datosPersona.apellido ||
+                    '',
+                parentesco:
+                    parentescoPersona ||
+                    '',
+            };
+
+            setPersonaEncontrada(persona);
+
+            if (!nombrePersona) {
+                setNombrePersona(
+                    datosPersona.nombre || ''
+                );
+            }
+
+            if (!apellidoPersona) {
+                setApellidoPersona(
+                    datosPersona.apellido || ''
+                );
+            }
+
+            Alert.alert(
+                'Código válido',
+                `Cuenta encontrada:\n${datosPersona.nombre || ''} ${datosPersona.apellido || ''}`
+            );
+
+        } catch (error: any) {
+
+            Alert.alert(
+                'Error',
+                error?.message ||
+                'No se pudo verificar el código.'
+            );
+
+        } finally {
+
+            setBuscandoCodigo(false);
+        }
+    }
+
+    // ========================================================
+    // LIMPIAR FORMULARIO
+    // ========================================================
+
+    function limpiarFormulario() {
+
+        setCategoriaSeleccionada(null);
+
+        setSubEntidad('');
+        setMonto('');
+        setCuotaPagar('');
+        setNumeroCuotas('');
+        setFechaMaxPago('');
+
+        setNombrePersona('');
+        setApellidoPersona('');
+        setParentescoPersona('');
+
+        setUsarCodigoPersona(false);
+        setCodigoPersona('');
+        setPersonaEncontrada(null);
+
+        setFormaPagoCobrar(null);
+        setCuotasCobrar('');
+        setValorCuotaCobrar('');
+
+        setModoTarjeta(null);
+
+        setBancoTarjeta('');
+        setMarcaTarjeta('');
+        setCupoTotal('');
+        setFechaCaducidad('');
+
+        setTarjetaConsumoId(null);
+        setMontoConsumo('');
+        setEsDiferido(null);
+        setNumeroCuotasConsumo('');
+        setValorCuotaConsumo('');
+        setFechaConsumo('');
+        setDescripcionConsumo('');
+    }
+
+    // ========================================================
+    // CAMBIAR CATEGORIA
+    // ========================================================
+
+    function seleccionarCategoria(
+        categoria: string
+    ) {
+
+        limpiarFormulario();
+
+        setCategoriaSeleccionada(
+            categoria
+        );
+    }
+
+    // ========================================================
+    // AUTOR
+    // ========================================================
+
+    function obtenerAutor(
+        email: string | null | undefined
+    ) {
+
+        return email
+            ?.toLowerCase()
+            .includes('daniela')
+            ? 'Daniela'
+            : 'Daniel';
+    }
+
+    // ========================================================
+    // CUENTA POR COBRAR
+    // ========================================================
+
+    async function guardarCuentaPorCobrar() {
+
+        if (!idPareja) {
+
+            Alert.alert(
+                'Atención',
+                'No se encontró el código de pareja configurado.'
+            );
+
+            return;
+        }
+
+        if (!usuarioActual) {
+
+            Alert.alert(
+                'Error',
+                'No hay un usuario logueado.'
+            );
+
+            return;
+        }
+
+        if (!nombrePersona.trim()) {
+
+            Alert.alert(
+                'Atención',
+                'Ingresa el nombre de la persona.'
+            );
+
+            return;
+        }
+
+        if (!apellidoPersona.trim()) {
+
+            Alert.alert(
+                'Atención',
+                'Ingresa el apellido de la persona.'
+            );
+
+            return;
+        }
+
+        if (!monto) {
+
+            Alert.alert(
+                'Atención',
+                'Ingresa el monto prestado.'
+            );
+
+            return;
+        }
+
+        const montoNumero =
+            parseFloat(monto);
+
+        if (
+            isNaN(montoNumero) ||
+            montoNumero <= 0
+        ) {
+
+            Alert.alert(
+                'Atención',
+                'Ingresa un monto válido.'
+            );
+
+            return;
+        }
+
+        if (!formaPagoCobrar) {
+
+            Alert.alert(
+                'Atención',
+                'Selecciona si el préstamo es corriente o diferido.'
+            );
+
+            return;
+        }
+
+        let cuotas = 1;
+        let valorCuota = montoNumero;
+
+        if (formaPagoCobrar === 'diferido') {
+
+            if (!cuotasCobrar) {
+
+                Alert.alert(
+                    'Atención',
+                    'Ingresa el número de cuotas.'
+                );
+
+                return;
+            }
+
+            cuotas =
+                parseInt(cuotasCobrar);
+
+            if (
+                isNaN(cuotas) ||
+                cuotas <= 0
+            ) {
+
+                Alert.alert(
+                    'Atención',
+                    'Ingresa un número de cuotas válido.'
+                );
+
+                return;
+            }
+
+            if (!valorCuotaCobrar) {
+
+                Alert.alert(
+                    'Atención',
+                    'Ingresa el valor de la cuota.'
+                );
+
+                return;
+            }
+
+            valorCuota =
+                parseFloat(
+                    valorCuotaCobrar
+                );
+
+            if (
+                isNaN(valorCuota) ||
+                valorCuota <= 0
+            ) {
+
+                Alert.alert(
+                    'Atención',
+                    'Ingresa un valor de cuota válido.'
+                );
+
+                return;
+            }
+        }
+
+        if (
+            usarCodigoPersona &&
+            !personaEncontrada
+        ) {
+
+            Alert.alert(
+                'Atención',
+                'Primero verifica el código de la persona.'
+            );
+
+            return;
+        }
+
+        try {
+
+            const fecha =
+                new Date().toISOString();
+
+            const operacionRef = push(
+                ref(
+                    db,
+                    `parejas/${idPareja}/cuentasPorCobrar`
+                )
+            );
+
+            const idOperacion =
+                operacionRef.key;
+
+            if (!idOperacion) {
+                return;
+            }
+
+            const datosPrestamo = {
+
+                tipo: 'cuentaPorCobrar',
+
+                idOperacion,
+
+                categoria:
+                    'Cuenta por Cobrar',
+
+                nombre:
+                    nombrePersona.trim(),
+
+                apellido:
+                    apellidoPersona.trim(),
+
+                parentesco:
+                    parentescoPersona.trim() ||
+                    'No especificado',
+
+                monto:
+                    Number(
+                        montoNumero.toFixed(2)
+                    ),
+
+                formaPago:
+                    formaPagoCobrar,
+
+                numeroCuotas:
+                    cuotas,
+
+                valorCuota:
+                    Number(
+                        valorCuota.toFixed(2)
+                    ),
+
+                cuotaPagar:
+                    Number(
+                        valorCuota.toFixed(2)
+                    ),
+
+                fechaPago:
+                    fechaMaxPago ||
+                    'N/A',
+
+                fechaRegistro:
+                    fecha,
+
+                montoPagado: 0,
+
+                saldoPendiente:
+                    Number(
+                        montoNumero.toFixed(2)
+                    ),
+
+                estado: 'Pendiente',
+
+                codigoPersona:
+                    usarCodigoPersona
+                        ? codigoPersona
+                            .trim()
+                            .toUpperCase()
+                        : null,
+
+                uidPersona:
+                    usarCodigoPersona &&
+                    personaEncontrada
+                        ? personaEncontrada.uid
+                        : null,
+
+                vinculada:
+                    usarCodigoPersona &&
+                    !!personaEncontrada,
+
+                usuarioEmail:
+                    usuarioActual.email,
+
+                autor:
+                    obtenerAutor(
+                        usuarioActual.email
+                    ),
+            };
+
+            await set(
+                operacionRef,
+                datosPrestamo
+            );
+
+            if (
+                usarCodigoPersona &&
+                personaEncontrada
+            ) {
+
+                const deudaOtraPersonaRef =
+                    ref(
+                        db,
+                        `usuarios/${personaEncontrada.uid}/cuentasPorPagar/${idOperacion}`
+                    );
+
+                const datosCuentaPorPagar = {
+
+                    tipo:
+                        'cuentaPorPagar',
+
+                    idOperacion,
+
+                    categoria:
+                        'Cuenta por Pagar',
+
+                    acreedorUid:
+                        usuarioActual.uid,
+
+                    acreedorNombre:
+                        obtenerNombrePropio(),
+
+                    acreedorCodigo:
+                        miCodigoCuenta,
+
+                    deudorNombre:
+                        nombrePersona.trim(),
+
+                    deudorApellido:
+                        apellidoPersona.trim(),
+
+                    parentesco:
+                        parentescoPersona.trim() ||
+                        'No especificado',
+
+                    monto:
+                        Number(
+                            montoNumero.toFixed(2)
+                        ),
+
+                    formaPago:
+                        formaPagoCobrar,
+
+                    numeroCuotas:
+                        cuotas,
+
+                    valorCuota:
+                        Number(
+                            valorCuota.toFixed(2)
+                        ),
+
+                    cuotaPagar:
+                        Number(
+                            valorCuota.toFixed(2)
+                        ),
+
+                    fechaPago:
+                        fechaMaxPago ||
+                        'N/A',
+
+                    fechaRegistro:
+                        fecha,
+
+                    montoPagado: 0,
+
+                    saldoPendiente:
+                        Number(
+                            montoNumero.toFixed(2)
+                        ),
+
+                    estado:
+                        'Pendiente',
+
+                    codigoPrestamista:
+                        miCodigoCuenta,
+
+                    vinculada: true,
+                };
+
+                await set(
+                    deudaOtraPersonaRef,
+                    datosCuentaPorPagar
+                );
+
+                Alert.alert(
+                    '¡Préstamo vinculado!',
+                    `Se registró el préstamo de $${montoNumero.toFixed(
+                        2
+                    )} en ambas cuentas.`
+                );
+
+            } else {
+
+                Alert.alert(
+                    '¡Préstamo registrado!',
+                    `La cuenta por cobrar de $${montoNumero.toFixed(
+                        2
+                    )} quedó registrada únicamente en tu cuenta.`
+                );
+            }
+
+            limpiarFormulario();
+
+            navigation.goBack();
+
+        } catch (error: any) {
+
+            console.log(
+                'Error guardando cuenta por cobrar:',
+                error
+            );
+
+            Alert.alert(
+                'Error',
+                error?.message ||
+                'No se pudo registrar el préstamo.'
+            );
+        }
+    }
+
+    // ========================================================
+    // NOMBRE PROPIO
+    // ========================================================
+
+    function obtenerNombrePropio() {
+
+        return (
+            usuarioActual?.displayName ||
+            usuarioActual?.email ||
+            'Usuario'
+        );
+    }
+
+    // ========================================================
+    // CARGAR TARJETAS
+    // ========================================================
 
     useEffect(() => {
 
@@ -155,7 +915,7 @@ export default function RegistroDeudasScreen({
 
         if (
             categoriaSeleccionada !==
-                'Tarjeta de Crédito' ||
+            'Tarjeta de Crédito' ||
             modoTarjeta !== 'consumo'
         ) {
             return;
@@ -168,23 +928,28 @@ export default function RegistroDeudasScreen({
 
         const unsubscribe = onValue(
             deudasRef,
-            (snapshot) => {
+            snapshot => {
 
-                const data = snapshot.val();
+                const data =
+                    snapshot.val();
 
                 if (!data) {
+
                     setTarjetasDisponibles([]);
+
                     return;
                 }
 
-                const lista: TarjetaRegistrada[] =
+                const lista:
+                    TarjetaRegistrada[] =
                     Object.keys(data)
                         .filter(
-                            (key) =>
+                            key =>
                                 data[key]?.tipo ===
                                 'tarjeta'
                         )
-                        .map((key) => ({
+                        .map(key => ({
+
                             id: key,
 
                             banco:
@@ -217,734 +982,2293 @@ export default function RegistroDeudasScreen({
         modoTarjeta,
     ]);
 
-    // ============================================================
-    // LIMPIAR FORMULARIO
-    // ============================================================
-
-    function limpiarFormulario() {
-
-        setCategoriaSeleccionada(null);
-
-        setSubEntidad('');
-        setMonto('');
-        setCuotaPagar('');
-        setNumeroCuotas('');
-        setFechaMaxPago('');
-
-        setModoTarjeta(null);
-
-        setBancoTarjeta('');
-        setMarcaTarjeta('');
-        setCupoTotal('');
-        setFechaCaducidad('');
-
-        setTarjetaConsumoId(null);
-        setMontoConsumo('');
-        setEsDiferido(null);
-        setNumeroCuotasConsumo('');
-        setValorCuotaConsumo('');
-        setFechaConsumo('');
-        setDescripcionConsumo('');
-    }
-
-    // ============================================================
-    // CAMBIAR CATEGORIA
-    // ============================================================
-
-    function seleccionarCategoria(
-        categoria: string
-    ) {
-
-        limpiarFormulario();
-
-        setCategoriaSeleccionada(categoria);
-    }
-
-    // ============================================================
-    // AUTOR
-    // ============================================================
-
-    function obtenerAutor(
-        email: string | null | undefined
-    ) {
-
-        return email
-            ?.toLowerCase()
-            .includes('daniela')
-            ? 'Daniela'
-            : 'Daniel';
-    }
-
-    // ============================================================
+    // ========================================================
     // GUARDAR TARJETA NUEVA
-    // ============================================================
+    // ========================================================
 
-    function guardarTarjetaNueva() {
+    async function guardarTarjetaNueva() {
 
         if (!idPareja) {
-            Alert.alert('Atención', 'No se encontró el código de pareja configurado.');
+
+            Alert.alert(
+                'Atención',
+                'No se encontró el código de pareja configurado.'
+            );
+
             return;
         }
 
         if (!bancoTarjeta) {
-            Alert.alert('Atención', 'Selecciona el banco de la tarjeta.');
+
+            Alert.alert(
+                'Atención',
+                'Ingresa el banco de la tarjeta.'
+            );
+
             return;
         }
 
         if (!marcaTarjeta) {
-            Alert.alert('Atención', 'Selecciona la marca de la tarjeta.');
+
+            Alert.alert(
+                'Atención',
+                'Selecciona la marca de la tarjeta.'
+            );
+
             return;
         }
 
-        if (!cupoTotal) {
-            Alert.alert('Atención', 'Ingresa el cupo total de la tarjeta.');
+        const cupoNumero =
+            parseFloat(cupoTotal);
+
+        if (
+            isNaN(cupoNumero) ||
+            cupoNumero <= 0
+        ) {
+
+            Alert.alert(
+                'Atención',
+                'Ingresa un cupo válido.'
+            );
+
             return;
         }
-
-        const usuarioActual = auth.currentUser;
 
         if (!usuarioActual) {
-            Alert.alert('Error', 'No hay un usuario logueado.');
             return;
         }
 
-        const cupoNumero = parseFloat(cupoTotal);
+        const tarjetasRef =
+            ref(
+                db,
+                `parejas/${idPareja}/deudas`
+            );
 
-        if (isNaN(cupoNumero) || cupoNumero <= 0) {
-            Alert.alert('Atención', 'Ingresa un cupo válido.');
-            return;
-        }
-
-        const tarjetasRef = ref(db, `parejas/${idPareja}/deudas`);
-        const nuevaTarjetaRef = push(tarjetasRef);
+        const nuevaTarjetaRef =
+            push(tarjetasRef);
 
         const datosTarjeta = {
+
             tipo: 'tarjeta',
-            categoria: 'Tarjeta de Crédito',
-            entidad: bancoTarjeta,
-            marcaTarjeta: marcaTarjeta,
-            cupoTotal: cupoNumero,
+
+            categoria:
+                'Tarjeta de Crédito',
+
+            entidad:
+                bancoTarjeta,
+
+            marcaTarjeta:
+                marcaTarjeta,
+
+            cupoTotal:
+                cupoNumero,
+
             saldoUtilizado: 0,
-            saldoDisponible: cupoNumero,
-            fechaCaducidad: fechaCaducidad || 'N/A',
-            fechaRegistro: new Date().toISOString(),
-            usuarioEmail: usuarioActual.email,
-            autor: obtenerAutor(usuarioActual.email),
+
+            saldoDisponible:
+                cupoNumero,
+
+            fechaCaducidad:
+                fechaCaducidad ||
+                'N/A',
+
+            fechaRegistro:
+                new Date().toISOString(),
+
+            usuarioEmail:
+                usuarioActual.email,
+
+            autor:
+                obtenerAutor(
+                    usuarioActual.email
+                ),
         };
 
-        set(nuevaTarjetaRef, datosTarjeta)
-            .then(() => {
-                Alert.alert('¡Éxito!', 'Tarjeta registrada correctamente.');
-                limpiarFormulario();
-                navigation.goBack();
-            })
-            .catch((error) => {
-                Alert.alert('Error', error?.message || 'No se pudo registrar la tarjeta.');
-            });
+        try {
+
+            await set(
+                nuevaTarjetaRef,
+                datosTarjeta
+            );
+
+            Alert.alert(
+                '¡Tarjeta registrada!',
+                `${marcaTarjeta} registrada correctamente.`
+            );
+
+            limpiarFormulario();
+
+            navigation.goBack();
+
+        } catch (error: any) {
+
+            Alert.alert(
+                'Error',
+                error?.message ||
+                'No se pudo registrar la tarjeta.'
+            );
+        }
     }
 
-    // ============================================================
-    // GUARDAR CONSUMO DE TARJETA
-    // ============================================================
+    // ========================================================
+    // GUARDAR CONSUMO
+    // ========================================================
 
-    function guardarConsumo() {
+    async function guardarConsumo() {
 
         if (!idPareja) {
-            Alert.alert('Atención', 'No se encontró el código de pareja configurado.');
+
+            Alert.alert(
+                'Atención',
+                'No se encontró el código de pareja.'
+            );
+
             return;
         }
 
         if (!tarjetaConsumoId) {
-            Alert.alert('Atención', 'Selecciona a qué tarjeta pertenece este consumo.');
+
+            Alert.alert(
+                'Atención',
+                'Selecciona la tarjeta.'
+            );
+
             return;
         }
 
-        if (!montoConsumo) {
-            Alert.alert('Atención', 'Ingresa el monto del consumo.');
-            return;
-        }
+        const montoNumero =
+            parseFloat(montoConsumo);
 
-        const montoNumero = parseFloat(montoConsumo);
+        if (
+            isNaN(montoNumero) ||
+            montoNumero <= 0
+        ) {
 
-        if (isNaN(montoNumero) || montoNumero <= 0) {
-            Alert.alert('Atención', 'Ingresa un monto de consumo válido.');
+            Alert.alert(
+                'Atención',
+                'Ingresa un monto válido.'
+            );
+
             return;
         }
 
         if (esDiferido === null) {
-            Alert.alert('Atención', 'Indica si el consumo es diferido o no.');
+
+            Alert.alert(
+                'Atención',
+                'Indica si es corriente o diferido.'
+            );
+
             return;
         }
 
         let cuotas = 1;
-        let cuotaFinal = montoNumero;
+        let cuotaFinal =
+            montoNumero;
 
-        if (esDiferido === true) {
-            if (!numeroCuotasConsumo) {
-                Alert.alert('Atención', 'Ingresa a cuántas cuotas vas a diferir el consumo.');
+        if (esDiferido) {
+
+            cuotas =
+                parseInt(
+                    numeroCuotasConsumo
+                );
+
+            cuotaFinal =
+                parseFloat(
+                    valorCuotaConsumo
+                );
+
+            if (
+                isNaN(cuotas) ||
+                cuotas <= 0
+            ) {
+
+                Alert.alert(
+                    'Atención',
+                    'Ingresa las cuotas.'
+                );
+
                 return;
             }
 
-            cuotas = parseInt(numeroCuotasConsumo);
+            if (
+                isNaN(cuotaFinal) ||
+                cuotaFinal <= 0
+            ) {
 
-            if (isNaN(cuotas) || cuotas <= 0) {
-                Alert.alert('Atención', 'Ingresa un número de cuotas válido.');
-                return;
-            }
+                Alert.alert(
+                    'Atención',
+                    'Ingresa el valor de cuota.'
+                );
 
-            if (!valorCuotaConsumo) {
-                Alert.alert('Atención', 'Ingresa el valor de la cuota.');
-                return;
-            }
-
-            cuotaFinal = parseFloat(valorCuotaConsumo);
-
-            if (isNaN(cuotaFinal) || cuotaFinal <= 0) {
-                Alert.alert('Atención', 'Ingresa un valor de cuota válido.');
                 return;
             }
         }
-
-        const usuarioActual = auth.currentUser;
 
         if (!usuarioActual) {
-            Alert.alert('Error', 'No hay un usuario logueado.');
             return;
         }
 
-        const tarjetaElegida = tarjetasDisponibles.find(
-            (tarjeta) => tarjeta.id === tarjetaConsumoId
-        );
+        const tarjeta =
+            tarjetasDisponibles.find(
+                t =>
+                    t.id ===
+                    tarjetaConsumoId
+            );
 
-        if (!tarjetaElegida) {
-            Alert.alert('Error', 'No se encontró la tarjeta seleccionada.');
+        if (!tarjeta) {
+
+            Alert.alert(
+                'Error',
+                'No se encontró la tarjeta.'
+            );
+
             return;
         }
 
-        const cupo = Number(tarjetaElegida.cupoTotal) || 0;
+        const cupo =
+            Number(
+                tarjeta.cupoTotal
+            ) || 0;
 
         if (montoNumero > cupo) {
+
             Alert.alert(
                 'Cupo insuficiente',
-                `El consumo de $${montoNumero.toFixed(2)} supera el cupo total de $${cupo.toFixed(2)}.`
+                `El consumo supera el cupo de $${cupo.toFixed(
+                    2
+                )}.`
             );
+
             return;
         }
 
-        const deudasRef = ref(db, `parejas/${idPareja}/deudas`);
-        const nuevoConsumoRef = push(deudasRef);
+        const deudasRef =
+            ref(
+                db,
+                `parejas/${idPareja}/deudas`
+            );
+
+        const nuevoConsumoRef =
+            push(deudasRef);
 
         const datosConsumo = {
-            tipo: 'consumoTarjeta',
-            categoria: 'Tarjeta de Crédito',
-            tarjetaId: tarjetaConsumoId,
-            tarjetaBanco: tarjetaElegida.banco,
-            tarjetaMarca: tarjetaElegida.marca,
-            monto: montoNumero,
-            diferido: esDiferido,
-            numeroCuotas: cuotas,
-            cuotaPagar: Number(cuotaFinal.toFixed(2)),
-            valorCuota: Number(cuotaFinal.toFixed(2)),
-            descripcion: descripcionConsumo || 'Consumo con tarjeta',
-            fechaMaxPago: fechaConsumo || 'N/A',
-            fechaRegistro: new Date().toISOString(),
-            usuarioEmail: usuarioActual.email,
-            autor: obtenerAutor(usuarioActual.email),
+
+            tipo:
+                'consumoTarjeta',
+
+            categoria:
+                'Tarjeta de Crédito',
+
+            tarjetaId:
+                tarjetaConsumoId,
+
+            tarjetaBanco:
+                tarjeta.banco,
+
+            tarjetaMarca:
+                tarjeta.marca,
+
+            monto:
+                montoNumero,
+
+            diferido:
+                esDiferido,
+
+            numeroCuotas:
+                cuotas,
+
+            cuotaPagar:
+                Number(
+                    cuotaFinal.toFixed(2)
+                ),
+
+            valorCuota:
+                Number(
+                    cuotaFinal.toFixed(2)
+                ),
+
+            descripcion:
+                descripcionConsumo ||
+                'Consumo con tarjeta',
+
+            fechaMaxPago:
+                fechaConsumo ||
+                'N/A',
+
+            fechaRegistro:
+                new Date().toISOString(),
+
+            usuarioEmail:
+                usuarioActual.email,
+
+            autor:
+                obtenerAutor(
+                    usuarioActual.email
+                ),
         };
 
-        set(nuevoConsumoRef, datosConsumo)
-            .then(() => {
-                Alert.alert(
-                    '¡Éxito!',
-                    `Consumo registrado correctamente.\n\nValor de la cuota: $${cuotaFinal.toFixed(2)}`
-                );
-                limpiarFormulario();
-                navigation.goBack();
-            })
-            .catch((error) => {
-                Alert.alert('Error', error?.message || 'No se pudo registrar el consumo.');
-            });
+        try {
+
+            await set(
+                nuevoConsumoRef,
+                datosConsumo
+            );
+
+            Alert.alert(
+                '¡Consumo registrado!',
+                `Consumo: $${montoNumero.toFixed(
+                    2
+                )}\nCuota: $${cuotaFinal.toFixed(
+                    2
+                )}`
+            );
+
+            limpiarFormulario();
+
+            navigation.goBack();
+
+        } catch (error: any) {
+
+            Alert.alert(
+                'Error',
+                error?.message ||
+                'No se pudo registrar.'
+            );
+        }
     }
 
-    // ============================================================
+    // ========================================================
     // GUARDAR DEUDA GENERAL
-    // ============================================================
+    // ========================================================
 
-    function guardarDeudaGeneral() {
+    async function guardarDeudaGeneral() {
 
         if (!idPareja) {
-            Alert.alert('Atención', 'No se encontró el código de pareja configurado.');
+
+            Alert.alert(
+                'Atención',
+                'No se encontró el código de pareja.'
+            );
+
             return;
         }
 
         if (!categoriaSeleccionada) {
-            Alert.alert('Atención', 'Por favor selecciona un tipo de deuda.');
             return;
         }
 
-        if (!subEntidad || !monto || !cuotaPagar) {
-            Alert.alert('Atención', 'Debes completar la entidad/banco, el monto total y la cuota a pagar.');
+        if (!subEntidad || !monto) {
+
+            Alert.alert(
+                'Atención',
+                'Completa la entidad y el monto.'
+            );
+
             return;
         }
 
-        const usuarioActual = auth.currentUser;
+        const montoNumero =
+            parseFloat(monto);
+
+        const cuotaNumero =
+            cuotaPagar
+                ? parseFloat(cuotaPagar)
+                : 0;
+
+        if (
+            isNaN(montoNumero) ||
+            montoNumero <= 0
+        ) {
+
+            Alert.alert(
+                'Atención',
+                'Ingresa un monto válido.'
+            );
+
+            return;
+        }
+
+        if (
+            categoriaSeleccionada !==
+                'Deuda Familiar' &&
+            (
+                isNaN(cuotaNumero) ||
+                cuotaNumero <= 0
+            )
+        ) {
+
+            Alert.alert(
+                'Atención',
+                'Ingresa una cuota válida.'
+            );
+
+            return;
+        }
 
         if (!usuarioActual) {
-            Alert.alert('Error', 'No hay un usuario logueado.');
             return;
         }
 
-        const montoNumero = parseFloat(monto);
-        const cuotaNumero = parseFloat(cuotaPagar);
+        const deudasRef =
+            ref(
+                db,
+                `parejas/${idPareja}/deudas`
+            );
 
-        if (isNaN(montoNumero) || montoNumero <= 0) {
-            Alert.alert('Atención', 'Ingresa un monto válido.');
-            return;
-        }
-
-        if (isNaN(cuotaNumero) || cuotaNumero <= 0) {
-            Alert.alert('Atención', 'Ingresa una cuota válida.');
-            return;
-        }
-
-        const deudasRef = ref(db, `parejas/${idPareja}/deudas`);
-        const nuevaDeudaRef = push(deudasRef);
+        const nuevaDeudaRef =
+            push(deudasRef);
 
         const datosDeuda = {
-            tipo: 'deuda',
-            categoria: categoriaSeleccionada,
-            entidad: subEntidad,
-            monto: montoNumero,
-            cuotaPagar: cuotaNumero,
+
+            tipo:
+                'deuda',
+
+            categoria:
+                categoriaSeleccionada,
+
+            entidad:
+                subEntidad,
+
+            monto:
+                montoNumero,
+
+            cuotaPagar:
+                cuotaNumero,
+
             numeroCuotas:
-                categoriaSeleccionada === 'Préstamo Bancario' ||
-                categoriaSeleccionada === 'Casa Comercial'
-                    ? parseInt(numeroCuotas) || 1
+                categoriaSeleccionada ===
+                    'Préstamo Bancario' ||
+                categoriaSeleccionada ===
+                    'Casa Comercial'
+                    ? parseInt(
+                        numeroCuotas
+                    ) || 1
                     : 1,
-            fechaMaxPago: fechaMaxPago || 'N/A',
-            fechaRegistro: new Date().toISOString(),
-            usuarioEmail: usuarioActual.email,
-            autor: obtenerAutor(usuarioActual.email),
+
+            fechaMaxPago:
+                fechaMaxPago ||
+                'N/A',
+
+            fechaRegistro:
+                new Date().toISOString(),
+
+            usuarioEmail:
+                usuarioActual.email,
+
+            autor:
+                obtenerAutor(
+                    usuarioActual.email
+                ),
         };
 
-        set(nuevaDeudaRef, datosDeuda)
-            .then(() => {
-                Alert.alert('¡Éxito!', 'Deuda registrada correctamente.');
-                limpiarFormulario();
-                navigation.goBack();
-            })
-            .catch((error) => {
-                Alert.alert('Error', error?.message || 'No se pudo registrar la deuda.');
-            });
+        try {
+
+            await set(
+                nuevaDeudaRef,
+                datosDeuda
+            );
+
+            Alert.alert(
+                '¡Éxito!',
+                'Deuda registrada correctamente.'
+            );
+
+            limpiarFormulario();
+
+            navigation.goBack();
+
+        } catch (error: any) {
+
+            Alert.alert(
+                'Error',
+                error?.message ||
+                'No se pudo registrar.'
+            );
+        }
     }
 
-    // ============================================================
+    // ========================================================
     // INTERFAZ
-    // ============================================================
+    // ========================================================
 
     return (
+
         <KeyboardAvoidingView
             style={styles.rootContainer}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            behavior={
+                Platform.OS === 'ios'
+                    ? 'padding'
+                    : 'height'
+            }
         >
+
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.container}
+                contentContainerStyle={
+                    styles.container
+                }
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Cabecera minimalista superior */}
+
+                {/* HEADER */}
+
                 <View style={styles.topHeader}>
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                         style={styles.backButton}
-                        onPress={() => navigation.goBack()}
+                        onPress={() =>
+                            navigation.goBack()
+                        }
                     >
-                        <Text style={styles.backButtonText}>←</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.topHeaderTitle}>Nueva Obligación</Text>
-                    <View style={{ width: 40 }} />
-                </View>
 
-                {/* Banner Principal */}
-                <View style={styles.heroCard}>
-                    <View style={styles.heroIconContainer}>
-                        <Text style={styles.heroEmoji}>💳</Text>
-                    </View>
-                    <View style={styles.heroTextContainer}>
-                        <Text style={styles.heroTitle}>Control Financiero</Text>
-                        <Text style={styles.heroSubtitle}>
-                            Registra y organiza tus compromisos en pareja
+                        <Text
+                            style={
+                                styles.backButtonText
+                            }
+                        >
+                            ←
                         </Text>
-                    </View>
+
+                    </TouchableOpacity>
+
+                    <Text
+                        style={
+                            styles.topHeaderTitle
+                        }
+                    >
+                        Nueva Obligación
+                    </Text>
+
+                    <View
+                        style={{
+                            width: 40,
+                        }}
+                    />
+
                 </View>
 
-                {/* Paso 1: Selección de Categoría */}
-                <View style={styles.sectionHeader}>
-                    <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>01</Text>
+                {/* HERO */}
+
+                <View
+                    style={
+                        styles.heroCard
+                    }
+                >
+
+                    <View
+                        style={
+                            styles.heroIconContainer
+                        }
+                    >
+
+                        <Text
+                            style={
+                                styles.heroEmoji
+                            }
+                        >
+                            💰
+                        </Text>
+
                     </View>
-                    <Text style={styles.sectionTitle}>Tipo de Obligación</Text>
+
+                    <View
+                        style={
+                            styles.heroTextContainer
+                        }
+                    >
+
+                        <Text
+                            style={
+                                styles.heroTitle
+                            }
+                        >
+                            Control Financiero
+                        </Text>
+
+                        <Text
+                            style={
+                                styles.heroSubtitle
+                            }
+                        >
+                            Registra deudas, préstamos y cuentas por cobrar
+                        </Text>
+
+                    </View>
+
                 </View>
 
-                <View style={styles.categoriesContainer}>
+                {/* MI CODIGO */}
+
+                <View
+                    style={
+                        styles.codigoCard
+                    }
+                >
+
+                    <Text
+                        style={
+                            styles.codigoLabel
+                        }
+                    >
+                        🔗 Mi código de cuenta
+                    </Text>
+
+                    {cargandoCodigo ? (
+
+                        <ActivityIndicator
+                            size="small"
+                            color="#059669"
+                        />
+
+                    ) : (
+
+                        <Text
+                            style={
+                                styles.codigoTexto
+                            }
+                        >
+                            {miCodigoCuenta ||
+                                'No disponible'}
+                        </Text>
+
+                    )}
+
+                    <Text
+                        style={
+                            styles.codigoDescripcion
+                        }
+                    >
+                        Comparte este código para vincular préstamos con otra cuenta.
+                    </Text>
+
+                </View>
+
+                {/* CATEGORIAS */}
+
+                <View
+                    style={
+                        styles.sectionHeader
+                    }
+                >
+
+                    <View
+                        style={
+                            styles.stepBadge
+                        }
+                    >
+
+                        <Text
+                            style={
+                                styles.stepBadgeText
+                            }
+                        >
+                            01
+                        </Text>
+
+                    </View>
+
+                    <Text
+                        style={
+                            styles.sectionTitle
+                        }
+                    >
+                        Tipo de Obligación
+                    </Text>
+
+                </View>
+
+                <View
+                    style={
+                        styles.categoriesContainer
+                    }
+                >
+
                     {[
-                        { id: 'Tarjeta de Crédito', label: 'Tarjeta de Crédito', icon: '💳' },
-                        { id: 'Préstamo Bancario', label: 'Préstamo Bancario', icon: '🏦' },
-                        { id: 'Casa Comercial', label: 'Casa Comercial', icon: '🏬' },
-                        { id: 'Operadora Celular', label: 'Planes Celular', icon: '📱' },
-                    ].map((item) => {
-                        const isSelected = categoriaSeleccionada === item.id;
+                        {
+                            id: 'Tarjeta de Crédito',
+                            label: 'Tarjeta de Crédito',
+                            icon: '💳',
+                        },
+                        {
+                            id: 'Préstamo Bancario',
+                            label: 'Préstamo Bancario',
+                            icon: '🏦',
+                        },
+                        {
+                            id: 'Casa Comercial',
+                            label: 'Casa Comercial',
+                            icon: '🏬',
+                        },
+                        {
+                            id: 'Operadora Celular',
+                            label: 'Planes Celular',
+                            icon: '📱',
+                        },
+                    ].map(item => {
+
+                        const selected =
+                            categoriaSeleccionada ===
+                            item.id;
+
                         return (
+
                             <TouchableOpacity
                                 key={item.id}
                                 style={[
                                     styles.categoryCard,
-                                    isSelected && styles.categoryCardSelected,
+                                    selected &&
+                                    styles.categoryCardSelected,
                                 ]}
-                                onPress={() => seleccionarCategoria(item.id)}
-                                activeOpacity={0.8}
+                                onPress={() =>
+                                    seleccionarCategoria(
+                                        item.id
+                                    )
+                                }
                             >
-                                <Text style={styles.categoryEmoji}>{item.icon}</Text>
-                                <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
+
+                                <View
+                                    style={[
+                                        styles.categoryIconBox,
+                                        selected &&
+                                        styles.categoryIconBoxSelected,
+                                    ]}
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.categoryEmoji
+                                        }
+                                    >
+                                        {item.icon}
+                                    </Text>
+
+                                </View>
+
+                                <Text
+                                    style={[
+                                        styles.categoryText,
+                                        selected &&
+                                        styles.categoryTextSelected,
+                                    ]}
+                                >
                                     {item.label}
                                 </Text>
-                                <View style={[styles.radioIndicator, isSelected && styles.radioIndicatorSelected]}>
-                                    {isSelected && <View style={styles.radioDot} />}
+
+                                <View
+                                    style={[
+                                        styles.radioIndicator,
+                                        selected &&
+                                        styles.radioIndicatorSelected,
+                                    ]}
+                                >
+
+                                    {selected && (
+                                        <View
+                                            style={
+                                                styles.radioDot
+                                            }
+                                        />
+                                    )}
+
                                 </View>
+
                             </TouchableOpacity>
                         );
                     })}
 
-                    {/* Opción Ancha para Cuentas por Pagar */}
+                    {/* CUENTAS POR PAGAR */}
+
                     <TouchableOpacity
                         style={[
                             styles.categoryCardWide,
-                            categoriaSeleccionada === 'Deuda Familiar' && styles.categoryCardSelected,
+                            categoriaSeleccionada ===
+                                'Deuda Familiar' &&
+                            styles.categoryCardSelected,
                         ]}
-                        onPress={() => seleccionarCategoria('Deuda Familiar')}
-                        activeOpacity={0.8}
+                        onPress={() =>
+                            seleccionarCategoria(
+                                'Deuda Familiar'
+                            )
+                        }
                     >
-                        <Text style={styles.categoryEmoji}>👥</Text>
-                        <View >
-                            <Text style={[styles.categoryText, categoriaSeleccionada === 'Deuda Familiar' && styles.categoryTextSelected]}>
+
+                        <View
+                            style={[
+                                styles.categoryIconBox,
+                                categoriaSeleccionada ===
+                                    'Deuda Familiar' &&
+                                styles.categoryIconBoxSelected,
+                            ]}
+                        >
+
+                            <Text
+                                style={
+                                    styles.categoryEmoji
+                                }
+                            >
+                                💸
+                            </Text>
+
+                        </View>
+
+                        <View>
+
+                            <Text
+                                style={[
+                                    styles.categoryText,
+                                    categoriaSeleccionada ===
+                                        'Deuda Familiar' &&
+                                    styles.categoryTextSelected,
+                                ]}
+                            >
                                 Cuentas por Pagar
                             </Text>
-                            <Text style={styles.categorySubText}>Familiares / Personales</Text>
+
+                            <Text
+                                style={
+                                    styles.categorySubText
+                                }
+                            >
+                                Dinero que tú debes
+                            </Text>
+
                         </View>
-                        <View style={[styles.radioIndicator, categoriaSeleccionada === 'Deuda Familiar' && styles.radioIndicatorSelected]}>
-                            {categoriaSeleccionada === 'Deuda Familiar' && <View style={styles.radioDot} />}
-                        </View>
+
                     </TouchableOpacity>
+
+                    {/* CUENTAS POR COBRAR */}
+
+                    <TouchableOpacity
+                        style={[
+                            styles.categoryCardWide,
+                            categoriaSeleccionada ===
+                                'Cuenta por Cobrar' &&
+                            styles.categoryCardSelected,
+                        ]}
+                        onPress={() =>
+                            seleccionarCategoria(
+                                'Cuenta por Cobrar'
+                            )
+                        }
+                    >
+
+                        <View
+                            style={[
+                                styles.categoryIconBox,
+                                categoriaSeleccionada ===
+                                    'Cuenta por Cobrar' &&
+                                styles.categoryIconBoxSelected,
+                            ]}
+                        >
+
+                            <Text
+                                style={
+                                    styles.categoryEmoji
+                                }
+                            >
+                                💵
+                            </Text>
+
+                        </View>
+
+                        <View>
+
+                            <Text
+                                style={[
+                                    styles.categoryText,
+                                    categoriaSeleccionada ===
+                                        'Cuenta por Cobrar' &&
+                                    styles.categoryTextSelected,
+                                ]}
+                            >
+                                Cuentas por Cobrar
+                            </Text>
+
+                            <Text
+                                style={
+                                    styles.categorySubText
+                                }
+                            >
+                                Dinero que te deben
+                            </Text>
+
+                        </View>
+
+                    </TouchableOpacity>
+
                 </View>
 
-                {/* Sub-Flujo: Tarjeta de Crédito */}
-                {categoriaSeleccionada === 'Tarjeta de Crédito' && (
-                    <View style={styles.subFlowContainer}>
-                        <View style={styles.sectionHeader}>
-                            <View style={styles.stepBadge}>
-                                <Text style={styles.stepBadgeText}>02</Text>
-                            </View>
-                            <Text style={styles.sectionTitle}>Acción con Tarjeta</Text>
-                        </View>
+                {/* ==================================================
+                    TARJETA DE CREDITO
+                ================================================== */}
 
-                        <View style={styles.modeRow}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.modeCard,
-                                    modoTarjeta === 'nueva' && styles.modeCardSelected,
-                                ]}
-                                onPress={() => setModoTarjeta('nueva')}
-                                activeOpacity={0.8}
+                {categoriaSeleccionada ===
+                    'Tarjeta de Crédito' && (
+
+                    <View
+                        style={
+                            styles.subFlowContainer
+                        }
+                    >
+
+                        <View
+                            style={
+                                styles.sectionHeader
+                            }
+                        >
+
+                            <View
+                                style={
+                                    styles.stepBadge
+                                }
                             >
-                                <Text style={styles.modeEmoji}>➕</Text>
-                                <Text style={[styles.modeTitle, modoTarjeta === 'nueva' && styles.modeTitleSelected]}>
-                                    Tarjeta Nueva
-                                </Text>
-                                <Text style={styles.modeDesc}>Registrar plástico</Text>
-                            </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[
-                                    styles.modeCard,
-                                    modoTarjeta === 'consumo' && styles.modeCardSelected,
-                                ]}
-                                onPress={() => setModoTarjeta('consumo')}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={styles.modeEmoji}>💸</Text>
-                                <Text style={[styles.modeTitle, modoTarjeta === 'consumo' && styles.modeTitleSelected]}>
-                                    Consumo
-                                </Text>
-                                <Text style={styles.modeDesc}>Nuevo gasto o diferido</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* FORMULARIO: NUEVA TARJETA */}
-                        {modoTarjeta === 'nueva' && (
-                            <View style={styles.formCard}>
-                                <Text style={styles.formCardTitle}>Detalles del Plástico</Text>
-
-                                <Text style={styles.inputLabel}>Banco Emisor</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. Pichincha, Guayaquil, Produbanco"
-                                    placeholderTextColor="#94A3B8"
-                                    value={bancoTarjeta}
-                                    onChangeText={setBancoTarjeta}
-                                />
-
-                                <Text style={styles.inputLabel}>Marca de la Tarjeta</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. Visa, Mastercard"
-                                    placeholderTextColor="#94A3B8"
-                                    value={marcaTarjeta}
-                                    onChangeText={setMarcaTarjeta}
-                                />
-
-                                <Text style={styles.inputLabel}>Cupo Total ($)</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. 1500"
-                                    placeholderTextColor="#94A3B8"
-                                    keyboardType="numeric"
-                                    value={cupoTotal}
-                                    onChangeText={setCupoTotal}
-                                />
-
-                                <Text style={styles.inputLabel}>Fecha de Corte / Vencimiento (Opcional)</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. 15 de cada mes"
-                                    placeholderTextColor="#94A3B8"
-                                    value={fechaCaducidad}
-                                    onChangeText={setFechaCaducidad}
-                                />
-
-                                <TouchableOpacity
-                                    style={styles.submitButton}
-                                    onPress={guardarTarjetaNueva}
-                                    activeOpacity={0.85}
+                                <Text
+                                    style={
+                                        styles.stepBadgeText
+                                    }
                                 >
-                                    <Text style={styles.submitButtonText}>Guardar Tarjeta</Text>
-                                </TouchableOpacity>
+                                    02
+                                </Text>
+
                             </View>
-                        )}
 
-                        {/* FORMULARIO: CONSUMO TARJETA */}
-                        {modoTarjeta === 'consumo' && (
-                            <View style={styles.formCard}>
-                                <Text style={styles.formCardTitle}>Detalle del Consumo</Text>
+                            <Text
+                                style={
+                                    styles.sectionTitle
+                                }
+                            >
+                                Tarjeta de Crédito
+                            </Text>
 
-                                <Text style={styles.inputLabel}>Seleccionar Tarjeta</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-                                    {tarjetasDisponibles.map((tarjeta) => {
-                                        const isChipSelected = tarjetaConsumoId === tarjeta.id;
+                        </View>
+
+                        <View
+                            style={
+                                styles.modeRow
+                            }
+                        >
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.tarjetaModeButton,
+                                    modoTarjeta === 'nueva' &&
+                                    styles.tarjetaModeButtonSelected,
+                                ]}
+                                onPress={() =>
+                                    setModoTarjeta('nueva')
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.tarjetaModeIcon
+                                    }
+                                >
+                                    ➕
+                                </Text>
+
+                                <Text
+                                    style={[
+                                        styles.tarjetaModeText,
+                                        modoTarjeta === 'nueva' &&
+                                        styles.tarjetaModeTextSelected,
+                                    ]}
+                                >
+                                    Nueva tarjeta
+                                </Text>
+
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.tarjetaModeButton,
+                                    modoTarjeta === 'consumo' &&
+                                    styles.tarjetaModeButtonSelected,
+                                ]}
+                                onPress={() =>
+                                    setModoTarjeta('consumo')
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.tarjetaModeIcon
+                                    }
+                                >
+                                    🛒
+                                </Text>
+
+                                <Text
+                                    style={[
+                                        styles.tarjetaModeText,
+                                        modoTarjeta === 'consumo' &&
+                                        styles.tarjetaModeTextSelected,
+                                    ]}
+                                >
+                                    Registrar consumo
+                                </Text>
+
+                            </TouchableOpacity>
+
+                        </View>
+
+                        {/* NUEVA TARJETA */}
+
+                        {modoTarjeta === 'nueva' && (
+
+                            <View
+                                style={
+                                    styles.formCard
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Banco / Entidad
+                                </Text>
+
+                                <TextInput
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. Banco Pichincha"
+                                    placeholderTextColor="#94A3B8"
+                                    value={
+                                        bancoTarjeta
+                                    }
+                                    onChangeText={
+                                        setBancoTarjeta
+                                    }
+                                />
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Marca de la tarjeta
+                                </Text>
+
+                                <View
+                                    style={
+                                        styles.marcasContainer
+                                    }
+                                >
+
+                                    {[
+                                        'Visa',
+                                        'Mastercard',
+                                        'Diners',
+                                        'American Express',
+                                        'Discover',
+                                    ].map(marca => {
+
+                                        const selected =
+                                            marcaTarjeta ===
+                                            marca;
+
                                         return (
+
                                             <TouchableOpacity
-                                                key={tarjeta.id}
+                                                key={marca}
                                                 style={[
-                                                    styles.chipItem,
-                                                    isChipSelected && styles.chipItemSelected,
+                                                    styles.marcaButton,
+                                                    selected &&
+                                                    styles.marcaButtonSelected,
                                                 ]}
-                                                onPress={() => setTarjetaConsumoId(tarjeta.id)}
+                                                onPress={() =>
+                                                    setMarcaTarjeta(
+                                                        marca
+                                                    )
+                                                }
                                             >
-                                                <Text style={[styles.chipText, isChipSelected && styles.chipTextSelected]}>
-                                                    {tarjeta.banco} ({tarjeta.marca})
+
+                                                <Text
+                                                    style={[
+                                                        styles.marcaButtonText,
+                                                        selected &&
+                                                        styles.marcaButtonTextSelected,
+                                                    ]}
+                                                >
+                                                    {marca}
                                                 </Text>
+
+                                                {selected && (
+                                                    <Text
+                                                        style={
+                                                            styles.marcaCheck
+                                                        }
+                                                    >
+                                                        ✓
+                                                    </Text>
+                                                )}
+
                                             </TouchableOpacity>
                                         );
                                     })}
-                                </ScrollView>
 
-                                <Text style={styles.inputLabel}>Monto del Consumo ($)</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. 85.50"
-                                    placeholderTextColor="#94A3B8"
-                                    keyboardType="numeric"
-                                    value={montoConsumo}
-                                    onChangeText={setMontoConsumo}
-                                />
-
-                                <Text style={styles.inputLabel}>Modalidad de Pago</Text>
-                                <View style={styles.modeRow}>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.subModeButton,
-                                            esDiferido === false && styles.subModeButtonSelected,
-                                        ]}
-                                        onPress={() => setEsDiferido(false)}
-                                    >
-                                        <Text style={[styles.subModeText, esDiferido === false && styles.subModeTextSelected]}>
-                                            Corriente
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.subModeButton,
-                                            esDiferido === true && styles.subModeButtonSelected,
-                                        ]}
-                                        onPress={() => setEsDiferido(true)}
-                                    >
-                                        <Text style={[styles.subModeText, esDiferido === true && styles.subModeTextSelected]}>
-                                            Diferido
-                                        </Text>
-                                    </TouchableOpacity>
                                 </View>
 
-                                {esDiferido === true && (
-                                    <>
-                                        <Text style={styles.inputLabel}>Número de Cuotas</Text>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Ej. 6 ó 12"
-                                            placeholderTextColor="#94A3B8"
-                                            keyboardType="numeric"
-                                            value={numeroCuotasConsumo}
-                                            onChangeText={setNumeroCuotasConsumo}
-                                        />
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Cupo Total ($)
+                                </Text>
 
-                                        <Text style={styles.inputLabel}>Valor de la Cuota Mensual ($)</Text>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Ej. 14.25"
-                                            placeholderTextColor="#94A3B8"
-                                            keyboardType="numeric"
-                                            value={valorCuotaConsumo}
-                                            onChangeText={setValorCuotaConsumo}
-                                        />
-                                    </>
-                                )}
-
-                                <Text style={styles.inputLabel}>Establecimiento o Descripción</Text>
                                 <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. Supermaxi, Cena, Ropa"
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. 3000"
                                     placeholderTextColor="#94A3B8"
-                                    value={descripcionConsumo}
-                                    onChangeText={setDescripcionConsumo}
+                                    keyboardType="numeric"
+                                    value={
+                                        cupoTotal
+                                    }
+                                    onChangeText={
+                                        setCupoTotal
+                                    }
                                 />
 
-                                <Text style={styles.inputLabel}>Fecha Máxima / Corte (Opcional)</Text>
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Fecha de Caducidad
+                                </Text>
+
                                 <TextInput
-                                    style={styles.input}
-                                    placeholder="Ej. 2026-09-15"
+                                    style={
+                                        styles.input
+                                    }
+                                    placeholder="Ej. 08/29"
                                     placeholderTextColor="#94A3B8"
-                                    value={fechaConsumo}
-                                    onChangeText={setFechaConsumo}
+                                    value={
+                                        fechaCaducidad
+                                    }
+                                    onChangeText={
+                                        setFechaCaducidad
+                                    }
                                 />
 
                                 <TouchableOpacity
-                                    style={styles.submitButton}
-                                    onPress={guardarConsumo}
-                                    activeOpacity={0.85}
+                                    style={
+                                        styles.submitButton
+                                    }
+                                    onPress={
+                                        guardarTarjetaNueva
+                                    }
                                 >
-                                    <Text style={styles.submitButtonText}>Registrar Consumo</Text>
+
+                                    <Text
+                                        style={
+                                            styles.submitButtonText
+                                        }
+                                    >
+                                        💳 Registrar Tarjeta
+                                    </Text>
+
                                 </TouchableOpacity>
+
                             </View>
                         )}
+
+                        {/* CONSUMO */}
+
+                        {modoTarjeta === 'consumo' && (
+
+                            <View
+                                style={
+                                    styles.formCard
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.inputLabel
+                                    }
+                                >
+                                    Selecciona la tarjeta
+                                </Text>
+
+                                {tarjetasDisponibles.length === 0 ? (
+
+                                    <View
+                                        style={
+                                            styles.emptyCard
+                                        }
+                                    >
+
+                                        <Text
+                                            style={
+                                                styles.emptyCardIcon
+                                            }
+                                        >
+                                            💳
+                                        </Text>
+
+                                        <Text
+                                            style={
+                                                styles.emptyCardTitle
+                                            }
+                                        >
+                                            No tienes tarjetas registradas
+                                        </Text>
+
+                                        <Text
+                                            style={
+                                                styles.emptyCardText
+                                            }
+                                        >
+                                            Primero registra una tarjeta para poder agregar consumos.
+                                        </Text>
+
+                                    </View>
+
+                                ) : (
+
+                                    tarjetasDisponibles.map(
+                                        tarjeta => {
+
+                                            const selected =
+                                                tarjetaConsumoId ===
+                                                tarjeta.id;
+
+                                            return (
+
+                                                <TouchableOpacity
+                                                    key={
+                                                        tarjeta.id
+                                                    }
+                                                    style={[
+                                                        styles.tarjetaItem,
+                                                        selected &&
+                                                        styles.tarjetaItemSelected,
+                                                    ]}
+                                                    onPress={() =>
+                                                        setTarjetaConsumoId(
+                                                            tarjeta.id
+                                                        )
+                                                    }
+                                                >
+
+                                                    <View
+                                                        style={
+                                                            styles.tarjetaItemIcon
+                                                        }
+                                                    >
+                                                        <Text
+                                                            style={{
+                                                                fontSize: 22,
+                                                            }}
+                                                        >
+                                                            💳
+                                                        </Text>
+                                                    </View>
+
+                                                    <View
+                                                        style={{
+                                                            flex: 1,
+                                                        }}
+                                                    >
+
+                                                        <Text
+                                                            style={
+                                                                styles.tarjetaItemTitle
+                                                            }
+                                                        >
+                                                            {tarjeta.banco}
+                                                        </Text>
+
+                                                        <Text
+                                                            style={
+                                                                styles.tarjetaItemSubtitle
+                                                            }
+                                                        >
+                                                            {tarjeta.marca}
+                                                            {' • '}
+                                                            Cupo $
+                                                            {tarjeta.cupoTotal.toFixed(
+                                                                2
+                                                            )}
+                                                        </Text>
+
+                                                    </View>
+
+                                                    <View
+                                                        style={[
+                                                            styles.radioIndicator,
+                                                            selected &&
+                                                            styles.radioIndicatorSelected,
+                                                        ]}
+                                                    >
+
+                                                        {selected && (
+                                                            <View
+                                                                style={
+                                                                    styles.radioDot
+                                                                }
+                                                            />
+                                                        )}
+
+                                                    </View>
+
+                                                </TouchableOpacity>
+                                            );
+                                        }
+                                    )
+                                )}
+
+                                {tarjetasDisponibles.length > 0 && (
+
+                                    <>
+
+                                        <Text
+                                            style={
+                                                styles.inputLabel
+                                            }
+                                        >
+                                            Monto del Consumo ($)
+                                        </Text>
+
+                                        <TextInput
+                                            style={
+                                                styles.input
+                                            }
+                                            placeholder="Ej. 120"
+                                            placeholderTextColor="#94A3B8"
+                                            keyboardType="numeric"
+                                            value={
+                                                montoConsumo
+                                            }
+                                            onChangeText={
+                                                setMontoConsumo
+                                            }
+                                        />
+
+                                        <Text
+                                            style={
+                                                styles.inputLabel
+                                            }
+                                        >
+                                            Forma de pago
+                                        </Text>
+
+                                        <View
+                                            style={
+                                                styles.modeRow
+                                            }
+                                        >
+
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.subModeButton,
+                                                    esDiferido === false &&
+                                                    styles.subModeButtonSelected,
+                                                ]}
+                                                onPress={() =>
+                                                    setEsDiferido(false)
+                                                }
+                                            >
+
+                                                <Text
+                                                    style={[
+                                                        styles.subModeText,
+                                                        esDiferido === false &&
+                                                        styles.subModeTextSelected,
+                                                    ]}
+                                                >
+                                                    Corriente
+                                                </Text>
+
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.subModeButton,
+                                                    esDiferido === true &&
+                                                    styles.subModeButtonSelected,
+                                                ]}
+                                                onPress={() =>
+                                                    setEsDiferido(true)
+                                                }
+                                            >
+
+                                                <Text
+                                                    style={[
+                                                        styles.subModeText,
+                                                        esDiferido === true &&
+                                                        styles.subModeTextSelected,
+                                                    ]}
+                                                >
+                                                    Diferido
+                                                </Text>
+
+                                            </TouchableOpacity>
+
+                                        </View>
+
+                                        {esDiferido === true && (
+
+                                            <>
+
+                                                <Text
+                                                    style={
+                                                        styles.inputLabel
+                                                    }
+                                                >
+                                                    Número de Cuotas
+                                                </Text>
+
+                                                <TextInput
+                                                    style={
+                                                        styles.input
+                                                    }
+                                                    placeholder="Ej. 6"
+                                                    placeholderTextColor="#94A3B8"
+                                                    keyboardType="numeric"
+                                                    value={
+                                                        numeroCuotasConsumo
+                                                    }
+                                                    onChangeText={
+                                                        setNumeroCuotasConsumo
+                                                    }
+                                                />
+
+                                                <Text
+                                                    style={
+                                                        styles.inputLabel
+                                                    }
+                                                >
+                                                    Valor de la Cuota ($)
+                                                </Text>
+
+                                                <TextInput
+                                                    style={
+                                                        styles.input
+                                                    }
+                                                    placeholder="Ej. 20"
+                                                    placeholderTextColor="#94A3B8"
+                                                    keyboardType="numeric"
+                                                    value={
+                                                        valorCuotaConsumo
+                                                    }
+                                                    onChangeText={
+                                                        setValorCuotaConsumo
+                                                    }
+                                                />
+
+                                            </>
+                                        )}
+
+                                        <Text
+                                            style={
+                                                styles.inputLabel
+                                            }
+                                        >
+                                            Descripción
+                                        </Text>
+
+                                        <TextInput
+                                            style={
+                                                styles.input
+                                            }
+                                            placeholder="Ej. Compra supermercado"
+                                            placeholderTextColor="#94A3B8"
+                                            value={
+                                                descripcionConsumo
+                                            }
+                                            onChangeText={
+                                                setDescripcionConsumo
+                                            }
+                                        />
+
+                                        <Text
+                                            style={
+                                                styles.inputLabel
+                                            }
+                                        >
+                                            Fecha / Día de Pago
+                                        </Text>
+
+                                        <TextInput
+                                            style={
+                                                styles.input
+                                            }
+                                            placeholder="Ej. 15 de cada mes"
+                                            placeholderTextColor="#94A3B8"
+                                            value={
+                                                fechaConsumo
+                                            }
+                                            onChangeText={
+                                                setFechaConsumo
+                                            }
+                                        />
+
+                                        <TouchableOpacity
+                                            style={
+                                                styles.submitButton
+                                            }
+                                            onPress={
+                                                guardarConsumo
+                                            }
+                                        >
+
+                                            <Text
+                                                style={
+                                                    styles.submitButtonText
+                                                }
+                                            >
+                                                🛒 Registrar Consumo
+                                            </Text>
+
+                                        </TouchableOpacity>
+
+                                    </>
+                                )}
+
+                            </View>
+                        )}
+
                     </View>
                 )}
 
-                {/* Sub-Flujo: Deudas Generales */}
-                {categoriaSeleccionada && categoriaSeleccionada !== 'Tarjeta de Crédito' && (
-                    <View style={styles.subFlowContainer}>
-                        <View style={styles.sectionHeader}>
-                            <View style={styles.stepBadge}>
-                                <Text style={styles.stepBadgeText}>02</Text>
+                {/* ==================================================
+                    CUENTA POR COBRAR
+                ================================================== */}
+
+                {categoriaSeleccionada ===
+                    'Cuenta por Cobrar' && (
+
+                    <View
+                        style={
+                            styles.subFlowContainer
+                        }
+                    >
+
+                        <View
+                            style={
+                                styles.sectionHeader
+                            }
+                        >
+
+                            <View
+                                style={
+                                    styles.stepBadge
+                                }
+                            >
+                                <Text
+                                    style={
+                                        styles.stepBadgeText
+                                    }
+                                >
+                                    02
+                                </Text>
                             </View>
-                            <Text style={styles.sectionTitle}>Información de la Deuda</Text>
+
+                            <Text
+                                style={
+                                    styles.sectionTitle
+                                }
+                            >
+                                Persona que te debe
+                            </Text>
+
                         </View>
 
-                        <View style={styles.formCard}>
-                            <Text style={styles.inputLabel}>Entidad o Acreedor</Text>
+                        <View
+                            style={
+                                styles.formCard
+                            }
+                        >
+
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Nombre
+                            </Text>
+
                             <TextInput
-                                style={styles.input}
-                                placeholder="Ej. Banco Bolivariano, Almacenes Tía, Familiar"
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. Juan"
                                 placeholderTextColor="#94A3B8"
-                                value={subEntidad}
-                                onChangeText={setSubEntidad}
+                                value={
+                                    nombrePersona
+                                }
+                                onChangeText={
+                                    setNombrePersona
+                                }
                             />
 
-                            <Text style={styles.inputLabel}>Monto Total de la Deuda ($)</Text>
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Apellido
+                            </Text>
+
                             <TextInput
-                                style={styles.input}
-                                placeholder="Ej. 2500"
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. Pérez"
                                 placeholderTextColor="#94A3B8"
-                                keyboardType="numeric"
-                                value={monto}
-                                onChangeText={setMonto}
+                                value={
+                                    apellidoPersona
+                                }
+                                onChangeText={
+                                    setApellidoPersona
+                                }
                             />
 
-                            <Text style={styles.inputLabel}>Cuota Periódica a Pagar ($)</Text>
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Parentesco / Relación
+                            </Text>
+
                             <TextInput
-                                style={styles.input}
-                                placeholder="Ej. 120"
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. Hermano, amigo, compañero"
                                 placeholderTextColor="#94A3B8"
-                                keyboardType="numeric"
-                                value={cuotaPagar}
-                                onChangeText={setCuotaPagar}
+                                value={
+                                    parentescoPersona
+                                }
+                                onChangeText={
+                                    setParentescoPersona
+                                }
                             />
 
-                            {(categoriaSeleccionada === 'Préstamo Bancario' || categoriaSeleccionada === 'Casa Comercial') && (
-                                <>
-                                    <Text style={styles.inputLabel}>Número Total de Cuotas</Text>
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                ¿Tiene código de cuenta?
+                            </Text>
+
+                            <View
+                                style={
+                                    styles.modeRow
+                                }
+                            >
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.subModeButton,
+                                        !usarCodigoPersona &&
+                                        styles.subModeButtonSelected,
+                                    ]}
+                                    onPress={() => {
+
+                                        setUsarCodigoPersona(false);
+                                        setPersonaEncontrada(null);
+                                        setCodigoPersona('');
+
+                                    }}
+                                >
+
+                                    <Text
+                                        style={[
+                                            styles.subModeText,
+                                            !usarCodigoPersona &&
+                                            styles.subModeTextSelected,
+                                        ]}
+                                    >
+                                        No
+                                    </Text>
+
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.subModeButton,
+                                        usarCodigoPersona &&
+                                        styles.subModeButtonSelected,
+                                    ]}
+                                    onPress={() =>
+                                        setUsarCodigoPersona(true)
+                                    }
+                                >
+
+                                    <Text
+                                        style={[
+                                            styles.subModeText,
+                                            usarCodigoPersona &&
+                                            styles.subModeTextSelected,
+                                        ]}
+                                    >
+                                        Sí, vincular
+                                    </Text>
+
+                                </TouchableOpacity>
+
+                            </View>
+
+                            {usarCodigoPersona && (
+
+                                <View>
+
+                                    <Text
+                                        style={
+                                            styles.inputLabel
+                                        }
+                                    >
+                                        Código de cuenta de la persona
+                                    </Text>
+
                                     <TextInput
-                                        style={styles.input}
-                                        placeholder="Ej. 24"
+                                        style={
+                                            styles.input
+                                        }
+                                        placeholder="Ej. XK72P4"
+                                        placeholderTextColor="#94A3B8"
+                                        autoCapitalize="characters"
+                                        value={
+                                            codigoPersona
+                                        }
+                                        onChangeText={text => {
+
+                                            setCodigoPersona(
+                                                text.toUpperCase()
+                                            );
+
+                                            setPersonaEncontrada(
+                                                null
+                                            );
+
+                                        }}
+                                    />
+
+                                    <TouchableOpacity
+                                        style={
+                                            styles.verifyButton
+                                        }
+                                        onPress={
+                                            buscarPersonaPorCodigo
+                                        }
+                                    >
+
+                                        {buscandoCodigo ? (
+
+                                            <ActivityIndicator
+                                                color="#FFFFFF"
+                                            />
+
+                                        ) : (
+
+                                            <Text
+                                                style={
+                                                    styles.verifyButtonText
+                                                }
+                                            >
+                                                🔍 Validar código
+                                            </Text>
+
+                                        )}
+
+                                    </TouchableOpacity>
+
+                                    {personaEncontrada && (
+
+                                        <View
+                                            style={
+                                                styles.personaEncontrada
+                                            }
+                                        >
+
+                                            <Text
+                                                style={
+                                                    styles.personaEncontradaTitulo
+                                                }
+                                            >
+                                                ✅ Cuenta encontrada
+                                            </Text>
+
+                                            <Text
+                                                style={
+                                                    styles.personaEncontradaTexto
+                                                }
+                                            >
+                                                {
+                                                    personaEncontrada.nombre
+                                                }{' '}
+                                                {
+                                                    personaEncontrada.apellido
+                                                }
+                                            </Text>
+
+                                            <Text
+                                                style={
+                                                    styles.personaEncontradaCodigo
+                                                }
+                                            >
+                                                Código: {codigoPersona}
+                                            </Text>
+
+                                            <Text
+                                                style={
+                                                    styles.personaEncontradaInfo
+                                                }
+                                            >
+                                                El préstamo se registrará en ambas cuentas.
+                                            </Text>
+
+                                        </View>
+                                    )}
+
+                                </View>
+                            )}
+
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Monto Prestado ($)
+                            </Text>
+
+                            <TextInput
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. 300"
+                                placeholderTextColor="#94A3B8"
+                                keyboardType="numeric"
+                                value={
+                                    monto
+                                }
+                                onChangeText={
+                                    setMonto
+                                }
+                            />
+
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Forma de Pago
+                            </Text>
+
+                            <View
+                                style={
+                                    styles.modeRow
+                                }
+                            >
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.subModeButton,
+                                        formaPagoCobrar ===
+                                            'corriente' &&
+                                        styles.subModeButtonSelected,
+                                    ]}
+                                    onPress={() =>
+                                        setFormaPagoCobrar(
+                                            'corriente'
+                                        )
+                                    }
+                                >
+
+                                    <Text
+                                        style={[
+                                            styles.subModeText,
+                                            formaPagoCobrar ===
+                                                'corriente' &&
+                                            styles.subModeTextSelected,
+                                        ]}
+                                    >
+                                        Corriente
+                                    </Text>
+
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.subModeButton,
+                                        formaPagoCobrar ===
+                                            'diferido' &&
+                                        styles.subModeButtonSelected,
+                                    ]}
+                                    onPress={() =>
+                                        setFormaPagoCobrar(
+                                            'diferido'
+                                        )
+                                    }
+                                >
+
+                                    <Text
+                                        style={[
+                                            styles.subModeText,
+                                            formaPagoCobrar ===
+                                                'diferido' &&
+                                            styles.subModeTextSelected,
+                                        ]}
+                                    >
+                                        Diferido
+                                    </Text>
+
+                                </TouchableOpacity>
+
+                            </View>
+
+                            {formaPagoCobrar ===
+                                'diferido' && (
+
+                                <>
+
+                                    <Text
+                                        style={
+                                            styles.inputLabel
+                                        }
+                                    >
+                                        Número de Cuotas
+                                    </Text>
+
+                                    <TextInput
+                                        style={
+                                            styles.input
+                                        }
+                                        placeholder="Ej. 6"
                                         placeholderTextColor="#94A3B8"
                                         keyboardType="numeric"
-                                        value={numeroCuotas}
-                                        onChangeText={setNumeroCuotas}
+                                        value={
+                                            cuotasCobrar
+                                        }
+                                        onChangeText={
+                                            setCuotasCobrar
+                                        }
                                     />
+
+                                    <Text
+                                        style={
+                                            styles.inputLabel
+                                        }
+                                    >
+                                        Valor de la Cuota ($)
+                                    </Text>
+
+                                    <TextInput
+                                        style={
+                                            styles.input
+                                        }
+                                        placeholder="Ej. 50"
+                                        placeholderTextColor="#94A3B8"
+                                        keyboardType="numeric"
+                                        value={
+                                            valorCuotaCobrar
+                                        }
+                                        onChangeText={
+                                            setValorCuotaCobrar
+                                        }
+                                    />
+
                                 </>
                             )}
 
-                            <Text style={styles.inputLabel}>Fecha Límite / Día de Pago</Text>
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Fecha / Día de Pago
+                            </Text>
+
                             <TextInput
-                                style={styles.input}
-                                placeholder="Ej. 30 de cada mes"
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. 15 de cada mes"
                                 placeholderTextColor="#94A3B8"
-                                value={fechaMaxPago}
-                                onChangeText={setFechaMaxPago}
+                                value={
+                                    fechaMaxPago
+                                }
+                                onChangeText={
+                                    setFechaMaxPago
+                                }
                             />
 
                             <TouchableOpacity
-                                style={styles.submitButton}
-                                onPress={guardarDeudaGeneral}
-                                activeOpacity={0.85}
+                                style={
+                                    styles.submitButton
+                                }
+                                onPress={
+                                    guardarCuentaPorCobrar
+                                }
                             >
-                                <Text style={styles.submitButtonText}>Guardar Obligación</Text>
+
+                                <Text
+                                    style={
+                                        styles.submitButtonText
+                                    }
+                                >
+                                    💰 Registrar Préstamo
+                                </Text>
+
                             </TouchableOpacity>
+
                         </View>
+
                     </View>
                 )}
+
+                {/* ==================================================
+                    DEUDAS GENERALES
+                ================================================== */}
+
+                {categoriaSeleccionada &&
+                    categoriaSeleccionada !==
+                        'Tarjeta de Crédito' &&
+                    categoriaSeleccionada !==
+                        'Cuenta por Cobrar' && (
+
+                    <View
+                        style={
+                            styles.subFlowContainer
+                        }
+                    >
+
+                        <View
+                            style={
+                                styles.sectionHeader
+                            }
+                        >
+
+                            <View
+                                style={
+                                    styles.stepBadge
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.stepBadgeText
+                                    }
+                                >
+                                    02
+                                </Text>
+
+                            </View>
+
+                            <Text
+                                style={
+                                    styles.sectionTitle
+                                }
+                            >
+                                Información de la Deuda
+                            </Text>
+
+                        </View>
+
+                        <View
+                            style={
+                                styles.formCard
+                            }
+                        >
+
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Entidad o Acreedor
+                            </Text>
+
+                            <TextInput
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. Banco, almacén, familiar"
+                                placeholderTextColor="#94A3B8"
+                                value={
+                                    subEntidad
+                                }
+                                onChangeText={
+                                    setSubEntidad
+                                }
+                            />
+
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Monto Total de la Deuda ($)
+                            </Text>
+
+                            <TextInput
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. 2500"
+                                placeholderTextColor="#94A3B8"
+                                keyboardType="numeric"
+                                value={
+                                    monto
+                                }
+                                onChangeText={
+                                    setMonto
+                                }
+                            />
+
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Cuota Periódica
+                            </Text>
+
+                            <TextInput
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. 120"
+                                placeholderTextColor="#94A3B8"
+                                keyboardType="numeric"
+                                value={
+                                    cuotaPagar
+                                }
+                                onChangeText={
+                                    setCuotaPagar
+                                }
+                            />
+
+                            {(categoriaSeleccionada ===
+                                'Préstamo Bancario' ||
+                                categoriaSeleccionada ===
+                                    'Casa Comercial') && (
+
+                                <>
+
+                                    <Text
+                                        style={
+                                            styles.inputLabel
+                                        }
+                                    >
+                                        Número Total de Cuotas
+                                    </Text>
+
+                                    <TextInput
+                                        style={
+                                            styles.input
+                                        }
+                                        placeholder="Ej. 24"
+                                        placeholderTextColor="#94A3B8"
+                                        keyboardType="numeric"
+                                        value={
+                                            numeroCuotas
+                                        }
+                                        onChangeText={
+                                            setNumeroCuotas
+                                        }
+                                    />
+
+                                </>
+                            )}
+
+                            <Text
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Fecha Límite / Día de Pago
+                            </Text>
+
+                            <TextInput
+                                style={
+                                    styles.input
+                                }
+                                placeholder="Ej. 30 de cada mes"
+                                placeholderTextColor="#94A3B8"
+                                value={
+                                    fechaMaxPago
+                                }
+                                onChangeText={
+                                    setFechaMaxPago
+                                }
+                            />
+
+                            <TouchableOpacity
+                                style={
+                                    styles.submitButton
+                                }
+                                onPress={
+                                    guardarDeudaGeneral
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.submitButtonText
+                                    }
+                                >
+                                    💾 Guardar Obligación
+                                </Text>
+
+                            </TouchableOpacity>
+
+                        </View>
+
+                    </View>
+                )}
+
             </ScrollView>
+
         </KeyboardAvoidingView>
     );
 }
 
+// ============================================================
+// ESTILOS
+// ============================================================
+
 const styles = StyleSheet.create({
+
     rootContainer: {
         flex: 1,
         backgroundColor: '#F8FAFC',
     },
+
     scrollView: {
         flex: 1,
     },
+
     container: {
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop:
+            Platform.OS === 'android'
+                ? 45
+                : 25,
         paddingBottom: 40,
     },
+
     topHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 20,
     },
+
     backButton: {
         width: 40,
         height: 40,
@@ -954,37 +3278,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
         elevation: 2,
     },
+
     backButtonText: {
         color: '#1E293B',
         fontSize: 18,
         fontWeight: 'bold',
     },
+
     topHeaderTitle: {
         color: '#1E293B',
         fontSize: 16,
         fontWeight: '600',
     },
+
     heroCard: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FFFFFF',
         borderRadius: 20,
         padding: 18,
-        marginBottom: 24,
+        marginBottom: 20,
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
         elevation: 2,
     },
+
     heroIconContainer: {
         width: 50,
         height: 50,
@@ -994,29 +3314,67 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 15,
     },
+
     heroEmoji: {
         fontSize: 24,
     },
+
     heroTextContainer: {
         flex: 1,
     },
+
     heroTitle: {
         color: '#1E293B',
         fontSize: 17,
         fontWeight: 'bold',
         marginBottom: 3,
     },
+
     heroSubtitle: {
         color: '#64748B',
         fontSize: 12,
         lineHeight: 16,
     },
+
+    codigoCard: {
+        backgroundColor: '#ECFDF5',
+        borderRadius: 18,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+        alignItems: 'center',
+    },
+
+    codigoLabel: {
+        color: '#047857',
+        fontSize: 12,
+        fontWeight: '600',
+        marginBottom: 5,
+    },
+
+    codigoTexto: {
+        color: '#065F46',
+        fontSize: 24,
+        fontWeight: 'bold',
+        letterSpacing: 3,
+        marginVertical: 4,
+    },
+
+    codigoDescripcion: {
+        color: '#64748B',
+        fontSize: 10,
+        textAlign: 'center',
+        marginTop: 4,
+    },
+
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 14,
         marginTop: 10,
     },
+
     stepBadge: {
         width: 26,
         height: 26,
@@ -1026,75 +3384,91 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 10,
     },
+
     stepBadgeText: {
         color: '#FFFFFF',
         fontSize: 11,
         fontWeight: 'bold',
     },
+
     sectionTitle: {
         color: '#1E293B',
         fontSize: 15,
         fontWeight: '600',
     },
+
     categoriesContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         marginBottom: 10,
     },
+
     categoryCard: {
         width: '48%',
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
-        padding: 16,
+        padding: 14,
         marginBottom: 12,
         borderWidth: 1,
         borderColor: '#E2E8F0',
         position: 'relative',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 2,
-        elevation: 1,
+        elevation: 2,
     },
+
     categoryCardWide: {
         width: '100%',
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
-        padding: 16,
+        padding: 14,
         marginBottom: 12,
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#E2E8F0',
         position: 'relative',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 2,
-        elevation: 1,
+        elevation: 2,
     },
+
     categoryCardSelected: {
         borderColor: '#059669',
         backgroundColor: '#ECFDF5',
     },
-    categoryEmoji: {
-        fontSize: 22,
-        marginBottom: 8,
+
+    categoryIconBox: {
+        width: 42,
+        height: 42,
+        borderRadius: 13,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 9,
     },
+
+    categoryIconBoxSelected: {
+        backgroundColor: '#D1FAE5',
+    },
+
+    categoryEmoji: {
+        fontSize: 23,
+    },
+
     categoryText: {
         color: '#1E293B',
-        fontWeight: '600',
+        fontWeight: '700',
         fontSize: 13,
     },
+
     categoryTextSelected: {
         color: '#047857',
     },
+
     categorySubText: {
         color: '#64748B',
         fontSize: 11,
         marginTop: 2,
     },
+
     radioIndicator: {
         position: 'absolute',
         top: 14,
@@ -1107,58 +3481,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+
     radioIndicatorSelected: {
         borderColor: '#059669',
         backgroundColor: '#059669',
     },
+
     radioDot: {
         width: 6,
         height: 6,
         borderRadius: 3,
         backgroundColor: '#FFFFFF',
     },
+
     subFlowContainer: {
         marginTop: 10,
     },
-    modeRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    modeCard: {
-        width: '48%',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    modeCardSelected: {
-        borderColor: '#059669',
-        backgroundColor: '#ECFDF5',
-    },
-    modeEmoji: {
-        fontSize: 22,
-        marginBottom: 8,
-    },
-    modeTitle: {
-        color: '#1E293B',
-        fontWeight: '600',
-        fontSize: 13,
-        marginBottom: 2,
-    },
-    modeTitleSelected: {
-        color: '#047857',
-    },
-    modeDesc: {
-        color: '#64748B',
-        fontSize: 11,
-    },
+
     formCard: {
         backgroundColor: '#FFFFFF',
         borderRadius: 20,
@@ -1166,25 +3505,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E2E8F0',
         marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
         elevation: 2,
     },
-    formCardTitle: {
-        color: '#1E293B',
-        fontSize: 15,
-        fontWeight: 'bold',
-        marginBottom: 16,
-    },
+
     inputLabel: {
         color: '#475569',
         fontSize: 12,
-        fontWeight: '500',
+        fontWeight: '600',
         marginBottom: 6,
         marginTop: 12,
     },
+
     input: {
         backgroundColor: '#F8FAFC',
         borderWidth: 1,
@@ -1195,30 +3526,13 @@ const styles = StyleSheet.create({
         color: '#1E293B',
         fontSize: 13,
     },
-    chipScroll: {
-        marginBottom: 4,
+
+    modeRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 16,
     },
-    chipItem: {
-        backgroundColor: '#F8FAFC',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        borderRadius: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        marginRight: 8,
-    },
-    chipItemSelected: {
-        borderColor: '#059669',
-        backgroundColor: '#ECFDF5',
-    },
-    chipText: {
-        color: '#64748B',
-        fontSize: 12,
-    },
-    chipTextSelected: {
-        color: '#047857',
-        fontWeight: 'bold',
-    },
+
     subModeButton: {
         width: '48%',
         backgroundColor: '#F8FAFC',
@@ -1228,33 +3542,237 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         alignItems: 'center',
     },
+
     subModeButtonSelected: {
         borderColor: '#059669',
         backgroundColor: '#ECFDF5',
     },
+
     subModeText: {
         color: '#64748B',
         fontSize: 12,
     },
+
     subModeTextSelected: {
         color: '#047857',
         fontWeight: 'bold',
     },
+
+    // ========================================================
+    // TARJETAS
+    // ========================================================
+
+    tarjetaModeButton: {
+        width: '48%',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 16,
+        paddingVertical: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 1,
+    },
+
+    tarjetaModeButtonSelected: {
+        borderColor: '#059669',
+        backgroundColor: '#ECFDF5',
+    },
+
+    tarjetaModeIcon: {
+        fontSize: 22,
+        marginBottom: 5,
+    },
+
+    tarjetaModeText: {
+        color: '#475569',
+        fontSize: 12,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+
+    tarjetaModeTextSelected: {
+        color: '#047857',
+        fontWeight: 'bold',
+    },
+
+    marcasContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+
+    marcaButton: {
+        width: '48%',
+        minHeight: 48,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        backgroundColor: '#F8FAFC',
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        marginBottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    marcaButtonSelected: {
+        borderColor: '#059669',
+        backgroundColor: '#ECFDF5',
+    },
+
+    marcaButtonText: {
+        color: '#475569',
+        fontSize: 12,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+
+    marcaButtonTextSelected: {
+        color: '#047857',
+        fontWeight: 'bold',
+    },
+
+    marcaCheck: {
+        color: '#059669',
+        fontSize: 15,
+        fontWeight: 'bold',
+        marginLeft: 7,
+    },
+
+    tarjetaItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 15,
+        padding: 13,
+        marginBottom: 10,
+    },
+
+    tarjetaItemSelected: {
+        borderColor: '#059669',
+        backgroundColor: '#ECFDF5',
+    },
+
+    tarjetaItemIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 12,
+        backgroundColor: '#E0F2FE',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+
+    tarjetaItemTitle: {
+        color: '#1E293B',
+        fontSize: 13,
+        fontWeight: 'bold',
+    },
+
+    tarjetaItemSubtitle: {
+        color: '#64748B',
+        fontSize: 11,
+        marginTop: 3,
+    },
+
+    emptyCard: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 15,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        padding: 20,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+
+    emptyCardIcon: {
+        fontSize: 32,
+        marginBottom: 8,
+    },
+
+    emptyCardTitle: {
+        color: '#334155',
+        fontSize: 13,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+
+    emptyCardText: {
+        color: '#64748B',
+        fontSize: 11,
+        textAlign: 'center',
+        marginTop: 5,
+        lineHeight: 16,
+    },
+
+    // ========================================================
+    // CODIGO / VINCULACION
+    // ========================================================
+
+    verifyButton: {
+        backgroundColor: '#0F766E',
+        borderRadius: 12,
+        paddingVertical: 12,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+
+    verifyButtonText: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+
+    personaEncontrada: {
+        backgroundColor: '#ECFDF5',
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+        borderRadius: 14,
+        padding: 14,
+        marginTop: 10,
+    },
+
+    personaEncontradaTitulo: {
+        color: '#047857',
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+
+    personaEncontradaTexto: {
+        color: '#1E293B',
+        fontSize: 15,
+        fontWeight: 'bold',
+    },
+
+    personaEncontradaCodigo: {
+        color: '#64748B',
+        fontSize: 11,
+        marginTop: 3,
+    },
+
+    personaEncontradaInfo: {
+        color: '#059669',
+        fontSize: 10,
+        marginTop: 6,
+    },
+
     submitButton: {
         backgroundColor: '#059669',
         borderRadius: 14,
         paddingVertical: 15,
         alignItems: 'center',
         marginTop: 24,
-        shadowColor: '#059669',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 6,
         elevation: 3,
     },
+
     submitButtonText: {
         color: '#FFFFFF',
         fontWeight: 'bold',
         fontSize: 14,
     },
-});  //pagina /registro/deudas
+});

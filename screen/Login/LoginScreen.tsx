@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
         height: 115,
         borderRadius: 20,
         justifyContent: 'center',
-        
+
     },
 
     titulo: {
@@ -473,23 +473,23 @@ const styles = StyleSheet.create({
     // INPUT
     // ============================================================
 
-    inputContainer: {
-        height: 54,
+inputContainer: {
+    height: 54,
 
-        backgroundColor: COLOR_MUY_SUAVE,
+    backgroundColor: COLOR_MUY_SUAVE,
 
-        borderWidth: 1,
-        borderColor: '#E4E7E6',
+    borderWidth: 1,
+    borderColor: '#E4E7E6',
 
-        borderRadius: 12,
+    borderRadius: 12,
 
-        flexDirection: 'row',
-        alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
 
-        marginBottom: 16,
+    marginBottom: 16,
 
-        paddingRight: 6,
-    },
+    paddingRight: 6,
+},
 
     inputIconBox: {
         width: 38,
@@ -508,14 +508,11 @@ const styles = StyleSheet.create({
 
     input: {
         flex: 1,
-
-        height: '100%',
-
         color: '#171A19',
-
         fontSize: 14,
-
-        paddingVertical: 0,
+        paddingVertical: Platform.OS === 'android' ? 8 : 0,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
 
     eyeButton: {
