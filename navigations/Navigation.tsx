@@ -1,17 +1,8 @@
-import React, {
-    ComponentType,
-    useRef,
-} from 'react';
+import React from 'react';
 
 import {
-    Animated,
-    PanResponder,
-    View,
-} from 'react-native';
-
-import {
-    createBottomTabNavigator,
-} from '@react-navigation/bottom-tabs';
+    createMaterialTopTabNavigator,
+} from '@react-navigation/material-top-tabs';
 
 import {
     NavigationContainer,
@@ -21,7 +12,9 @@ import {
     createNativeStackNavigator,
 } from '@react-navigation/native-stack';
 
-import { Ionicons } from '@expo/vector-icons';
+import {
+    Ionicons,
+} from '@expo/vector-icons';
 
 import {
     SafeAreaProvider,
@@ -32,271 +25,57 @@ import {
 // PANTALLAS
 // ============================================================
 
-import LoginScreen from '../screen/Login/LoginScreen';
+import LoginScreen
+    from '../screen/Login/LoginScreen';
 
-import InicioScreen from '../screen/Inicio/InicioScreen';
+import InicioScreen
+    from '../screen/Inicio/InicioScreen';
 
-import PerfilScreen from '../screen/Perfiles/PerfilScreen';
+import PerfilScreen
+    from '../screen/Perfiles/PerfilScreen';
 
-import RegistroScreen from '../screen/Registro/RegistroScreen';
+import RegistroScreen
+    from '../screen/Registro/RegistroScreen';
 
-import RegistroMovimientosScreen from '../screen/Registros/RegistroMovimientosScreen';
+import RegistroMovimientosScreen
+    from '../screen/Registros/RegistroMovimientosScreen';
 
-import RegistroIngresosScreen from '../screen/Registros/RegistroIngresosScreen';
+import RegistroIngresosScreen
+    from '../screen/Registros/RegistroIngresosScreen';
 
-import RegistroDeudasScreen from '../screen/Registros/RegistroDeudasScreen';
+import RegistroDeudasScreen
+    from '../screen/Registros/RegistroDeudasScreen';
 
-import RegistroGastosFijosScreen from '../screen/Registros/RegistroGastosFijosScreen';
+import RegistroGastosFijosScreen
+    from '../screen/Registros/RegistroGastosFijosScreen';
 
-import RegistroGastosScreen from '../screen/Registros/RegistroGastosScreen';
+import RegistroGastosScreen
+    from '../screen/Registros/RegistroGastosScreen';
 
-import RegistroGastosRapidos from '../screen/Registros/RegistroGastosRapidos';
+import RegistroGastosRapidos
+    from '../screen/Registros/RegistroGastosRapidos';
 
-import ReporteDeudasRegistradas from '../screen/Reportes/ReporteDeudasRegistradas';
+import ReporteDeudasRegistradas
+    from '../screen/Reportes/ReporteDeudasRegistradas';
 
-import ConfigurarParejaScreen from '../config/ConfigurarParejaScreen';
+import ConfigurarParejaScreen
+    from '../config/ConfigurarParejaScreen';
 
-import RegistroGastosDetallados from '../screen/Registros/RegistroGastosDetallados';
+import RegistroGastosDetallados
+    from '../screen/Registros/RegistroGastosDetallados';
 
-import CuentasYEfectivoScreen from '../screen/Cuentas/CuentasYEfectivoScreen';
+import CuentasYEfectivoScreen
+    from '../screen/Cuentas/CuentasYEfectivoScreen';
 
 // ============================================================
 // NAVIGATORS
 // ============================================================
 
-const Tab = createBottomTabNavigator();
+const Tab =
+    createMaterialTopTabNavigator();
 
-const Stack = createNativeStackNavigator();
-
-// ============================================================
-// ORDEN DE LAS PESTAÑAS
-// ============================================================
-
-const TAB_NAMES = [
-    'Inicio',
-    'Registros',
-    'Reportes',
-    'Cuentas',
-    'Perfil',
-];
-
-// ============================================================
-// WRAPPER PARA PERMITIR DESLIZAR DE LADO A LADO
-// ============================================================
-
-function SwipeScreen({
-    component: ScreenComponent,
-    navigation,
-    route,
-}: {
-    component: ComponentType<any>;
-    navigation: any;
-    route: any;
-}) {
-
-    const navegando = useRef(false);
-
-    const panResponder = useRef(
-
-        PanResponder.create({
-
-            // ====================================================
-            // SOLO TOMAMOS EL GESTO SI ES HORIZONTAL
-            // ====================================================
-
-            onMoveShouldSetPanResponder: (
-                _event,
-                gestureState
-            ) => {
-
-                const movimientoHorizontal =
-                    Math.abs(gestureState.dx) >
-                    Math.abs(gestureState.dy);
-
-                const movimientoSuficiente =
-                    Math.abs(gestureState.dx) > 20;
-
-                return (
-                    movimientoHorizontal &&
-                    movimientoSuficiente
-                );
-            },
-
-            // ====================================================
-            // CUANDO TERMINA EL GESTO
-            // ====================================================
-
-            onPanResponderRelease: (
-                _event,
-                gestureState
-            ) => {
-
-                if (navegando.current) {
-                    return;
-                }
-
-                const desplazamiento =
-                    gestureState.dx;
-
-                const velocidad =
-                    gestureState.vx;
-
-                // ------------------------------------------------
-                // SI NO SE MOVIÓ SUFICIENTE, NO HACEMOS NADA
-                // ------------------------------------------------
-
-                if (
-                    Math.abs(desplazamiento) < 60 &&
-                    Math.abs(velocidad) < 0.5
-                ) {
-                    return;
-                }
-
-                const indiceActual =
-                    TAB_NAMES.indexOf(route.name);
-
-                if (indiceActual === -1) {
-                    return;
-                }
-
-                let nuevoIndice =
-                    indiceActual;
-
-                // ------------------------------------------------
-                // DESLIZAR HACIA LA IZQUIERDA
-                // VA A LA SIGUIENTE PANTALLA
-                // ------------------------------------------------
-
-                if (
-                    desplazamiento < -60 ||
-                    velocidad < -0.5
-                ) {
-
-                    nuevoIndice =
-                        Math.min(
-                            indiceActual + 1,
-                            TAB_NAMES.length - 1
-                        );
-
-                }
-
-                // ------------------------------------------------
-                // DESLIZAR HACIA LA DERECHA
-                // VA A LA PANTALLA ANTERIOR
-                // ------------------------------------------------
-
-                else if (
-                    desplazamiento > 60 ||
-                    velocidad > 0.5
-                ) {
-
-                    nuevoIndice =
-                        Math.max(
-                            indiceActual - 1,
-                            0
-                        );
-                }
-
-                // ------------------------------------------------
-                // SI NO CAMBIÓ, TERMINAMOS
-                // ------------------------------------------------
-
-                if (
-                    nuevoIndice === indiceActual
-                ) {
-                    return;
-                }
-
-                const nuevaPantalla =
-                    TAB_NAMES[nuevoIndice];
-
-                navegando.current = true;
-
-                navigation.navigate(
-                    nuevaPantalla
-                );
-
-                // Evita múltiples cambios seguidos
-                setTimeout(() => {
-                    navegando.current = false;
-                }, 350);
-            },
-
-        })
-
-    ).current;
-
-    return (
-
-        <View
-            style={{
-                flex: 1,
-            }}
-            {...panResponder.panHandlers}
-        >
-
-            <ScreenComponent
-                navigation={navigation}
-                route={route}
-            />
-
-        </View>
-    );
-}
-
-// ============================================================
-// COMPONENTES DE LAS PANTALLAS CON SWIPE
-// ============================================================
-
-function InicioSwipe(props: any) {
-
-    return (
-        <SwipeScreen
-            {...props}
-            component={InicioScreen}
-        />
-    );
-}
-
-function RegistrosSwipe(props: any) {
-
-    return (
-        <SwipeScreen
-            {...props}
-            component={RegistroMovimientosScreen}
-        />
-    );
-}
-
-function ReportesSwipe(props: any) {
-
-    return (
-        <SwipeScreen
-            {...props}
-            component={ReporteDeudasRegistradas}
-        />
-    );
-}
-
-function CuentasSwipe(props: any) {
-
-    return (
-        <SwipeScreen
-            {...props}
-            component={CuentasYEfectivoScreen}
-        />
-    );
-}
-
-function PerfilSwipe(props: any) {
-
-    return (
-        <SwipeScreen
-            {...props}
-            component={PerfilScreen}
-        />
-    );
-}
+const Stack =
+    createNativeStackNavigator();
 
 // ============================================================
 // TABS PRINCIPALES
@@ -318,11 +97,24 @@ function MyTabs() {
 
             initialRouteName="Inicio"
 
-            screenOptions={({
-                route,
-            }) => ({
+            // ====================================================
+            // EL SWIPE FUNCIONA EN TODA LA PANTALLA
+            // ====================================================
+
+            tabBarPosition="bottom"
+
+            screenOptions={({ route }) => ({
 
                 headerShown: false,
+
+                // =================================================
+                // SWIPE
+                // =================================================
+
+                swipeEnabled: true,
+
+                // Animación suave al cambiar de pantalla
+                animationEnabled: true,
 
                 // =================================================
                 // BARRA INFERIOR
@@ -330,11 +122,9 @@ function MyTabs() {
 
                 tabBarStyle: {
 
-                    backgroundColor:
-                        '#FFFFFF',
+                    backgroundColor: '#FFFFFF',
 
-                    borderTopColor:
-                        '#E2E8F0',
+                    borderTopColor: '#E2E8F0',
 
                     borderTopWidth: 1,
 
@@ -348,15 +138,39 @@ function MyTabs() {
                         bottomSafeArea,
 
                     paddingTop: 6,
-
                 },
 
                 // =================================================
-                // COLORES
+                // LÍNEA VERDE
+                // =================================================
+                //
+                // Esta es la parte importante:
+                //
+                // Al deslizar la pantalla, la línea verde
+                // también se desplaza suavemente hacia el
+                // siguiente tab.
+                //
+                // =================================================
+
+                tabBarIndicatorStyle: {
+
+                    backgroundColor: '#059669',
+
+                    height: 3,
+
+                    borderRadius: 3,
+                },
+
+                // =================================================
+                // COLOR ACTIVO
                 // =================================================
 
                 tabBarActiveTintColor:
                     '#059669',
+
+                // =================================================
+                // COLOR INACTIVO
+                // =================================================
 
                 tabBarInactiveTintColor:
                     '#64748B',
@@ -373,6 +187,7 @@ function MyTabs() {
 
                     textTransform: 'none',
 
+                    marginTop: 0,
                 },
 
                 // =================================================
@@ -388,9 +203,9 @@ function MyTabs() {
                         keyof typeof Ionicons.glyphMap =
                         'home-outline';
 
-                    // ------------------------------------------------
+                    // --------------------------------------------
                     // INICIO
-                    // ------------------------------------------------
+                    // --------------------------------------------
 
                     if (
                         route.name ===
@@ -401,12 +216,11 @@ function MyTabs() {
                             focused
                                 ? 'home'
                                 : 'home-outline';
-
                     }
 
-                    // ------------------------------------------------
+                    // --------------------------------------------
                     // REGISTROS
-                    // ------------------------------------------------
+                    // --------------------------------------------
 
                     else if (
                         route.name ===
@@ -417,12 +231,11 @@ function MyTabs() {
                             focused
                                 ? 'add-circle'
                                 : 'add-circle-outline';
-
                     }
 
-                    // ------------------------------------------------
+                    // --------------------------------------------
                     // REPORTES
-                    // ------------------------------------------------
+                    // --------------------------------------------
 
                     else if (
                         route.name ===
@@ -433,12 +246,11 @@ function MyTabs() {
                             focused
                                 ? 'bar-chart'
                                 : 'bar-chart-outline';
-
                     }
 
-                    // ------------------------------------------------
+                    // --------------------------------------------
                     // CUENTAS
-                    // ------------------------------------------------
+                    // --------------------------------------------
 
                     else if (
                         route.name ===
@@ -449,12 +261,11 @@ function MyTabs() {
                             focused
                                 ? 'wallet'
                                 : 'wallet-outline';
-
                     }
 
-                    // ------------------------------------------------
+                    // --------------------------------------------
                     // PERFIL
-                    // ------------------------------------------------
+                    // --------------------------------------------
 
                     else if (
                         route.name ===
@@ -465,7 +276,6 @@ function MyTabs() {
                             focused
                                 ? 'person'
                                 : 'person-outline';
-
                     }
 
                     return (
@@ -478,53 +288,52 @@ function MyTabs() {
 
                     );
                 },
-
             })}
         >
 
-            {/* ================================================= */}
-            {/* INICIO */}
-            {/* ================================================= */}
+            {/* ================================================== */}
+            {/* 1. INICIO */}
+            {/* ================================================== */}
 
             <Tab.Screen
                 name="Inicio"
-                component={InicioSwipe}
+                component={InicioScreen}
             />
 
-            {/* ================================================= */}
-            {/* REGISTROS */}
-            {/* ================================================= */}
+            {/* ================================================== */}
+            {/* 2. REGISTROS */}
+            {/* ================================================== */}
 
             <Tab.Screen
                 name="Registros"
-                component={RegistrosSwipe}
+                component={RegistroMovimientosScreen}
             />
 
-            {/* ================================================= */}
-            {/* REPORTES */}
-            {/* ================================================= */}
+            {/* ================================================== */}
+            {/* 3. REPORTES */}
+            {/* ================================================== */}
 
             <Tab.Screen
                 name="Reportes"
-                component={ReportesSwipe}
+                component={ReporteDeudasRegistradas}
             />
 
-            {/* ================================================= */}
-            {/* CUENTAS */}
-            {/* ================================================= */}
+            {/* ================================================== */}
+            {/* 4. CUENTAS */}
+            {/* ================================================== */}
 
             <Tab.Screen
                 name="Cuentas"
-                component={CuentasSwipe}
+                component={CuentasYEfectivoScreen}
             />
 
-            {/* ================================================= */}
-            {/* PERFIL */}
-            {/* ================================================= */}
+            {/* ================================================== */}
+            {/* 5. PERFIL */}
+            {/* ================================================== */}
 
             <Tab.Screen
                 name="Perfil"
-                component={PerfilSwipe}
+                component={PerfilScreen}
             />
 
         </Tab.Navigator>
@@ -549,13 +358,8 @@ function MyStack() {
 
                 gestureEnabled: true,
 
-                // =================================================
-                // IMPORTANTE:
-                // NO usamos detachPreviousScreen
-                // =================================================
-
-                animation: 'slide_from_right',
-
+                animation:
+                    'slide_from_right',
             }}
         >
 

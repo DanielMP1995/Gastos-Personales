@@ -964,7 +964,7 @@ export default function InicioScreen({ navigation }: any) {
     // ============================================================
     // RETURN
     // ============================================================
-console.log('🔥 InicioScreen está renderizando');
+
     return (
 
         <View style={styles.root}>
