@@ -12,9 +12,13 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTheme } from '../../context/ThemeContext';
+
 export default function RegistroGastosScreen({ navigation }: any) {
 
     const insets = useSafeAreaInsets();
+
+    const { colors } = useTheme();
 
     useEffect(() => {
         navigation.setOptions({
@@ -22,16 +26,18 @@ export default function RegistroGastosScreen({ navigation }: any) {
         });
     }, [navigation]);
 
+    const styles = crearStyles(colors);
+
     return (
         <View style={styles.container}>
 
             <StatusBar
                 barStyle="dark-content"
-                backgroundColor="#F8FAFC"
+                backgroundColor={colors.veryLight}
                 translucent={false}
             />
 
-            {/* DECORACIÓN SUPERIOR CLARA */}
+            {/* DECORACIÓN SUPERIOR */}
 
             <View style={styles.decorCircleOne} />
 
@@ -81,7 +87,7 @@ export default function RegistroGastosScreen({ navigation }: any) {
                     <Ionicons
                         name="wallet-outline"
                         size={24}
-                        color="#059669"
+                        color={colors.primary}
                     />
 
                 </View>
@@ -126,7 +132,7 @@ export default function RegistroGastosScreen({ navigation }: any) {
                         <Ionicons
                             name="flash"
                             size={26}
-                            color="#059669"
+                            color={colors.primary}
                         />
 
                     </View>
@@ -163,7 +169,7 @@ export default function RegistroGastosScreen({ navigation }: any) {
                             <Ionicons
                                 name="arrow-forward-circle"
                                 size={22}
-                                color="#059669"
+                                color={colors.primary}
                             />
 
                         </View>
@@ -189,7 +195,7 @@ export default function RegistroGastosScreen({ navigation }: any) {
                         <Ionicons
                             name="create-outline"
                             size={26}
-                            color="#0284C7"
+                            color={colors.primary}
                         />
 
                     </View>
@@ -214,7 +220,7 @@ export default function RegistroGastosScreen({ navigation }: any) {
                             <Ionicons
                                 name="arrow-forward-circle"
                                 size={22}
-                                color="#0284C7"
+                                color={colors.primary}
                             />
 
                         </View>
@@ -282,351 +288,317 @@ export default function RegistroGastosScreen({ navigation }: any) {
     );
 }
 
-const styles = StyleSheet.create({
 
-    // ============================================================
-    // CONTENEDOR
-    // ============================================================
+// ============================================================
+// ESTILOS DINÁMICOS
+// ============================================================
 
-    container: {
-        flex: 1,
-        backgroundColor: '#F8FAFC',
-        paddingHorizontal: 20,
-        paddingBottom: 25,
-        overflow: 'hidden',
-    },
+const crearStyles = (colors: any) =>
+    StyleSheet.create({
 
-    // ============================================================
-    // DECORACIÓN
-    // ============================================================
-
-    decorCircleOne: {
-        position: 'absolute',
-        width: 220,
-        height: 220,
-        borderRadius: 110,
-        backgroundColor: '#ECFDF5',
-        top: -100,
-        right: -80,
-        opacity: 0.8,
-    },
-
-    decorCircleTwo: {
-        position: 'absolute',
-        width: 180,
-        height: 180,
-        borderRadius: 90,
-        backgroundColor: '#F1F5F9',
-        bottom: -70,
-        left: -90,
-        opacity: 0.6,
-    },
-
-    // ============================================================
-    // HEADER
-    // ============================================================
-
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-        zIndex: 2,
-    },
-
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
+        container: {
+            flex: 1,
+            backgroundColor: colors.veryLight,
+            paddingHorizontal: 20,
+            paddingBottom: 25,
+            overflow: 'hidden',
         },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
 
-    headerTextContainer: {
-        flex: 1,
-    },
-
-    headerSmall: {
-        color: '#059669',
-        fontSize: 10,
-        fontWeight: '800',
-        letterSpacing: 1.5,
-        marginBottom: 2,
-    },
-
-    titulo: {
-        color: '#1E293B',
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-
-    headerIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: '#ECFDF5',
-        borderWidth: 1,
-        borderColor: '#A7F3D0',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-    // ============================================================
-    // INTRO
-    // ============================================================
-
-    introContainer: {
-        marginBottom: 20,
-    },
-
-    subtitulo: {
-        color: '#64748B',
-        fontSize: 13,
-        lineHeight: 18,
-        maxWidth: 340,
-    },
-
-    line: {
-        width: 40,
-        height: 3,
-        borderRadius: 10,
-        backgroundColor: '#059669',
-        marginTop: 12,
-    },
-
-    // ============================================================
-    // OPCIONES
-    // ============================================================
-
-    optionsContainer: {
-        gap: 14,
-    },
-
-    // ============================================================
-    // GASTOS RÁPIDOS
-    // ============================================================
-
-    cardRapido: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 18,
-        padding: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#A7F3D0',
-
-        shadowColor: '#059669',
-        shadowOffset: {
-            width: 0,
-            height: 4,
+        decorCircleOne: {
+            position: 'absolute',
+            width: 220,
+            height: 220,
+            borderRadius: 110,
+            backgroundColor: colors.light,
+            top: -100,
+            right: -80,
+            opacity: 0.8,
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
-    },
 
-    iconContainerRapido: {
-        width: 52,
-        height: 52,
-        borderRadius: 15,
-        backgroundColor: '#ECFDF5',
-        borderWidth: 1,
-        borderColor: '#A7F3D0',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 14,
-    },
-
-    // ============================================================
-    // GASTO DETALLADO
-    // ============================================================
-
-    cardNormal: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 18,
-        padding: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
+        decorCircleTwo: {
+            position: 'absolute',
+            width: 180,
+            height: 180,
+            borderRadius: 90,
+            backgroundColor: colors.light,
+            bottom: -70,
+            left: -90,
+            opacity: 0.35,
         },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
-    },
 
-    iconContainerNormal: {
-        width: 52,
-        height: 52,
-        borderRadius: 15,
-        backgroundColor: '#F0F9FF',
-        borderWidth: 1,
-        borderColor: '#BAE6FD',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 14,
-    },
+        header: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 20,
+            zIndex: 2,
+        },
 
-    // ============================================================
-    // CONTENIDO CARDS
-    // ============================================================
+        backButton: {
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            backgroundColor: '#FFFFFF',
+            borderWidth: 1,
+            borderColor: colors.light,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
 
-    cardContent: {
-        flex: 1,
-    },
+            shadowColor: '#000',
+            shadowOffset: {
+                width: 0,
+                height: 1,
+            },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+            elevation: 2,
+        },
 
-    cardTitleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
+        headerTextContainer: {
+            flex: 1,
+        },
 
-    cardTitle: {
-        color: '#1E293B',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+        headerSmall: {
+            color: colors.primary,
+            fontSize: 10,
+            fontWeight: '800',
+            letterSpacing: 1.5,
+            marginBottom: 2,
+        },
 
-    cardTitleNormal: {
-        color: '#1E293B',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+        titulo: {
+            color: '#1E293B',
+            fontSize: 20,
+            fontWeight: 'bold',
+        },
 
-    recommendedBadge: {
-        backgroundColor: '#ECFDF5',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: '#A7F3D0',
-    },
+        headerIcon: {
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            backgroundColor: colors.light,
+            borderWidth: 1,
+            borderColor: colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
 
-    recommendedText: {
-        color: '#059669',
-        fontSize: 8,
-        fontWeight: 'bold',
-        letterSpacing: 0.5,
-    },
+        introContainer: {
+            marginBottom: 20,
+        },
 
-    cardSub: {
-        color: '#64748B',
-        fontSize: 12,
-        lineHeight: 16,
-        marginTop: 4,
-    },
+        subtitulo: {
+            color: '#64748B',
+            fontSize: 13,
+            lineHeight: 18,
+            maxWidth: 340,
+        },
 
-    cardSubNormal: {
-        color: '#64748B',
-        fontSize: 12,
-        lineHeight: 16,
-        marginTop: 4,
-    },
+        line: {
+            width: 40,
+            height: 3,
+            borderRadius: 10,
+            backgroundColor: colors.primary,
+            marginTop: 12,
+        },
 
-    cardFooter: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 10,
-    },
+        optionsContainer: {
+            gap: 14,
+        },
 
-    cardFooterText: {
-        color: '#059669',
-        fontSize: 10,
-        fontWeight: '500',
-        flex: 1,
-    },
+        cardRapido: {
+            backgroundColor: '#FFFFFF',
+            borderRadius: 18,
+            padding: 18,
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: colors.light,
 
-    cardFooterTextNormal: {
-        color: '#0284C7',
-        fontSize: 10,
-        fontWeight: '500',
-        flex: 1,
-    },
+            shadowColor: colors.primary,
+            shadowOffset: {
+                width: 0,
+                height: 4,
+            },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 3,
+        },
 
-    // ============================================================
-    // CONSEJO
-    // ============================================================
+        iconContainerRapido: {
+            width: 52,
+            height: 52,
+            borderRadius: 15,
+            backgroundColor: colors.veryLight,
+            borderWidth: 1,
+            borderColor: colors.light,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 14,
+        },
 
-    tipContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FEF3C7',
-        borderRadius: 16,
-        padding: 14,
-        marginTop: 20,
-        borderWidth: 1,
-        borderColor: '#FDE68A',
-    },
+        cardNormal: {
+            backgroundColor: '#FFFFFF',
+            borderRadius: 18,
+            padding: 18,
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: colors.light,
 
-    tipIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        backgroundColor: '#FEF9C3',
-        borderWidth: 1,
-        borderColor: '#FDE68A',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
+            shadowColor: colors.primary,
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            shadowOpacity: 0.05,
+            shadowRadius: 6,
+            elevation: 2,
+        },
 
-    tipTextContainer: {
-        flex: 1,
-    },
+        iconContainerNormal: {
+            width: 52,
+            height: 52,
+            borderRadius: 15,
+            backgroundColor: colors.veryLight,
+            borderWidth: 1,
+            borderColor: colors.light,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 14,
+        },
 
-    tipTitle: {
-        color: '#B45309',
-        fontSize: 12,
-        fontWeight: 'bold',
-        marginBottom: 2,
-    },
+        cardContent: {
+            flex: 1,
+        },
 
-    tipText: {
-        color: '#78350F',
-        fontSize: 11,
-        lineHeight: 15,
-    },
+        cardTitleRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 8,
+        },
 
-    // ============================================================
-    // REGRESAR
-    // ============================================================
+        cardTitle: {
+            color: '#1E293B',
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
 
-    btnRegresar: {
-        marginTop: 'auto',
-        height: 48,
-        backgroundColor: '#F1F5F9',
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+        cardTitleNormal: {
+            color: '#1E293B',
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
 
-    btnRegresarText: {
-        color: '#64748B',
-        fontSize: 13,
-        fontWeight: '600',
-        marginLeft: 6,
-    },
+        recommendedBadge: {
+            backgroundColor: colors.veryLight,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: colors.light,
+        },
 
-});    // aqui gastos rapiudo y detallados estan
+        recommendedText: {
+            color: colors.primary,
+            fontSize: 8,
+            fontWeight: 'bold',
+            letterSpacing: 0.5,
+        },
+
+        cardSub: {
+            color: '#64748B',
+            fontSize: 12,
+            lineHeight: 16,
+            marginTop: 4,
+        },
+
+        cardSubNormal: {
+            color: '#64748B',
+            fontSize: 12,
+            lineHeight: 16,
+            marginTop: 4,
+        },
+
+        cardFooter: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 10,
+        },
+
+        cardFooterText: {
+            color: colors.primary,
+            fontSize: 10,
+            fontWeight: '500',
+            flex: 1,
+        },
+
+        cardFooterTextNormal: {
+            color: colors.primary,
+            fontSize: 10,
+            fontWeight: '500',
+            flex: 1,
+        },
+
+        tipContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#FEF3C7',
+            borderRadius: 16,
+            padding: 14,
+            marginTop: 20,
+            borderWidth: 1,
+            borderColor: '#FDE68A',
+        },
+
+        tipIcon: {
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: '#FEF9C3',
+            borderWidth: 1,
+            borderColor: '#FDE68A',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
+        },
+
+        tipTextContainer: {
+            flex: 1,
+        },
+
+        tipTitle: {
+            color: '#B45309',
+            fontSize: 12,
+            fontWeight: 'bold',
+            marginBottom: 2,
+        },
+
+        tipText: {
+            color: '#78350F',
+            fontSize: 11,
+            lineHeight: 15,
+        },
+
+        btnRegresar: {
+            marginTop: 'auto',
+            height: 48,
+            backgroundColor: '#F1F5F9',
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: colors.light,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+
+        btnRegresarText: {
+            color: '#64748B',
+            fontSize: 13,
+            fontWeight: '600',
+            marginLeft: 6,
+        },
+
+    });

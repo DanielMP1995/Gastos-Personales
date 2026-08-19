@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react';
+
 import {
     StyleSheet,
     Text,
@@ -11,8 +13,6 @@ import {
     Modal,
 } from 'react-native';
 
-import React, { useState, useEffect } from 'react';
-
 import { Ionicons } from '@expo/vector-icons';
 
 import { auth, db } from '../../firebase/FirebaseConfig';
@@ -23,10 +23,12 @@ import {
     update,
 } from 'firebase/database';
 
+import { useTheme } from '../../context/ThemeContext';
 
-/* =====================================================
-   AVATARES DISPONIBLES
-===================================================== */
+
+// =====================================================
+// AVATARES DISPONIBLES
+// =====================================================
 
 const AVATARS = [
     require('../../assets/AVATARES/AVATAR1.png'),
@@ -39,9 +41,24 @@ const AVATARS = [
 ];
 
 
+// =====================================================
+// PANTALLA PERFIL
+// =====================================================
+
 export default function PerfilScreen({ navigation }: any) {
 
+    // =====================================================
+    // TEMA
+    // =====================================================
+
+    const { colors } = useTheme();
+
     const usuarioActual = auth.currentUser;
+
+
+    // =====================================================
+    // DATOS
+    // =====================================================
 
     const [data, setData] = useState({
         nombre: '',
@@ -52,16 +69,30 @@ export default function PerfilScreen({ navigation }: any) {
         fotoPerfil: '',
     });
 
-    const [nombreParejaVinculada, setNombreParejaVinculada] =
-        useState('Buscando pareja vinculada...');
 
-    const [codigoNuevo, setCodigoNuevo] = useState('');
-    const [modoVincular, setModoVincular] = useState(false);
+    const [
+        nombreParejaVinculada,
+        setNombreParejaVinculada,
+    ] = useState(
+        'Buscando pareja vinculada...'
+    );
 
-    const [modalAvatarVisible, setModalAvatarVisible] = useState(false);
+
+    const [codigoNuevo, setCodigoNuevo] =
+        useState('');
+
+    const [modoVincular, setModoVincular] =
+        useState(false);
+
+    const [
+        modalAvatarVisible,
+        setModalAvatarVisible,
+    ] = useState(false);
 
 
-    /* HEADER */
+    // =====================================================
+    // HEADER
+    // =====================================================
 
     useEffect(() => {
 
@@ -72,22 +103,27 @@ export default function PerfilScreen({ navigation }: any) {
     }, [navigation]);
 
 
-    /* CARGAR DATOS DEL USUARIO */
+    // =====================================================
+    // CARGAR DATOS DEL USUARIO
+    // =====================================================
 
     useEffect(() => {
 
         if (!usuarioActual) return;
+
 
         const perfilRef = ref(
             db,
             `usuarios/${usuarioActual.uid}`
         );
 
+
         const unsubscribePerfil = onValue(
             perfilRef,
             (snapshot) => {
 
                 const val = snapshot.val();
+
 
                 if (val) {
 
@@ -101,12 +137,15 @@ export default function PerfilScreen({ navigation }: any) {
                     });
 
 
-                    /* BUSCAR PAREJA */
+                    // =================================================
+                    // BUSCAR PAREJA
+                    // =================================================
 
                     const usuariosRef = ref(
                         db,
                         'usuarios'
                     );
+
 
                     onValue(
                         usuariosRef,
@@ -115,15 +154,20 @@ export default function PerfilScreen({ navigation }: any) {
                             const allUsers =
                                 snapUsuarios.val();
 
+
                             if (allUsers) {
 
                                 let encontrado = false;
 
-                                Object.keys(allUsers).forEach(
+
+                                Object.keys(
+                                    allUsers
+                                ).forEach(
                                     (uidKey) => {
 
                                         const usuarioItem =
                                             allUsers[uidKey];
+
 
                                         if (
                                             uidKey !==
@@ -136,7 +180,9 @@ export default function PerfilScreen({ navigation }: any) {
                                                 `${usuarioItem.nombre} ${usuarioItem.apellido}`
                                             );
 
-                                            encontrado = true;
+                                            encontrado =
+                                                true;
+
                                         }
 
                                     }
@@ -162,28 +208,42 @@ export default function PerfilScreen({ navigation }: any) {
         );
 
 
-        return () => unsubscribePerfil();
+        return () =>
+            unsubscribePerfil();
 
     }, [usuarioActual]);
 
 
-    /* =========================================
-       SELECCIONAR AVATAR
-    ========================================= */
+    // =====================================================
+    // SELECCIONAR AVATAR
+    // =====================================================
 
     function abrirSelectorAvatar() {
+
         setModalAvatarVisible(true);
+
     }
 
-    function seleccionarAvatar(numero: number) {
+
+    function seleccionarAvatar(
+        numero: number
+    ) {
 
         if (!usuarioActual) return;
 
-        const idAvatar = `AVATAR${numero}`;
+
+        const idAvatar =
+            `AVATAR${numero}`;
+
 
         update(
-            ref(db, `usuarios/${usuarioActual.uid}`),
-            { fotoPerfil: idAvatar }
+            ref(
+                db,
+                `usuarios/${usuarioActual.uid}`
+            ),
+            {
+                fotoPerfil: idAvatar,
+            }
         )
             .then(() => {
 
@@ -192,27 +252,49 @@ export default function PerfilScreen({ navigation }: any) {
                     fotoPerfil: idAvatar,
                 }));
 
-                setModalAvatarVisible(false);
+
+                setModalAvatarVisible(
+                    false
+                );
 
             })
             .catch((error) => {
 
-                Alert.alert('Error', error.message);
+                Alert.alert(
+                    'Error',
+                    error.message
+                );
 
             });
-    }
 
-    function getAvatarSource(idAvatar: string) {
-
-        const index = parseInt(idAvatar.replace('AVATAR', ''), 10) - 1;
-
-        return AVATARS[index] || AVATARS[0];
     }
 
 
-    /* =========================================
-       COPIAR CÓDIGO
-    ========================================= */
+    function getAvatarSource(
+        idAvatar: string
+    ) {
+
+        const index =
+            parseInt(
+                idAvatar.replace(
+                    'AVATAR',
+                    ''
+                ),
+                10
+            ) - 1;
+
+
+        return (
+            AVATARS[index] ||
+            AVATARS[0]
+        );
+
+    }
+
+
+    // =====================================================
+    // COPIAR CÓDIGO
+    // =====================================================
 
     function copiarCodigo() {
 
@@ -224,6 +306,7 @@ export default function PerfilScreen({ navigation }: any) {
             );
 
             return;
+
         }
 
 
@@ -240,9 +323,9 @@ export default function PerfilScreen({ navigation }: any) {
     }
 
 
-    /* =========================================
-       VINCULAR PAREJA
-    ========================================= */
+    // =====================================================
+    // VINCULAR PAREJA
+    // =====================================================
 
     function guardarNuevoCodigoPareja() {
 
@@ -254,13 +337,16 @@ export default function PerfilScreen({ navigation }: any) {
             );
 
             return;
+
         }
 
 
         if (usuarioActual) {
 
             const codigoLimpio =
-                codigoNuevo.trim().toUpperCase();
+                codigoNuevo
+                    .trim()
+                    .toUpperCase();
 
 
             update(
@@ -269,7 +355,8 @@ export default function PerfilScreen({ navigation }: any) {
                     `usuarios/${usuarioActual.uid}`
                 ),
                 {
-                    idPareja: codigoLimpio,
+                    idPareja:
+                        codigoLimpio,
                 }
             )
                 .then(() => {
@@ -280,7 +367,9 @@ export default function PerfilScreen({ navigation }: any) {
                     );
 
 
-                    setModoVincular(false);
+                    setModoVincular(
+                        false
+                    );
 
                     setCodigoNuevo('');
 
@@ -299,9 +388,9 @@ export default function PerfilScreen({ navigation }: any) {
     }
 
 
-    /* =========================================
-       CERRAR SESIÓN
-    ========================================= */
+    // =====================================================
+    // CERRAR SESIÓN
+    // =====================================================
 
     function cerrarSesion() {
 
@@ -326,59 +415,171 @@ export default function PerfilScreen({ navigation }: any) {
     }
 
 
-    const parejaEncontrada =
-        !nombreParejaVinculada.includes('Aún') &&
-        !nombreParejaVinculada.includes('Buscando');
+    // =====================================================
+    // PAREJA ENCONTRADA
+    // =====================================================
 
+    const parejaEncontrada =
+        !nombreParejaVinculada.includes(
+            'Aún'
+        ) &&
+        !nombreParejaVinculada.includes(
+            'Buscando'
+        );
+
+
+    // =====================================================
+    // RENDER
+    // =====================================================
 
     return (
 
         <>
 
             <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.container}
-                showsVerticalScrollIndicator={false}
+                style={[
+                    styles.scrollView,
+                    {
+                        backgroundColor:
+                            colors.veryLight,
+                    },
+                ]}
+                contentContainerStyle={
+                    styles.container
+                }
+                showsVerticalScrollIndicator={
+                    false
+                }
             >
 
 
                 {/* =================================
-                HEADER
-            ================================= */}
+                    HEADER
+                ================================= */}
 
-                <View style={styles.header}>
+                <View
+                    style={[
+                        styles.header,
+                        {
+                            borderBottomColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
-                    <Text style={styles.headerSmall}>
-                        CUENTA PERSONAL
-                    </Text>
+                    <TouchableOpacity
+                        style={[
+                            styles.backButton,
+                            {
+                                backgroundColor:
+                                    colors.light,
+                            },
+                        ]}
+                        onPress={() =>
+                            navigation.goBack()
+                        }
+                        activeOpacity={0.8}
+                    >
 
-                    <Text style={styles.titulo}>
-                        Perfil y pareja
-                    </Text>
+                        <Ionicons
+                            name="arrow-back"
+                            size={21}
+                            color={
+                                colors.primary
+                            }
+                        />
+
+                    </TouchableOpacity>
+
+
+                    <View
+                        style={
+                            styles.headerTextContainer
+                        }
+                    >
+
+                        <Text
+                            style={[
+                                styles.headerSmall,
+                                {
+                                    color:
+                                        colors.primary,
+                                },
+                            ]}
+                        >
+                            CUENTA PERSONAL
+                        </Text>
+
+
+                        <Text
+                            style={[
+                                styles.titulo,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
+                        >
+                            Perfil y pareja
+                        </Text>
+
+                    </View>
 
                 </View>
 
 
                 {/* =================================
-                PERFIL CON AVATAR
-            ================================= */}
+                    PERFIL
+                ================================= */}
 
-                <View style={styles.profileCard}>
+                <View
+                    style={[
+                        styles.profileCard,
+                        {
+                            backgroundColor:
+                                '#FFFFFF',
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
-                    <View style={styles.avatarContainer}>
+                    <View
+                        style={
+                            styles.avatarContainer
+                        }
+                    >
 
                         {data.fotoPerfil ? (
 
                             <Image
-                                source={getAvatarSource(data.fotoPerfil)}
-                                style={styles.avatarImage}
+                                source={
+                                    getAvatarSource(
+                                        data.fotoPerfil
+                                    )
+                                }
+                                style={
+                                    styles.avatarImage
+                                }
                             />
 
                         ) : (
 
-                            <View style={styles.avatar}>
+                            <View
+                                style={[
+                                    styles.avatar,
+                                    {
+                                        backgroundColor:
+                                            colors.primary,
+                                    },
+                                ]}
+                            >
 
-                                <Text style={styles.avatarText}>
+                                <Text
+                                    style={
+                                        styles.avatarText
+                                    }
+                                >
 
                                     {data.nombre
                                         ? data.nombre
@@ -393,11 +594,19 @@ export default function PerfilScreen({ navigation }: any) {
                         )}
 
 
-                        {/* BOTÓN CÁMARA */}
+                        {/* CÁMARA */}
 
                         <TouchableOpacity
-                            style={styles.cameraButton}
-                            onPress={abrirSelectorAvatar}
+                            style={[
+                                styles.cameraButton,
+                                {
+                                    backgroundColor:
+                                        colors.primary,
+                                },
+                            ]}
+                            onPress={
+                                abrirSelectorAvatar
+                            }
                             activeOpacity={0.8}
                         >
 
@@ -412,64 +621,208 @@ export default function PerfilScreen({ navigation }: any) {
                     </View>
 
 
-                    <Text style={styles.changePhotoText}>
+                    <Text
+                        style={
+                            styles.changePhotoText
+                        }
+                    >
                         Toca la cámara para elegir un avatar
                     </Text>
 
 
-                    <Text style={styles.profileName}>
-                        {data.nombre || 'Usuario'}{' '}
+                    <Text
+                        style={[
+                            styles.profileName,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
+                    >
+                        {data.nombre ||
+                            'Usuario'}{' '}
                         {data.apellido || ''}
                     </Text>
 
 
-                    <Text style={styles.profileEmail}>
-                        {data.correo || 'Sin correo'}
+                    <Text
+                        style={
+                            styles.profileEmail
+                        }
+                    >
+                        {data.correo ||
+                            'Sin correo'}
                     </Text>
 
                 </View>
 
 
                 {/* =================================
-                CÓDIGO DE PAREJA
-            ================================= */}
+                    PERSONALIZAR APLICACIÓN
+                ================================= */}
 
-                <View style={styles.sectionHeader}>
+                <TouchableOpacity
+                    style={[
+                        styles.opcion,
+                        {
+                            borderColor:
+                                colors.light,
+                            backgroundColor:
+                                '#FFFFFF',
+                        },
+                    ]}
+                    onPress={() =>
+                        navigation.navigate(
+                            'seleccionarTema'
+                        )
+                    }
+                    activeOpacity={0.8}
+                >
+
+                    <View
+                        style={[
+                            styles.opcionIcon,
+                            {
+                                backgroundColor:
+                                    colors.light,
+                            },
+                        ]}
+                    >
+
+                        <Ionicons
+                            name="color-palette-outline"
+                            size={24}
+                            color={
+                                colors.primary
+                            }
+                        />
+
+                    </View>
+
+
+                    <View
+                        style={{
+                            flex: 1,
+                            marginLeft: 12,
+                        }}
+                    >
+
+                        <Text
+                            style={[
+                                styles.opcionTitulo,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
+                        >
+                            Personalizar aplicación
+                        </Text>
+
+
+                        <Text
+                            style={[
+                                styles.opcionDescripcion,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
+                        >
+                            Cambia el color de la aplicación
+                        </Text>
+
+                    </View>
+
+
+                    <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color="#94A3B8"
+                    />
+
+                </TouchableOpacity>
+
+
+                {/* =================================
+                    CÓDIGO DE PAREJA
+                ================================= */}
+
+                <View
+                    style={
+                        styles.sectionHeader
+                    }
+                >
 
                     <Ionicons
                         name="key-outline"
                         size={18}
-                        color={COLOR_PRINCIPAL}
+                        color={
+                            colors.primary
+                        }
                     />
 
-                    <Text style={styles.sectionTitle}>
+                    <Text
+                        style={[
+                            styles.sectionTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
+                    >
                         Código de pareja
                     </Text>
 
                 </View>
 
 
-                <View style={styles.codeCard}>
+                <View
+                    style={[
+                        styles.codeCard,
+                        {
+                            backgroundColor:
+                                colors.primary,
+                        },
+                    ]}
+                >
 
-                    <Text style={styles.codeLabel}>
+                    <Text
+                        style={
+                            styles.codeLabel
+                        }
+                    >
                         TU CÓDIGO ÚNICO
                     </Text>
 
 
-                    <Text style={styles.roleName}>
-                        {data.idPareja || '------'}
+                    <Text
+                        style={
+                            styles.roleName
+                        }
+                    >
+                        {data.idPareja ||
+                            '------'}
                     </Text>
 
 
-                    <Text style={styles.codeDescription}>
+                    <Text
+                        style={
+                            styles.codeDescription
+                        }
+                    >
                         Comparte este código con tu pareja
                         para sincronizar sus finanzas.
                     </Text>
 
 
                     <TouchableOpacity
-                        style={styles.copiarBtn}
-                        onPress={copiarCodigo}
+                        style={
+                            styles.copiarBtn
+                        }
+                        onPress={
+                            copiarCodigo
+                        }
                         activeOpacity={0.85}
                     >
 
@@ -479,7 +832,11 @@ export default function PerfilScreen({ navigation }: any) {
                             color="#FFFFFF"
                         />
 
-                        <Text style={styles.copiarText}>
+                        <Text
+                            style={
+                                styles.copiarText
+                            }
+                        >
                             Copiar código
                         </Text>
 
@@ -489,31 +846,63 @@ export default function PerfilScreen({ navigation }: any) {
 
 
                 {/* =================================
-                PAREJA VINCULADA
-            ================================= */}
+                    PAREJA VINCULADA
+                ================================= */}
 
-                <View style={styles.partnerCard}>
+                <View
+                    style={[
+                        styles.partnerCard,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
-                    <View style={styles.partnerIcon}>
+                    <View
+                        style={[
+                            styles.partnerIcon,
+                            {
+                                backgroundColor:
+                                    colors.veryLight,
+                            },
+                        ]}
+                    >
 
                         <Ionicons
                             name="heart"
                             size={18}
-                            color={COLOR_PRINCIPAL}
+                            color={
+                                colors.primary
+                            }
                         />
 
                     </View>
 
 
-                    <View style={{ flex: 1 }}>
+                    <View
+                        style={{
+                            flex: 1,
+                        }}
+                    >
 
-                        <Text style={styles.labelVinculo}>
+                        <Text
+                            style={
+                                styles.labelVinculo
+                            }
+                        >
                             PAREJA VINCULADA
                         </Text>
 
 
                         <Text
-                            style={styles.valueVinculo}
+                            style={[
+                                styles.valueVinculo,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
                             numberOfLines={1}
                         >
                             {nombreParejaVinculada}
@@ -531,7 +920,7 @@ export default function PerfilScreen({ navigation }: any) {
                         size={20}
                         color={
                             parejaEncontrada
-                                ? COLOR_VERDE
+                                ? colors.primary
                                 : '#B7BDBB'
                         }
                     />
@@ -540,30 +929,60 @@ export default function PerfilScreen({ navigation }: any) {
 
 
                 {/* =================================
-                VINCULAR PAREJA
-            ================================= */}
+                    VINCULAR PAREJA
+                ================================= */}
 
-                <View style={styles.vincularCard}>
+                <View
+                    style={[
+                        styles.vincularCard,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
-                    <View style={styles.vincularHeader}>
+                    <View
+                        style={
+                            styles.vincularHeader
+                        }
+                    >
 
-                        <View style={styles.vincularIcon}>
+                        <View
+                            style={[
+                                styles.vincularIcon,
+                                {
+                                    backgroundColor:
+                                        colors.veryLight,
+                                },
+                            ]}
+                        >
 
                             <Ionicons
                                 name="link-outline"
                                 size={19}
-                                color={COLOR_PRINCIPAL}
+                                color={
+                                    colors.primary
+                                }
                             />
 
                         </View>
 
 
-                        <View style={{ flex: 1 }}>
+                        <View
+                            style={{
+                                flex: 1,
+                            }}
+                        >
 
                             <Text
-                                style={
-                                    styles.vincularCardTitulo
-                                }
+                                style={[
+                                    styles.vincularCardTitulo,
+                                    {
+                                        color:
+                                            colors.dark,
+                                    },
+                                ]}
                             >
                                 Vincular pareja
                             </Text>
@@ -582,7 +1001,11 @@ export default function PerfilScreen({ navigation }: any) {
                     </View>
 
 
-                    <Text style={styles.vincularDescription}>
+                    <Text
+                        style={
+                            styles.vincularDescription
+                        }
+                    >
                         Ingresa el código de conexión de tu
                         pareja para sincronizar la
                         información financiera.
@@ -592,11 +1015,17 @@ export default function PerfilScreen({ navigation }: any) {
                     {!modoVincular ? (
 
                         <TouchableOpacity
-                            style={
-                                styles.btnAbrirVincular
-                            }
+                            style={[
+                                styles.btnAbrirVincular,
+                                {
+                                    backgroundColor:
+                                        colors.primary,
+                                },
+                            ]}
                             onPress={() =>
-                                setModoVincular(true)
+                                setModoVincular(
+                                    true
+                                )
                             }
                             activeOpacity={0.85}
                         >
@@ -619,13 +1048,21 @@ export default function PerfilScreen({ navigation }: any) {
 
                     ) : (
 
-                        <View style={styles.vincularBox}>
+                        <View
+                            style={
+                                styles.vincularBox
+                            }
+                        >
 
                             <TextInput
-                                style={styles.inputVinculo}
+                                style={
+                                    styles.inputVinculo
+                                }
                                 placeholder="Ej. ABC123"
                                 placeholderTextColor="#9AA1A0"
-                                value={codigoNuevo}
+                                value={
+                                    codigoNuevo
+                                }
                                 onChangeText={
                                     setCodigoNuevo
                                 }
@@ -641,9 +1078,13 @@ export default function PerfilScreen({ navigation }: any) {
                             >
 
                                 <TouchableOpacity
-                                    style={
-                                        styles.btnGuardarVinculo
-                                    }
+                                    style={[
+                                        styles.btnGuardarVinculo,
+                                        {
+                                            backgroundColor:
+                                                colors.primary,
+                                        },
+                                    ]}
                                     onPress={
                                         guardarNuevoCodigoPareja
                                     }
@@ -677,7 +1118,9 @@ export default function PerfilScreen({ navigation }: any) {
                                             false
                                         );
 
-                                        setCodigoNuevo('');
+                                        setCodigoNuevo(
+                                            ''
+                                        );
 
                                     }}
                                     activeOpacity={0.85}
@@ -709,45 +1152,95 @@ export default function PerfilScreen({ navigation }: any) {
 
 
                 {/* =================================
-                DATOS PERSONALES
-            ================================= */}
+                    DATOS PERSONALES
+                ================================= */}
 
-                <View style={styles.sectionHeader}>
+                <View
+                    style={
+                        styles.sectionHeader
+                    }
+                >
 
                     <Ionicons
                         name="person-outline"
                         size={18}
-                        color={COLOR_PRINCIPAL}
+                        color={
+                            colors.primary
+                        }
                     />
 
-                    <Text style={styles.sectionTitle}>
+                    <Text
+                        style={[
+                            styles.sectionTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
+                    >
                         Datos personales
                     </Text>
 
                 </View>
 
 
-                <View style={styles.infoBox}>
+                <View
+                    style={[
+                        styles.infoBox,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
-                    <View style={styles.infoIcon}>
+                    <View
+                        style={[
+                            styles.infoIcon,
+                            {
+                                backgroundColor:
+                                    colors.veryLight,
+                            },
+                        ]}
+                    >
 
                         <Ionicons
                             name="person-outline"
                             size={17}
-                            color={COLOR_PRINCIPAL}
+                            color={
+                                colors.primary
+                            }
                         />
 
                     </View>
 
 
-                    <View style={styles.infoContent}>
+                    <View
+                        style={
+                            styles.infoContent
+                        }
+                    >
 
-                        <Text style={styles.label}>
+                        <Text
+                            style={
+                                styles.label
+                            }
+                        >
                             Nombre completo
                         </Text>
 
-                        <Text style={styles.value}>
-                            {data.nombre} {data.apellido}
+
+                        <Text
+                            style={[
+                                styles.value,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
+                        >
+                            {data.nombre}{' '}
+                            {data.apellido}
                         </Text>
 
                     </View>
@@ -755,27 +1248,63 @@ export default function PerfilScreen({ navigation }: any) {
                 </View>
 
 
-                <View style={styles.infoBox}>
+                <View
+                    style={[
+                        styles.infoBox,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
-                    <View style={styles.infoIcon}>
+                    <View
+                        style={[
+                            styles.infoIcon,
+                            {
+                                backgroundColor:
+                                    colors.veryLight,
+                            },
+                        ]}
+                    >
 
                         <Ionicons
                             name="male-female-outline"
                             size={17}
-                            color={COLOR_PRINCIPAL}
+                            color={
+                                colors.primary
+                            }
                         />
 
                     </View>
 
 
-                    <View style={styles.infoContent}>
+                    <View
+                        style={
+                            styles.infoContent
+                        }
+                    >
 
-                        <Text style={styles.label}>
+                        <Text
+                            style={
+                                styles.label
+                            }
+                        >
                             Género
                         </Text>
 
-                        <Text style={styles.value}>
-                            {data.genero || 'No especificado'}
+
+                        <Text
+                            style={[
+                                styles.value,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
+                        >
+                            {data.genero ||
+                                'No especificado'}
                         </Text>
 
                     </View>
@@ -783,27 +1312,60 @@ export default function PerfilScreen({ navigation }: any) {
                 </View>
 
 
-                <View style={styles.infoBox}>
+                <View
+                    style={[
+                        styles.infoBox,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
-                    <View style={styles.infoIcon}>
+                    <View
+                        style={[
+                            styles.infoIcon,
+                            {
+                                backgroundColor:
+                                    colors.veryLight,
+                            },
+                        ]}
+                    >
 
                         <Ionicons
                             name="mail-outline"
                             size={17}
-                            color={COLOR_PRINCIPAL}
+                            color={
+                                colors.primary
+                            }
                         />
 
                     </View>
 
 
-                    <View style={styles.infoContent}>
+                    <View
+                        style={
+                            styles.infoContent
+                        }
+                    >
 
-                        <Text style={styles.label}>
+                        <Text
+                            style={
+                                styles.label
+                            }
+                        >
                             Correo electrónico
                         </Text>
 
+
                         <Text
-                            style={styles.value}
+                            style={[
+                                styles.value,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
                             numberOfLines={1}
                         >
                             {data.correo}
@@ -815,27 +1377,41 @@ export default function PerfilScreen({ navigation }: any) {
 
 
                 {/* =================================
-                CERRAR SESIÓN
-            ================================= */}
+                    CERRAR SESIÓN
+                ================================= */}
 
                 <TouchableOpacity
-                    style={styles.logoutButton}
-                    onPress={cerrarSesion}
+                    style={
+                        styles.logoutButton
+                    }
+                    onPress={
+                        cerrarSesion
+                    }
                     activeOpacity={0.85}
                 >
 
-                    <View style={styles.logoutIcon}>
+                    <View
+                        style={
+                            styles.logoutIcon
+                        }
+                    >
 
                         <Ionicons
                             name="log-out-outline"
                             size={18}
-                            color={COLOR_ROJO}
+                            color={
+                                COLOR_ROJO
+                            }
                         />
 
                     </View>
 
 
-                    <Text style={styles.logoutText}>
+                    <Text
+                        style={
+                            styles.logoutText
+                        }
+                    >
                         Cerrar sesión
                     </Text>
 
@@ -843,65 +1419,128 @@ export default function PerfilScreen({ navigation }: any) {
                     <Ionicons
                         name="chevron-forward"
                         size={18}
-                        color={COLOR_ROJO}
+                        color={
+                            COLOR_ROJO
+                        }
                     />
 
                 </TouchableOpacity>
 
 
-                <Text style={styles.footerText}>
+                <Text
+                    style={
+                        styles.footerText
+                    }
+                >
                     Finanzas en Pareja
                 </Text>
+
 
             </ScrollView>
 
 
             {/* =================================
-            MODAL SELECCIONAR AVATAR
-        ================================= */}
+                MODAL AVATAR
+            ================================= */}
 
             <Modal
-                visible={modalAvatarVisible}
+                visible={
+                    modalAvatarVisible
+                }
                 transparent
                 animationType="fade"
-                onRequestClose={() => setModalAvatarVisible(false)}
+                onRequestClose={() =>
+                    setModalAvatarVisible(
+                        false
+                    )
+                }
             >
 
-                <View style={styles.modalOverlay}>
+                <View
+                    style={
+                        styles.modalOverlay
+                    }
+                >
 
-                    <View style={styles.modalBox}>
+                    <View
+                        style={[
+                            styles.modalBox,
+                            {
+                                borderColor:
+                                    colors.light,
+                            },
+                        ]}
+                    >
 
-                        <Text style={styles.modalTitulo}>
+                        <Text
+                            style={[
+                                styles.modalTitulo,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
+                        >
                             Elige tu avatar
                         </Text>
 
-                        <View style={styles.avatarGrid}>
 
-                            {AVATARS.map((src, i) => (
+                        <View
+                            style={
+                                styles.avatarGrid
+                            }
+                        >
 
-                                <TouchableOpacity
-                                    key={i}
-                                    onPress={() => seleccionarAvatar(i + 1)}
-                                    activeOpacity={0.8}
-                                >
+                            {AVATARS.map(
+                                (src, i) => (
 
-                                    <Image
-                                        source={src}
-                                        style={styles.avatarOpcion}
-                                    />
+                                    <TouchableOpacity
+                                        key={i}
+                                        onPress={() =>
+                                            seleccionarAvatar(
+                                                i + 1
+                                            )
+                                        }
+                                        activeOpacity={0.8}
+                                    >
 
-                                </TouchableOpacity>
+                                        <Image
+                                            source={
+                                                src
+                                            }
+                                            style={
+                                                styles.avatarOpcion
+                                            }
+                                        />
 
-                            ))}
+                                    </TouchableOpacity>
+
+                                )
+                            )}
 
                         </View>
 
+
                         <TouchableOpacity
-                            style={styles.btnCerrarModal}
-                            onPress={() => setModalAvatarVisible(false)}
+                            style={
+                                styles.btnCerrarModal
+                            }
+                            onPress={() =>
+                                setModalAvatarVisible(
+                                    false
+                                )
+                            }
                         >
 
-                            <Text style={styles.btnCerrarModalText}>
+                            <Text
+                                style={[
+                                    styles.btnCerrarModalText,
+                                    {
+                                        color:
+                                            colors.primary,
+                                    },
+                                ]}
+                            >
                                 Cancelar
                             </Text>
 
@@ -916,35 +1555,33 @@ export default function PerfilScreen({ navigation }: any) {
         </>
 
     );
+
 }
 
 
-/* =====================================================
-   PALETA
-===================================================== */
-
-const COLOR_PRINCIPAL = '#176B63';
-const COLOR_OSCURO = '#124C47';
-const COLOR_VERDE = '#2E7D6E';
-const COLOR_SUAVE = '#DCEAE7';
-const COLOR_MUY_SUAVE = '#F3F7F6';
+// =====================================================
+// PALETA FIJA
+// =====================================================
 
 const COLOR_ROJO = '#B85C5C';
 
 const COLOR_BORDE = '#E4E7E6';
+
 const COLOR_TEXTO_SUAVE = '#7A817F';
 
+const COLOR_MUY_SUAVE = '#F3F7F6';
 
-/* =====================================================
-   ESTILOS
-===================================================== */
+
+// =====================================================
+// ESTILOS
+// =====================================================
 
 const styles = StyleSheet.create({
 
     scrollView: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
+
 
     container: {
         paddingHorizontal: 20,
@@ -952,48 +1589,77 @@ const styles = StyleSheet.create({
         paddingBottom: 45,
     },
 
+
+    // =================================================
+    // HEADER
+    // =================================================
+
     header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingBottom: 15,
         marginBottom: 20,
+        borderBottomWidth: 1,
     },
 
+
+    backButton: {
+        width: 42,
+        height: 42,
+        borderRadius: 13,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+
+
+    headerTextContainer: {
+        flex: 1,
+    },
+
+
     headerSmall: {
-        color: COLOR_PRINCIPAL,
         fontSize: 10,
         fontWeight: '700',
         letterSpacing: 1.3,
         marginBottom: 4,
     },
 
+
     titulo: {
-        color: '#171A19',
         fontSize: 24,
         fontWeight: '800',
     },
 
+
+    // =================================================
+    // PERFIL
+    // =================================================
+
     profileCard: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 18,
         paddingVertical: 24,
         paddingHorizontal: 18,
         alignItems: 'center',
-        marginBottom: 22,
+        marginBottom: 15,
         borderWidth: 1,
-        borderColor: COLOR_BORDE,
     },
+
 
     avatarContainer: {
         position: 'relative',
         marginBottom: 10,
     },
 
+
     avatar: {
         width: 92,
         height: 92,
         borderRadius: 46,
-        backgroundColor: COLOR_PRINCIPAL,
         alignItems: 'center',
         justifyContent: 'center',
     },
+
 
     avatarImage: {
         width: 92,
@@ -1001,11 +1667,13 @@ const styles = StyleSheet.create({
         borderRadius: 46,
     },
 
+
     avatarText: {
         color: '#FFFFFF',
         fontSize: 34,
         fontWeight: '800',
     },
+
 
     cameraButton: {
         position: 'absolute',
@@ -1014,12 +1682,12 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: COLOR_PRINCIPAL,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 3,
         borderColor: '#FFFFFF',
     },
+
 
     changePhotoText: {
         color: COLOR_TEXTO_SUAVE,
@@ -1027,17 +1695,58 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
 
+
     profileName: {
-        color: '#171A19',
         fontSize: 19,
         fontWeight: '800',
         marginBottom: 3,
     },
 
+
     profileEmail: {
         color: COLOR_TEXTO_SUAVE,
         fontSize: 13,
     },
+
+
+    // =================================================
+    // PERSONALIZAR
+    // =================================================
+
+    opcion: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: 14,
+        marginBottom: 22,
+    },
+
+
+    opcionIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 13,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+
+    opcionTitulo: {
+        fontSize: 15,
+        fontWeight: '800',
+    },
+
+
+    opcionDescripcion: {
+        fontSize: 11,
+        marginTop: 3,
+    },
+
+
+    // =================================================
+    // SECCIONES
+    // =================================================
 
     sectionHeader: {
         flexDirection: 'row',
@@ -1047,19 +1756,24 @@ const styles = StyleSheet.create({
         gap: 8,
     },
 
+
     sectionTitle: {
-        color: '#171A19',
         fontSize: 15,
         fontWeight: '700',
     },
 
+
+    // =================================================
+    // CÓDIGO
+    // =================================================
+
     codeCard: {
-        backgroundColor: COLOR_PRINCIPAL,
         borderRadius: 18,
         padding: 20,
         alignItems: 'center',
         marginBottom: 15,
     },
+
 
     codeLabel: {
         color: '#CDE6E1',
@@ -1068,6 +1782,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1.2,
     },
 
+
     roleName: {
         color: '#FFFFFF',
         fontSize: 26,
@@ -1075,6 +1790,7 @@ const styles = StyleSheet.create({
         letterSpacing: 3,
         marginVertical: 8,
     },
+
 
     codeDescription: {
         color: '#CDE6E1',
@@ -1085,8 +1801,10 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
 
+
     copiarBtn: {
-        backgroundColor: 'rgba(255,255,255,0.16)',
+        backgroundColor:
+            'rgba(255,255,255,0.16)',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1095,6 +1813,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
 
+
     copiarText: {
         color: '#FFFFFF',
         fontWeight: '700',
@@ -1102,26 +1821,31 @@ const styles = StyleSheet.create({
         marginLeft: 7,
     },
 
+
+    // =================================================
+    // PAREJA
+    // =================================================
+
     partnerCard: {
         backgroundColor: '#FFFFFF',
         borderRadius: 15,
         padding: 15,
         marginBottom: 15,
         borderWidth: 1,
-        borderColor: COLOR_BORDE,
         flexDirection: 'row',
         alignItems: 'center',
     },
+
 
     partnerIcon: {
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
+
 
     labelVinculo: {
         color: COLOR_TEXTO_SUAVE,
@@ -1131,11 +1855,16 @@ const styles = StyleSheet.create({
         marginBottom: 3,
     },
 
+
     valueVinculo: {
-        color: '#171A19',
         fontSize: 14,
         fontWeight: '700',
     },
+
+
+    // =================================================
+    // VINCULAR
+    // =================================================
 
     vincularCard: {
         backgroundColor: '#FFFFFF',
@@ -1143,8 +1872,8 @@ const styles = StyleSheet.create({
         padding: 18,
         marginBottom: 25,
         borderWidth: 1,
-        borderColor: COLOR_BORDE,
     },
+
 
     vincularHeader: {
         flexDirection: 'row',
@@ -1152,27 +1881,29 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
 
+
     vincularIcon: {
         width: 42,
         height: 42,
         borderRadius: 13,
-        backgroundColor: COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
 
+
     vincularCardTitulo: {
-        color: '#171A19',
         fontSize: 15,
         fontWeight: '800',
     },
+
 
     vincularCardSub: {
         color: COLOR_TEXTO_SUAVE,
         fontSize: 11,
         marginTop: 2,
     },
+
 
     vincularDescription: {
         color: COLOR_TEXTO_SUAVE,
@@ -1181,8 +1912,8 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
 
+
     btnAbrirVincular: {
-        backgroundColor: COLOR_PRINCIPAL,
         width: '100%',
         paddingVertical: 13,
         borderRadius: 12,
@@ -1191,6 +1922,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
 
+
     btnAbrirVincularText: {
         color: '#FFFFFF',
         fontWeight: '700',
@@ -1198,9 +1930,11 @@ const styles = StyleSheet.create({
         marginLeft: 7,
     },
 
+
     vincularBox: {
         width: '100%',
     },
+
 
     inputVinculo: {
         backgroundColor: COLOR_MUY_SUAVE,
@@ -1216,14 +1950,15 @@ const styles = StyleSheet.create({
         letterSpacing: 2,
     },
 
+
     rowBotonesVinculo: {
         flexDirection: 'row',
         gap: 10,
     },
 
+
     btnGuardarVinculo: {
         flex: 1,
-        backgroundColor: COLOR_PRINCIPAL,
         paddingVertical: 12,
         borderRadius: 10,
         alignItems: 'center',
@@ -1231,12 +1966,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
 
+
     btnGuardarVinculoText: {
         color: '#FFFFFF',
         fontWeight: '700',
         fontSize: 12,
         marginLeft: 5,
     },
+
 
     btnCancelarVinculo: {
         flex: 1,
@@ -1250,6 +1987,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
 
+
     btnCancelarVinculoText: {
         color: '#5A615E',
         fontWeight: '700',
@@ -1257,30 +1995,36 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
 
+
+    // =================================================
+    // DATOS
+    // =================================================
+
     infoBox: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: COLOR_BORDE,
         borderRadius: 14,
         padding: 14,
         marginBottom: 12,
     },
 
+
     infoIcon: {
         width: 36,
         height: 36,
         borderRadius: 10,
-        backgroundColor: COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
 
+
     infoContent: {
         flex: 1,
     },
+
 
     label: {
         color: COLOR_TEXTO_SUAVE,
@@ -1289,11 +2033,16 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
 
+
     value: {
-        color: '#171A19',
         fontSize: 14,
         fontWeight: '700',
     },
+
+
+    // =================================================
+    // LOGOUT
+    // =================================================
 
     logoutButton: {
         flexDirection: 'row',
@@ -1307,6 +2056,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
 
+
     logoutIcon: {
         width: 36,
         height: 36,
@@ -1317,12 +2067,14 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
 
+
     logoutText: {
         flex: 1,
         color: COLOR_ROJO,
         fontSize: 14,
         fontWeight: '700',
     },
+
 
     footerText: {
         textAlign: 'center',
@@ -1331,12 +2083,19 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
 
+
+    // =================================================
+    // MODAL
+    // =================================================
+
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor:
+            'rgba(0,0,0,0.5)',
         alignItems: 'center',
         justifyContent: 'center',
     },
+
 
     modalBox: {
         backgroundColor: '#FFFFFF',
@@ -1344,14 +2103,16 @@ const styles = StyleSheet.create({
         padding: 22,
         width: '85%',
         alignItems: 'center',
+        borderWidth: 1,
     },
+
 
     modalTitulo: {
         fontSize: 16,
         fontWeight: '800',
         marginBottom: 15,
-        color: '#171A19',
     },
+
 
     avatarGrid: {
         flexDirection: 'row',
@@ -1361,6 +2122,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
 
+
     avatarOpcion: {
         width: 70,
         height: 70,
@@ -1369,13 +2131,14 @@ const styles = StyleSheet.create({
         borderColor: COLOR_BORDE,
     },
 
+
     btnCerrarModal: {
         paddingVertical: 10,
         paddingHorizontal: 20,
     },
 
+
     btnCerrarModalText: {
-        color: COLOR_TEXTO_SUAVE,
         fontWeight: '700',
     },
 

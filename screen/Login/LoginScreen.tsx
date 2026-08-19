@@ -104,9 +104,7 @@ export default function LoginScreen({ navigation }: any) {
                     ? 'padding'
                     : 'height'
             }
-            keyboardVerticalOffset={
-                Platform.OS === 'ios' ? 0 : 20
-            }
+            keyboardVerticalOffset={0}
         >
             <ScrollView
                 style={styles.scrollView}
@@ -121,6 +119,7 @@ export default function LoginScreen({ navigation }: any) {
                 automaticallyAdjustKeyboardInsets={
                     Platform.OS === 'ios'
                 }
+                contentInsetAdjustmentBehavior="automatic"
             >
 
                 {/* ================================================= */}
@@ -187,6 +186,7 @@ export default function LoginScreen({ navigation }: any) {
                                 keyboardType="email-address"
                                 autoCorrect={false}
                                 returnKeyType="next"
+                                blurOnSubmit={false}
                             />
 
                         </View>
@@ -401,13 +401,13 @@ const styles = StyleSheet.create({
 
     scrollContent: {
         flexGrow: 1,
-        paddingBottom: 30,
+        paddingBottom: 160,
     },
 
     container: {
         paddingHorizontal: 25,
         paddingTop: 28,
-        paddingBottom: 35,
+        paddingBottom: 60,
     },
 
     // ============================================================

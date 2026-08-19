@@ -22,9 +22,22 @@ import {
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { useTheme } from '../../context/ThemeContext';
+
 export default function ReporteDeudasRegistradas({
     navigation,
 }: any) {
+
+    // ============================================================
+    // TEMA
+    // ============================================================
+
+    const { colors } = useTheme();
+
+    const styles = useMemo(
+        () => crearEstilos(colors),
+        [colors]
+    );
 
     // ============================================================
     // ESTADOS
@@ -37,31 +50,50 @@ export default function ReporteDeudasRegistradas({
     const [deudas, setDeudas] = useState<any[]>([]);
     const [gastosFijos, setGastosFijos] = useState<any[]>([]);
     const [movimientos, setMovimientos] = useState<any[]>([]);
-    const [movimientosCuentas, setMovimientosCuentas] = useState<any[]>([]);
+    const [movimientosCuentas, setMovimientosCuentas] =
+        useState<any[]>([]);
 
-    const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
+    const [categoriaFiltro, setCategoriaFiltro] =
+        useState('Todas');
+
     const [loading, setLoading] = useState(true);
-    const [idPareja, setIdPareja] = useState<string | null>(null);
+    const [idPareja, setIdPareja] =
+        useState<string | null>(null);
 
     // ============================================================
     // MODAL EDICIÓN
     // ============================================================
 
-    const [modalVisible, setModalVisible] = useState(false);
-    const [itemSeleccionado, setItemSeleccionado] = useState<any>(null);
+    const [modalVisible, setModalVisible] =
+        useState(false);
 
-    const [nuevoMonto, setNuevoMonto] = useState('');
-    const [nuevaCuota, setNuevaCuota] = useState('');
-    const [nuevaFechaPago, setNuevaFechaPago] = useState('');
-    const [nuevoNombre, setNuevoNombre] = useState('');
-    const [nuevaCategoria, setNuevaCategoria] = useState('');
-    const [nuevoMotivo, setNuevoMotivo] = useState('');
+    const [itemSeleccionado, setItemSeleccionado] =
+        useState<any>(null);
+
+    const [nuevoMonto, setNuevoMonto] =
+        useState('');
+
+    const [nuevaCuota, setNuevaCuota] =
+        useState('');
+
+    const [nuevaFechaPago, setNuevaFechaPago] =
+        useState('');
+
+    const [nuevoNombre, setNuevoNombre] =
+        useState('');
+
+    const [nuevaCategoria, setNuevaCategoria] =
+        useState('');
+
+    const [nuevoMotivo, setNuevoMotivo] =
+        useState('');
 
     // ============================================================
     // CONFIGURACIÓN HEADER
     // ============================================================
 
     useEffect(() => {
+
         navigation.setOptions({
             headerShown: false,
         });
@@ -81,13 +113,21 @@ export default function ReporteDeudasRegistradas({
         const unsubscribe = onValue(
             userRef,
             (snapshot) => {
+
                 const data = snapshot.val();
 
                 if (data && data.idPareja) {
-                    setIdPareja(data.idPareja);
+
+                    setIdPareja(
+                        data.idPareja
+                    );
+
                 } else {
+
                     setLoading(false);
+
                 }
+
             },
             {
                 onlyOnce: true,
@@ -95,6 +135,7 @@ export default function ReporteDeudasRegistradas({
         );
 
         return () => unsubscribe();
+
     }, [navigation]);
 
     // ============================================================
@@ -102,6 +143,7 @@ export default function ReporteDeudasRegistradas({
     // ============================================================
 
     useEffect(() => {
+
         if (!idPareja) return;
 
         setLoading(true);
@@ -129,15 +171,18 @@ export default function ReporteDeudasRegistradas({
         const unsubDeudas = onValue(
             deudasRef,
             (snapshot) => {
+
                 const data = snapshot.val();
 
                 if (data) {
-                    const listaDeudas = Object.keys(data).map(
-                        (key) => ({
-                            id: key,
-                            ...data[key],
-                        })
-                    );
+
+                    const listaDeudas =
+                        Object.keys(data).map(
+                            (key) => ({
+                                id: key,
+                                ...data[key],
+                            })
+                        );
 
                     listaDeudas.sort(
                         (a, b) =>
@@ -149,31 +194,42 @@ export default function ReporteDeudasRegistradas({
                             ).getTime()
                     );
 
-                    setDeudas(listaDeudas);
+                    setDeudas(
+                        listaDeudas
+                    );
+
                 } else {
+
                     setDeudas([]);
+
                 }
+
             },
             (error) => {
+
                 console.error(
                     'Error cargando deudas:',
                     error
                 );
+
             }
         );
 
         const unsubFijos = onValue(
             fijosRef,
             (snapshot) => {
+
                 const data = snapshot.val();
 
                 if (data) {
-                    const listaFijos = Object.keys(data).map(
-                        (key) => ({
-                            id: key,
-                            ...data[key],
-                        })
-                    );
+
+                    const listaFijos =
+                        Object.keys(data).map(
+                            (key) => ({
+                                id: key,
+                                ...data[key],
+                            })
+                        );
 
                     listaFijos.sort(
                         (a, b) =>
@@ -185,440 +241,582 @@ export default function ReporteDeudasRegistradas({
                             ).getTime()
                     );
 
-                    setGastosFijos(listaFijos);
+                    setGastosFijos(
+                        listaFijos
+                    );
+
                 } else {
+
                     setGastosFijos([]);
+
                 }
+
             },
             (error) => {
+
                 console.error(
                     'Error cargando gastos fijos:',
                     error
                 );
+
             }
         );
 
         const unsubMovimientos = onValue(
             movimientosRef,
             (snapshot) => {
+
                 const data = snapshot.val();
 
                 if (data) {
-                    const listaMovs = Object.keys(data).map(
-                        (key) => ({
-                            id: key,
-                            ...data[key],
-                        })
+
+                    const listaMovs =
+                        Object.keys(data).map(
+                            (key) => ({
+                                id: key,
+                                ...data[key],
+                            })
+                        );
+
+                    setMovimientos(
+                        listaMovs
                     );
 
-                    setMovimientos(listaMovs);
                 } else {
+
                     setMovimientos([]);
+
                 }
 
                 setLoading(false);
+
             },
             (error) => {
+
                 console.error(
                     'Error cargando movimientos:',
                     error
                 );
 
                 setLoading(false);
+
             }
         );
 
-        const unsubMovimientosCuentas = onValue(
-            movimientosCuentasRef,
-            (snapshot) => {
-                const data = snapshot.val();
+        const unsubMovimientosCuentas =
+            onValue(
+                movimientosCuentasRef,
+                (snapshot) => {
 
-                if (data) {
-                    const lista = Object.keys(data).map(
-                        (key) => ({
-                            id: key,
-                            ...data[key],
-                        })
+                    const data =
+                        snapshot.val();
+
+                    if (data) {
+
+                        const lista =
+                            Object.keys(data).map(
+                                (key) => ({
+                                    id: key,
+                                    ...data[key],
+                                })
+                            );
+
+                        lista.sort(
+                            (a, b) =>
+                                new Date(
+                                    b.fecha || 0
+                                ).getTime() -
+                                new Date(
+                                    a.fecha || 0
+                                ).getTime()
+                        );
+
+                        setMovimientosCuentas(
+                            lista
+                        );
+
+                    } else {
+
+                        setMovimientosCuentas(
+                            []
+                        );
+
+                    }
+
+                },
+                (error) => {
+
+                    console.error(
+                        'Error cargando movimientos de cuentas:',
+                        error
                     );
 
-                    lista.sort(
-                        (a, b) =>
-                            new Date(
-                                b.fecha || 0
-                            ).getTime() -
-                            new Date(
-                                a.fecha || 0
-                            ).getTime()
-                    );
-
-                    setMovimientosCuentas(lista);
-                } else {
-                    setMovimientosCuentas([]);
                 }
-            },
-            (error) => {
-                console.error(
-                    'Error cargando movimientos de cuentas:',
-                    error
-                );
-            }
-        );
+            );
 
         return () => {
+
             unsubDeudas();
             unsubFijos();
             unsubMovimientos();
             unsubMovimientosCuentas();
+
         };
+
     }, [idPareja]);
 
     // ============================================================
     // OBTENER PAGOS ASOCIADOS A DEUDA
     // ============================================================
 
-    const obtenerPagosAsociados = (deuda: any) => {
-        return movimientos.filter((mov) => {
+    const obtenerPagosAsociados = (
+        deuda: any
+    ) => {
 
-            if (
-                mov.deudaId &&
-                mov.deudaId === deuda.id
-            ) {
-                return true;
+        return movimientos.filter(
+            (mov) => {
+
+                if (
+                    mov.deudaId &&
+                    mov.deudaId === deuda.id
+                ) {
+                    return true;
+                }
+
+                const desc = (
+                    mov.descripcion ||
+                    mov.entidadDeuda ||
+                    mov.entidad ||
+                    ''
+                ).toLowerCase();
+
+                const entidad = (
+                    deuda.entidad || ''
+                ).toLowerCase();
+
+                return (
+                    (
+                        entidad &&
+                        desc.includes(
+                            entidad
+                        )
+                    ) ||
+                    (
+                        mov.categoria ===
+                            deuda.categoria &&
+                        typeof mov.tipo ===
+                            'string' &&
+                        mov.tipo.includes(
+                            'pago'
+                        )
+                    )
+                );
+
             }
+        );
 
-            const desc = (
-                mov.descripcion ||
-                mov.entidadDeuda ||
-                mov.entidad ||
-                ''
-            ).toLowerCase();
-
-            const entidad = (
-                deuda.entidad || ''
-            ).toLowerCase();
-
-            return (
-                (entidad &&
-                    desc.includes(entidad)) ||
-                (
-                    mov.categoria === deuda.categoria &&
-                    typeof mov.tipo === 'string' &&
-                    mov.tipo.includes('pago')
-                )
-            );
-        });
     };
 
     // ============================================================
     // PROCESAR DEUDAS
     // ============================================================
 
-    const deudasProcesadas = useMemo(() => {
+    const deudasProcesadas = useMemo(
+        () => {
 
-        const tarjetas = deudas.filter(
-            (item) => item.tipo === 'tarjeta'
-        );
+            const tarjetas =
+                deudas.filter(
+                    (item) =>
+                        item.tipo ===
+                        'tarjeta'
+                );
 
-        const consumosTarjeta = deudas.filter(
-            (item) =>
-                item.tipo === 'consumoTarjeta'
-        );
+            const consumosTarjeta =
+                deudas.filter(
+                    (item) =>
+                        item.tipo ===
+                        'consumoTarjeta'
+                );
 
-        const deudasNormales = deudas.filter(
-            (item) =>
-                item.tipo !== 'tarjeta' &&
-                item.tipo !== 'consumoTarjeta'
-        );
+            const deudasNormales =
+                deudas.filter(
+                    (item) =>
+                        item.tipo !==
+                            'tarjeta' &&
+                        item.tipo !==
+                            'consumoTarjeta'
+                );
 
-        // --------------------------------------------------------
-        // TARJETAS
-        // --------------------------------------------------------
+            // ----------------------------------------------------
+            // TARJETAS
+            // ----------------------------------------------------
 
-        const tarjetasProcesadas = tarjetas.map(
-            (tarjeta) => {
+            const tarjetasProcesadas =
+                tarjetas.map(
+                    (tarjeta) => {
 
-                const cupoTotal =
-                    Number(tarjeta.cupoTotal) || 0;
+                        const cupoTotal =
+                            Number(
+                                tarjeta.cupoTotal
+                            ) || 0;
 
-                const consumos =
-                    consumosTarjeta.filter(
-                        (consumo) =>
-                            consumo.tarjetaId === tarjeta.id
-                    );
-
-                const totalConsumido =
-                    consumos.reduce(
-                        (sum, consumo) =>
-                            sum +
-                            (Number(consumo.monto) || 0),
-                        0
-                    );
-
-                const pagosTarjeta =
-                    movimientos.filter((mov) => {
-
-                        if (
-                            mov.deudaId &&
-                            consumos.some(
+                        const consumos =
+                            consumosTarjeta.filter(
                                 (consumo) =>
-                                    consumo.id ===
-                                    mov.deudaId
-                            )
-                        ) {
-                            return true;
-                        }
+                                    consumo.tarjetaId ===
+                                    tarjeta.id
+                            );
 
-                        const descripcion = (
-                            mov.descripcion ||
-                            mov.entidadDeuda ||
-                            mov.entidad ||
-                            ''
-                        ).toLowerCase();
+                        const totalConsumido =
+                            consumos.reduce(
+                                (
+                                    sum,
+                                    consumo
+                                ) =>
+                                    sum +
+                                    (
+                                        Number(
+                                            consumo.monto
+                                        ) || 0
+                                    ),
+                                0
+                            );
 
-                        const banco = (
-                            tarjeta.entidad || ''
-                        ).toLowerCase();
+                        const pagosTarjeta =
+                            movimientos.filter(
+                                (mov) => {
 
-                        return (
-                            banco &&
-                            descripcion.includes(banco) &&
-                            typeof mov.tipo === 'string' &&
-                            mov.tipo.includes('pago')
-                        );
-                    });
+                                    if (
+                                        mov.deudaId &&
+                                        consumos.some(
+                                            (
+                                                consumo
+                                            ) =>
+                                                consumo.id ===
+                                                mov.deudaId
+                                        )
+                                    ) {
+                                        return true;
+                                    }
 
-                const totalPagado =
-                    pagosTarjeta.reduce(
-                        (sum, mov) =>
-                            sum +
-                            (Number(mov.monto) || 0),
-                        0
-                    );
+                                    const descripcion =
+                                        (
+                                            mov.descripcion ||
+                                            mov.entidadDeuda ||
+                                            mov.entidad ||
+                                            ''
+                                        ).toLowerCase();
 
-                const deudaPendiente =
-                    Math.max(
-                        0,
-                        totalConsumido -
-                        totalPagado
-                    );
+                                    const banco =
+                                        (
+                                            tarjeta.entidad ||
+                                            ''
+                                        ).toLowerCase();
 
-                const cupoDisponible =
-                    Math.max(
-                        0,
-                        cupoTotal -
-                        totalConsumido +
-                        totalPagado
-                    );
+                                    return (
+                                        banco &&
+                                        descripcion.includes(
+                                            banco
+                                        ) &&
+                                        typeof mov.tipo ===
+                                            'string' &&
+                                        mov.tipo.includes(
+                                            'pago'
+                                        )
+                                    );
 
-                return {
-                    ...tarjeta,
-                    tipo: 'tarjeta',
-                    cupoTotal,
-                    totalConsumido,
-                    totalPagado,
-                    montoRestante:
-                        deudaPendiente,
-                    cupoDisponible,
-                    consumos,
-                };
-            }
-        );
+                                }
+                            );
 
-        // --------------------------------------------------------
-        // CONSUMOS SIN TARJETA
-        // --------------------------------------------------------
+                        const totalPagado =
+                            pagosTarjeta.reduce(
+                                (
+                                    sum,
+                                    mov
+                                ) =>
+                                    sum +
+                                    (
+                                        Number(
+                                            mov.monto
+                                        ) || 0
+                                    ),
+                                0
+                            );
 
-        const consumosSinTarjeta =
-            consumosTarjeta
-                .filter(
-                    (consumo) =>
-                        !tarjetas.some(
-                            (tarjeta) =>
-                                tarjeta.id ===
-                                consumo.tarjetaId
-                        )
-                )
-                .map((consumo) => {
-
-                    const pagos =
-                        obtenerPagosAsociados(
-                            consumo
-                        );
-
-                    const totalPagado =
-                        pagos.reduce(
-                            (sum, mov) =>
-                                sum +
-                                (Number(
-                                    mov.monto
-                                ) || 0),
-                            0
-                        );
-
-                    const monto =
-                        Number(
-                            consumo.monto
-                        ) || 0;
-
-                    return {
-                        ...consumo,
-                        montoRestante:
+                        const deudaPendiente =
                             Math.max(
                                 0,
-                                monto -
+                                totalConsumido -
                                 totalPagado
-                            ),
-                        totalPagado,
-                        consumoSinTarjeta: true,
-                    };
-                });
+                            );
 
-        // --------------------------------------------------------
-        // DEUDAS NORMALES
-        // --------------------------------------------------------
+                        const cupoDisponible =
+                            Math.max(
+                                0,
+                                cupoTotal -
+                                totalConsumido +
+                                totalPagado
+                            );
 
-        const normalesProcesadas =
-            deudasNormales.map((deuda) => {
+                        return {
+                            ...tarjeta,
+                            tipo: 'tarjeta',
+                            cupoTotal,
+                            totalConsumido,
+                            totalPagado,
+                            montoRestante:
+                                deudaPendiente,
+                            cupoDisponible,
+                            consumos,
+                        };
 
-                const pagosAsociados =
-                    obtenerPagosAsociados(
-                        deuda
+                    }
+                );
+
+            // ----------------------------------------------------
+            // CONSUMOS SIN TARJETA
+            // ----------------------------------------------------
+
+            const consumosSinTarjeta =
+                consumosTarjeta
+                    .filter(
+                        (consumo) =>
+                            !tarjetas.some(
+                                (tarjeta) =>
+                                    tarjeta.id ===
+                                    consumo.tarjetaId
+                            )
+                    )
+                    .map(
+                        (consumo) => {
+
+                            const pagos =
+                                obtenerPagosAsociados(
+                                    consumo
+                                );
+
+                            const totalPagado =
+                                pagos.reduce(
+                                    (
+                                        sum,
+                                        mov
+                                    ) =>
+                                        sum +
+                                        (
+                                            Number(
+                                                mov.monto
+                                            ) || 0
+                                        ),
+                                    0
+                                );
+
+                            const monto =
+                                Number(
+                                    consumo.monto
+                                ) || 0;
+
+                            return {
+                                ...consumo,
+                                montoRestante:
+                                    Math.max(
+                                        0,
+                                        monto -
+                                        totalPagado
+                                    ),
+                                totalPagado,
+                                consumoSinTarjeta:
+                                    true,
+                            };
+
+                        }
                     );
 
-                const totalPagado =
-                    pagosAsociados.reduce(
-                        (sum, mov) =>
-                            sum +
-                            (Number(
-                                mov.monto
-                            ) || 0),
-                        0
-                    );
+            // ----------------------------------------------------
+            // DEUDAS NORMALES
+            // ----------------------------------------------------
 
-                const montoOriginal =
-                    Number(
-                        deuda.monto
-                    ) || 0;
+            const normalesProcesadas =
+                deudasNormales.map(
+                    (deuda) => {
 
-                const saldoPendiente =
-                    Math.max(
-                        0,
-                        montoOriginal -
-                        totalPagado
-                    );
+                        const pagosAsociados =
+                            obtenerPagosAsociados(
+                                deuda
+                            );
 
-                return {
-                    ...deuda,
-                    montoRestante:
-                        saldoPendiente,
-                    totalPagado,
-                };
-            });
+                        const totalPagado =
+                            pagosAsociados.reduce(
+                                (
+                                    sum,
+                                    mov
+                                ) =>
+                                    sum +
+                                    (
+                                        Number(
+                                            mov.monto
+                                        ) || 0
+                                    ),
+                                0
+                            );
 
-        return [
-            ...tarjetasProcesadas,
-            ...consumosSinTarjeta,
-            ...normalesProcesadas,
-        ];
+                        const montoOriginal =
+                            Number(
+                                deuda.monto
+                            ) || 0;
 
-    }, [deudas, movimientos]);
+                        const saldoPendiente =
+                            Math.max(
+                                0,
+                                montoOriginal -
+                                totalPagado
+                            );
+
+                        return {
+                            ...deuda,
+                            montoRestante:
+                                saldoPendiente,
+                            totalPagado,
+                        };
+
+                    }
+                );
+
+            return [
+                ...tarjetasProcesadas,
+                ...consumosSinTarjeta,
+                ...normalesProcesadas,
+            ];
+
+        },
+        [
+            deudas,
+            movimientos,
+        ]
+    );
 
     // ============================================================
     // PROCESAR GASTOS FIJOS
     // ============================================================
 
-    const fijosConSaldo = useMemo(() => {
+    const fijosConSaldo = useMemo(
+        () => {
 
-        return gastosFijos.map((gasto) => {
+            return gastosFijos.map(
+                (gasto) => {
 
-            const pagosAsociados =
-                movimientos.filter((mov) => {
+                    const pagosAsociados =
+                        movimientos.filter(
+                            (mov) => {
 
-                    const desc = (
-                        mov.descripcion || ''
-                    ).toLowerCase();
+                                const desc =
+                                    (
+                                        mov.descripcion ||
+                                        ''
+                                    ).toLowerCase();
 
-                    const nombreFijo = (
-                        gasto.nombre || ''
-                    ).toLowerCase();
+                                const nombreFijo =
+                                    (
+                                        gasto.nombre ||
+                                        ''
+                                    ).toLowerCase();
 
-                    const catFijo = (
-                        gasto.categoria || ''
-                    ).toLowerCase();
+                                const catFijo =
+                                    (
+                                        gasto.categoria ||
+                                        ''
+                                    ).toLowerCase();
 
-                    return (
-                        (
-                            nombreFijo &&
-                            desc.includes(
-                                nombreFijo
-                            )
-                        ) ||
-                        (
-                            catFijo &&
-                            desc.includes(
-                                catFijo
-                            )
-                        )
-                    );
-                });
+                                return (
+                                    (
+                                        nombreFijo &&
+                                        desc.includes(
+                                            nombreFijo
+                                        )
+                                    ) ||
+                                    (
+                                        catFijo &&
+                                        desc.includes(
+                                            catFijo
+                                        )
+                                    )
+                                );
 
-            const totalPagado =
-                pagosAsociados.reduce(
-                    (sum, mov) =>
-                        sum +
-                        (Number(
-                            mov.monto
-                        ) || 0),
-                    0
-                );
+                            }
+                        );
 
-            const montoEstimado =
-                Number(
-                    gasto.monto ||
-                    gasto.montoEstimado
-                ) || 0;
+                    const totalPagado =
+                        pagosAsociados.reduce(
+                            (
+                                sum,
+                                mov
+                            ) =>
+                                sum +
+                                (
+                                    Number(
+                                        mov.monto
+                                    ) || 0
+                                ),
+                            0
+                        );
 
-            const saldoPendiente =
-                Math.max(
-                    0,
-                    montoEstimado -
-                    totalPagado
-                );
+                    const montoEstimado =
+                        Number(
+                            gasto.monto ||
+                            gasto.montoEstimado
+                        ) || 0;
 
-            return {
-                ...gasto,
-                montoRestante:
-                    saldoPendiente,
-                totalPagado,
-                monto:
-                    montoEstimado,
-            };
-        });
+                    const saldoPendiente =
+                        Math.max(
+                            0,
+                            montoEstimado -
+                            totalPagado
+                        );
 
-    }, [gastosFijos, movimientos]);
+                    return {
+                        ...gasto,
+                        montoRestante:
+                            saldoPendiente,
+                        totalPagado,
+                        monto:
+                            montoEstimado,
+                    };
+
+                }
+            );
+
+        },
+        [
+            gastosFijos,
+            movimientos,
+        ]
+    );
 
     // ============================================================
     // GASTOS RÁPIDOS
     // ============================================================
 
-    const gastosRapidos = useMemo(() => {
+    const gastosRapidos = useMemo(
+        () => {
 
-        return movimientos
-            .filter(
-                (mov) =>
-                    mov.origen === 'gastoRapido'
-            )
-            .sort(
-                (a, b) =>
-                    new Date(
-                        b.fecha || 0
-                    ).getTime() -
-                    new Date(
-                        a.fecha || 0
-                    ).getTime()
-            );
+            return movimientos
+                .filter(
+                    (mov) =>
+                        mov.origen ===
+                        'gastoRapido'
+                )
+                .sort(
+                    (a, b) =>
+                        new Date(
+                            b.fecha || 0
+                        ).getTime() -
+                        new Date(
+                            a.fecha || 0
+                        ).getTime()
+                );
 
-    }, [movimientos]);
+        },
+        [movimientos]
+    );
 
     // ============================================================
     // CATEGORÍAS
@@ -679,39 +877,47 @@ export default function ReporteDeudasRegistradas({
     const itemsFiltrados =
         categoriaFiltro === 'Todas'
             ? listaActual
-            : listaActual.filter((item) => {
+            : listaActual.filter(
+                (item) => {
 
-                const catItem = String(
-                    item.categoria || ''
-                )
-                    .trim()
-                    .toLowerCase();
-
-                const catFiltro =
-                    categoriaFiltro
-                        .trim()
-                        .toLowerCase();
-
-                if (
-                    catFiltro.includes(
-                        'internet'
-                    )
-                ) {
-                    return (
-                        catItem.includes(
-                            'internet'
-                        ) ||
-                        catItem.includes(
-                            'teléfono'
-                        ) ||
-                        catItem.includes(
-                            'telefono'
+                    const catItem =
+                        String(
+                            item.categoria ||
+                            ''
                         )
-                    );
-                }
+                            .trim()
+                            .toLowerCase();
 
-                return catItem === catFiltro;
-            });
+                    const catFiltro =
+                        categoriaFiltro
+                            .trim()
+                            .toLowerCase();
+
+                    if (
+                        catFiltro.includes(
+                            'internet'
+                        )
+                    ) {
+                        return (
+                            catItem.includes(
+                                'internet'
+                            ) ||
+                            catItem.includes(
+                                'teléfono'
+                            ) ||
+                            catItem.includes(
+                                'telefono'
+                            )
+                        );
+                    }
+
+                    return (
+                        catItem ===
+                        catFiltro
+                    );
+
+                }
+            );
 
     // ============================================================
     // TOTAL
@@ -720,7 +926,10 @@ export default function ReporteDeudasRegistradas({
     const totalFiltrado =
         tipoVista === 'cuentas'
             ? itemsFiltrados.reduce(
-                (acc, item) =>
+                (
+                    acc,
+                    item
+                ) =>
                     acc +
                     (
                         Number(
@@ -731,7 +940,10 @@ export default function ReporteDeudasRegistradas({
             )
             : tipoVista === 'rapidos'
                 ? itemsFiltrados.reduce(
-                    (acc, item) =>
+                    (
+                        acc,
+                        item
+                    ) =>
                         acc +
                         (
                             Number(
@@ -741,7 +953,10 @@ export default function ReporteDeudasRegistradas({
                     0
                 )
                 : itemsFiltrados.reduce(
-                    (acc, item) => {
+                    (
+                        acc,
+                        item
+                    ) => {
 
                         if (
                             item.tipo ===
@@ -758,6 +973,7 @@ export default function ReporteDeudasRegistradas({
                                 ) || 0
                             )
                         );
+
                     },
                     0
                 );
@@ -805,25 +1021,31 @@ export default function ReporteDeudasRegistradas({
                                 );
 
                             })
-                            .catch((error) => {
+                            .catch(
+                                (error) => {
 
-                                Alert.alert(
-                                    'Error',
-                                    error.message
-                                );
+                                    Alert.alert(
+                                        'Error',
+                                        error.message
+                                    );
 
-                            });
+                                }
+                            );
+
                     },
                 },
             ]
         );
+
     };
 
     // ============================================================
     // ABRIR EDICIÓN
     // ============================================================
 
-    const abrirEdicion = (item: any) => {
+    const abrirEdicion = (
+        item: any
+    ) => {
 
         setItemSeleccionado(item);
 
@@ -832,7 +1054,8 @@ export default function ReporteDeudasRegistradas({
         // --------------------------------------------------------
 
         if (
-            tipoVista === 'rapidos'
+            tipoVista ===
+            'rapidos'
         ) {
 
             setNuevoMonto(
@@ -843,10 +1066,12 @@ export default function ReporteDeudasRegistradas({
 
             const descripcion =
                 String(
-                    item.descripcion || ''
+                    item.descripcion ||
+                    ''
                 );
 
-            let motivo = descripcion;
+            let motivo =
+                descripcion;
 
             if (
                 descripcion.includes(
@@ -870,6 +1095,7 @@ export default function ReporteDeudasRegistradas({
             );
 
             setModalVisible(true);
+
             return;
         }
 
@@ -884,7 +1110,8 @@ export default function ReporteDeudasRegistradas({
 
             setNuevoMonto(
                 Number(
-                    item.cupoTotal || 0
+                    item.cupoTotal ||
+                    0
                 ).toString()
             );
 
@@ -892,9 +1119,11 @@ export default function ReporteDeudasRegistradas({
 
             setNuevoMonto(
                 Number(
-                    item.monto || 0
+                    item.monto ||
+                    0
                 ).toString()
             );
+
         }
 
         setNuevaCuota(
@@ -904,7 +1133,8 @@ export default function ReporteDeudasRegistradas({
         );
 
         setNuevaFechaPago(
-            item.fechaMaxPago || ''
+            item.fechaMaxPago ||
+            ''
         );
 
         setNuevoNombre(
@@ -915,10 +1145,11 @@ export default function ReporteDeudasRegistradas({
         );
 
         setModalVisible(true);
+
     };
 
     // ============================================================
-    // ACTUALIZAR MOVIMIENTO DE CUENTA
+    // ACTUALIZAR MOVIMIENTO DE CUENTA RÁPIDO
     // ============================================================
 
     const actualizarMovimientoCuentaRapido =
@@ -933,9 +1164,10 @@ export default function ReporteDeudasRegistradas({
             const movimientosRapidos =
                 movimientosCuentas.filter(
                     (mov) =>
-                        mov.tipo === 'gasto' &&
+                        mov.tipo ===
+                            'gasto' &&
                         mov.cuentaOrigenId ===
-                        gasto.cuentaOrigenId
+                            gasto.cuentaOrigenId
                 );
 
             let movimientoRelacionado =
@@ -945,7 +1177,9 @@ export default function ReporteDeudasRegistradas({
                         gasto.id
                 );
 
-            if (!movimientoRelacionado) {
+            if (
+                !movimientoRelacionado
+            ) {
 
                 movimientoRelacionado =
                     movimientosRapidos.find(
@@ -967,8 +1201,10 @@ export default function ReporteDeudasRegistradas({
                                 mismaFecha &&
                                 mismoMonto
                             );
+
                         }
                     );
+
             }
 
             if (
@@ -987,922 +1223,783 @@ export default function ReporteDeudasRegistradas({
                             nuevaDescripcion,
                     }
                 );
+
             }
+
         };
 
     // ============================================================
     // GUARDAR EDICIÓN
     // ============================================================
 
-    const guardarEdicion = async () => {
-
-        if (
-            !idPareja ||
-            !itemSeleccionado
-        ) {
-            return;
-        }
-
-        if (!nuevoMonto) {
-
-            Alert.alert(
-                'Atención',
-                'El monto no puede estar vacío.'
-            );
-
-            return;
-        }
-
-        const montoNuevo =
-            parseFloat(
-                nuevoMonto
-            );
-
-        if (
-            isNaN(montoNuevo) ||
-            montoNuevo <= 0
-        ) {
-
-            Alert.alert(
-                'Atención',
-                'Ingresa un monto válido.'
-            );
-
-            return;
-        }
-
-        try {
-
-            // ====================================================
-            // GASTO RÁPIDO
-            // ====================================================
+    const guardarEdicion =
+        async () => {
 
             if (
-                tipoVista ===
-                'rapidos'
+                !idPareja ||
+                !itemSeleccionado
             ) {
+                return;
+            }
 
-                const montoAnterior =
-                    Number(
-                        itemSeleccionado.monto
-                    ) || 0;
-
-                const diferencia =
-                    montoNuevo -
-                    montoAnterior;
-
-                const cuentaId =
-                    itemSeleccionado.cuentaOrigenId;
-
-                if (!cuentaId) {
-
-                    Alert.alert(
-                        'Error',
-                        'Este gasto rápido no tiene una cuenta de origen asociada.'
-                    );
-
-                    return;
-                }
-
-                const cuentaRef =
-                    ref(
-                        db,
-                        `parejas/${idPareja}/cuentas/${cuentaId}`
-                    );
-
-                const cuentaSnapshot =
-                    await new Promise<any>(
-                        (resolve) => {
-
-                            onValue(
-                                cuentaRef,
-                                (snap) => {
-                                    resolve(
-                                        snap
-                                    );
-                                },
-                                {
-                                    onlyOnce:
-                                        true,
-                                }
-                            );
-                        }
-                    );
-
-                const cuentaData =
-                    cuentaSnapshot.val();
-
-                if (!cuentaData) {
-
-                    Alert.alert(
-                        'Error',
-                        'La cuenta de origen ya no existe.'
-                    );
-
-                    return;
-                }
-
-                const saldoActual =
-                    Number(
-                        cuentaData.saldo
-                    ) || 0;
-
-                // Si aumentó el gasto,
-                // necesitamos quitar más dinero.
-                if (
-                    diferencia > 0 &&
-                    saldoActual <
-                    diferencia
-                ) {
-
-                    Alert.alert(
-                        'Saldo insuficiente',
-                        `La cuenta no tiene suficiente saldo para aumentar el gasto en $${diferencia.toFixed(2)}.`
-                    );
-
-                    return;
-                }
-
-                const nuevoSaldo =
-                    saldoActual -
-                    diferencia;
-
-                const motivo =
-                    nuevoMotivo.trim();
-
-                const descripcionFinal =
-                    motivo
-                        ? `${nuevaCategoria} - ${motivo}`
-                        : `Gasto rápido: ${nuevaCategoria}`;
-
-                // Actualizar gasto
-                await update(
-                    ref(
-                        db,
-                        `parejas/${idPareja}/movimientos/${itemSeleccionado.id}`
-                    ),
-                    {
-                        monto:
-                            Number(
-                                montoNuevo.toFixed(
-                                    2
-                                )
-                            ),
-                        categoria:
-                            nuevaCategoria,
-                        descripcion:
-                            descripcionFinal,
-                    }
-                );
-
-                // Ajustar cuenta
-                await update(
-                    cuentaRef,
-                    {
-                        saldo:
-                            Number(
-                                nuevoSaldo.toFixed(
-                                    2
-                                )
-                            ),
-                    }
-                );
-
-                // Actualizar movimiento de cuentas
-                await actualizarMovimientoCuentaRapido(
-                    itemSeleccionado,
-                    Number(
-                        montoNuevo.toFixed(
-                            2
-                        )
-                    ),
-                    descripcionFinal
-                );
+            if (!nuevoMonto) {
 
                 Alert.alert(
-                    '¡Éxito!',
-                    'Gasto rápido actualizado correctamente.'
+                    'Atención',
+                    'El monto no puede estar vacío.'
                 );
-
-                setModalVisible(false);
-                setItemSeleccionado(null);
 
                 return;
             }
 
-            // ====================================================
-            // DEUDAS / GASTOS FIJOS
-            // ====================================================
-
-            const rutaNodo =
-                tipoVista === 'deudas'
-                    ? 'deudas'
-                    : 'gastosFijos';
-
-            const itemRef =
-                ref(
-                    db,
-                    `parejas/${idPareja}/${rutaNodo}/${itemSeleccionado.id}`
+            const montoNuevo =
+                parseFloat(
+                    nuevoMonto
                 );
 
-            let datosActualizados: any = {};
-
             if (
-                tipoVista ===
-                'deudas' &&
-                itemSeleccionado.tipo ===
-                'tarjeta'
+                isNaN(montoNuevo) ||
+                montoNuevo <= 0
             ) {
 
-                datosActualizados = {
-                    cupoTotal:
-                        montoNuevo,
-                };
+                Alert.alert(
+                    'Atención',
+                    'Ingresa un monto válido.'
+                );
 
-            } else if (
-                tipoVista ===
-                'deudas' &&
-                itemSeleccionado.tipo ===
-                'consumoTarjeta'
-            ) {
-
-                datosActualizados = {
-                    monto:
-                        montoNuevo,
-                    fechaMaxPago:
-                        nuevaFechaPago ||
-                        'N/A',
-                };
-
-            } else if (
-                tipoVista ===
-                'deudas'
-            ) {
-
-                datosActualizados = {
-                    monto:
-                        montoNuevo,
-                    cuotaPagar:
-                        parseFloat(
-                            nuevaCuota
-                        ) || 0,
-                    fechaMaxPago:
-                        nuevaFechaPago ||
-                        'N/A',
-                };
-
-            } else {
-
-                datosActualizados = {
-                    monto:
-                        montoNuevo,
-                    nombre:
-                        nuevoNombre ||
-                        'Gasto Fijo',
-                };
+                return;
             }
 
-            await update(
-                itemRef,
-                datosActualizados
-            );
+            try {
 
-            Alert.alert(
-                '¡Éxito!',
-                'Actualizado correctamente.'
-            );
+                // =================================================
+                // GASTO RÁPIDO
+                // =================================================
 
-            setModalVisible(false);
-            setItemSeleccionado(null);
+                if (
+                    tipoVista ===
+                    'rapidos'
+                ) {
 
-        } catch (error: any) {
+                    const montoAnterior =
+                        Number(
+                            itemSeleccionado.monto
+                        ) || 0;
 
-            Alert.alert(
-                'Error',
-                error?.message ||
-                'No se pudo actualizar el registro.'
-            );
-        }
-    };
+                    const diferencia =
+                        montoNuevo -
+                        montoAnterior;
+
+                    const cuentaId =
+                        itemSeleccionado.cuentaOrigenId;
+
+                    if (!cuentaId) {
+
+                        Alert.alert(
+                            'Error',
+                            'Este gasto rápido no tiene una cuenta de origen asociada.'
+                        );
+
+                        return;
+                    }
+
+                    const cuentaRef =
+                        ref(
+                            db,
+                            `parejas/${idPareja}/cuentas/${cuentaId}`
+                        );
+
+                    const cuentaSnapshot =
+                        await new Promise<any>(
+                            (resolve) => {
+
+                                onValue(
+                                    cuentaRef,
+                                    (snap) => {
+                                        resolve(
+                                            snap
+                                        );
+                                    },
+                                    {
+                                        onlyOnce:
+                                            true,
+                                    }
+                                );
+
+                            }
+                        );
+
+                    const cuentaData =
+                        cuentaSnapshot.val();
+
+                    if (!cuentaData) {
+
+                        Alert.alert(
+                            'Error',
+                            'La cuenta de origen ya no existe.'
+                        );
+
+                        return;
+                    }
+
+                    const saldoActual =
+                        Number(
+                            cuentaData.saldo
+                        ) || 0;
+
+                    if (
+                        diferencia > 0 &&
+                        saldoActual <
+                            diferencia
+                    ) {
+
+                        Alert.alert(
+                            'Saldo insuficiente',
+                            `La cuenta no tiene suficiente saldo para aumentar el gasto en $${diferencia.toFixed(2)}.`
+                        );
+
+                        return;
+                    }
+
+                    const nuevoSaldo =
+                        saldoActual -
+                        diferencia;
+
+                    const motivo =
+                        nuevoMotivo.trim();
+
+                    const descripcionFinal =
+                        motivo
+                            ? `${nuevaCategoria} - ${motivo}`
+                            : `Gasto rápido: ${nuevaCategoria}`;
+
+                    // Actualizar gasto
+                    await update(
+                        ref(
+                            db,
+                            `parejas/${idPareja}/movimientos/${itemSeleccionado.id}`
+                        ),
+                        {
+                            monto:
+                                Number(
+                                    montoNuevo.toFixed(
+                                        2
+                                    )
+                                ),
+                            categoria:
+                                nuevaCategoria,
+                            descripcion:
+                                descripcionFinal,
+                        }
+                    );
+
+                    // Ajustar cuenta
+                    await update(
+                        cuentaRef,
+                        {
+                            saldo:
+                                Number(
+                                    nuevoSaldo.toFixed(
+                                        2
+                                    )
+                                ),
+                        }
+                    );
+
+                    // Actualizar movimiento
+                    await actualizarMovimientoCuentaRapido(
+                        itemSeleccionado,
+                        Number(
+                            montoNuevo.toFixed(
+                                2
+                            )
+                        ),
+                        descripcionFinal
+                    );
+
+                    Alert.alert(
+                        '¡Éxito!',
+                        'Gasto rápido actualizado correctamente.'
+                    );
+
+                    setModalVisible(
+                        false
+                    );
+
+                    setItemSeleccionado(
+                        null
+                    );
+
+                    return;
+                }
+
+                // =================================================
+                // DEUDAS / GASTOS FIJOS
+                // =================================================
+
+                const rutaNodo =
+                    tipoVista ===
+                        'deudas'
+                        ? 'deudas'
+                        : 'gastosFijos';
+
+                const itemRef =
+                    ref(
+                        db,
+                        `parejas/${idPareja}/${rutaNodo}/${itemSeleccionado.id}`
+                    );
+
+                let datosActualizados:
+                    any = {};
+
+                if (
+                    tipoVista ===
+                        'deudas' &&
+                    itemSeleccionado.tipo ===
+                        'tarjeta'
+                ) {
+
+                    datosActualizados = {
+                        cupoTotal:
+                            montoNuevo,
+                    };
+
+                } else if (
+                    tipoVista ===
+                        'deudas' &&
+                    itemSeleccionado.tipo ===
+                        'consumoTarjeta'
+                ) {
+
+                    datosActualizados = {
+                        monto:
+                            montoNuevo,
+                        fechaMaxPago:
+                            nuevaFechaPago ||
+                            'N/A',
+                    };
+
+                } else if (
+                    tipoVista ===
+                    'deudas'
+                ) {
+
+                    datosActualizados = {
+                        monto:
+                            montoNuevo,
+                        cuotaPagar:
+                            parseFloat(
+                                nuevaCuota
+                            ) || 0,
+                        fechaMaxPago:
+                            nuevaFechaPago ||
+                            'N/A',
+                    };
+
+                } else {
+
+                    datosActualizados = {
+                        monto:
+                            montoNuevo,
+                        nombre:
+                            nuevoNombre ||
+                            'Gasto Fijo',
+                    };
+
+                }
+
+                await update(
+                    itemRef,
+                    datosActualizados
+                );
+
+                Alert.alert(
+                    '¡Éxito!',
+                    'Actualizado correctamente.'
+                );
+
+                setModalVisible(
+                    false
+                );
+
+                setItemSeleccionado(
+                    null
+                );
+
+            } catch (
+                error: any
+            ) {
+
+                Alert.alert(
+                    'Error',
+                    error?.message ||
+                    'No se pudo actualizar el registro.'
+                );
+
+            }
+
+        };
 
     // ============================================================
     // ELIMINAR GASTO RÁPIDO
     // ============================================================
 
-    const eliminarGastoRapido = (
-        item: any
-    ) => {
+    const eliminarGastoRapido =
+        (
+            item: any
+        ) => {
 
-        if (!idPareja) return;
+            if (!idPareja) return;
 
-        Alert.alert(
-            'Eliminar gasto rápido',
-            `¿Quieres eliminar "${item.descripcion || 'este gasto'}"?\n\nEl dinero será devuelto a la cuenta de origen.`,
-            [
-                {
-                    text: 'Cancelar',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Eliminar',
-                    style: 'destructive',
+            Alert.alert(
+                'Eliminar gasto rápido',
+                `¿Quieres eliminar "${item.descripcion || 'este gasto'}"?\n\nEl dinero será devuelto a la cuenta de origen.`,
+                [
+                    {
+                        text: 'Cancelar',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Eliminar',
+                        style: 'destructive',
 
-                    onPress: async () => {
+                        onPress:
+                            async () => {
 
-                        try {
+                                try {
 
-                            const monto =
-                                Number(
-                                    item.monto
-                                ) || 0;
-
-                            const cuentaId =
-                                item.cuentaOrigenId;
-
-                            // ------------------------------------
-                            // DEVOLVER DINERO A LA CUENTA
-                            // ------------------------------------
-
-                            if (
-                                cuentaId
-                            ) {
-
-                                const cuentaRef =
-                                    ref(
-                                        db,
-                                        `parejas/${idPareja}/cuentas/${cuentaId}`
-                                    );
-
-                                const cuentaSnapshot =
-                                    await new Promise<any>(
-                                        (resolve) => {
-
-                                            onValue(
-                                                cuentaRef,
-                                                (snap) => {
-                                                    resolve(
-                                                        snap
-                                                    );
-                                                },
-                                                {
-                                                    onlyOnce:
-                                                        true,
-                                                }
-                                            );
-                                        }
-                                    );
-
-                                const cuentaData =
-                                    cuentaSnapshot.val();
-
-                                if (
-                                    cuentaData
-                                ) {
-
-                                    const saldoActual =
+                                    const monto =
                                         Number(
-                                            cuentaData.saldo
+                                            item.monto
                                         ) || 0;
 
-                                    await update(
-                                        cuentaRef,
-                                        {
-                                            saldo:
-                                                Number(
-                                                    (
-                                                        saldoActual +
-                                                        monto
-                                                    ).toFixed(
-                                                        2
-                                                    )
-                                                ),
-                                        }
-                                    );
-                                }
-                            }
+                                    const cuentaId =
+                                        item.cuentaOrigenId;
 
-                            // ------------------------------------
-                            // ELIMINAR MOVIMIENTO DE CUENTA
-                            // ------------------------------------
+                                    // --------------------------------
+                                    // DEVOLVER DINERO
+                                    // --------------------------------
 
-                            const relacionados =
-                                movimientosCuentas.filter(
-                                    (mov) => {
+                                    if (
+                                        cuentaId
+                                    ) {
+
+                                        const cuentaRef =
+                                            ref(
+                                                db,
+                                                `parejas/${idPareja}/cuentas/${cuentaId}`
+                                            );
+
+                                        const cuentaSnapshot =
+                                            await new Promise<any>(
+                                                (
+                                                    resolve
+                                                ) => {
+
+                                                    onValue(
+                                                        cuentaRef,
+                                                        (
+                                                            snap
+                                                        ) => {
+                                                            resolve(
+                                                                snap
+                                                            );
+                                                        },
+                                                        {
+                                                            onlyOnce:
+                                                                true,
+                                                        }
+                                                    );
+
+                                                }
+                                            );
+
+                                        const cuentaData =
+                                            cuentaSnapshot.val();
 
                                         if (
-                                            mov.gastoId &&
-                                            mov.gastoId ===
-                                            item.id
+                                            cuentaData
                                         ) {
-                                            return true;
+
+                                            const saldoActual =
+                                                Number(
+                                                    cuentaData.saldo
+                                                ) || 0;
+
+                                            await update(
+                                                cuentaRef,
+                                                {
+                                                    saldo:
+                                                        Number(
+                                                            (
+                                                                saldoActual +
+                                                                monto
+                                                            ).toFixed(
+                                                                2
+                                                            )
+                                                        ),
+                                                }
+                                            );
+
                                         }
 
-                                        return (
-                                            mov.tipo ===
-                                            'gasto' &&
-                                            mov.cuentaOrigenId ===
-                                            item.cuentaOrigenId &&
-                                            Number(
-                                                mov.monto
-                                            ) ===
-                                            monto &&
-                                            mov.fecha ===
-                                            item.fecha
-                                        );
                                     }
-                                );
 
-                            for (
-                                const mov of relacionados
-                            ) {
+                                    // --------------------------------
+                                    // ELIMINAR MOVIMIENTO CUENTA
+                                    // --------------------------------
 
-                                await remove(
-                                    ref(
-                                        db,
-                                        `parejas/${idPareja}/movimientosCuentas/${mov.id}`
-                                    )
-                                );
-                            }
+                                    const relacionados =
+                                        movimientosCuentas.filter(
+                                            (mov) => {
 
-                            // ------------------------------------
-                            // ELIMINAR GASTO
-                            // ------------------------------------
+                                                if (
+                                                    mov.gastoId &&
+                                                    mov.gastoId ===
+                                                    item.id
+                                                ) {
+                                                    return true;
+                                                }
 
-                            await remove(
-                                ref(
-                                    db,
-                                    `parejas/${idPareja}/movimientos/${item.id}`
-                                )
-                            );
+                                                return (
+                                                    mov.tipo ===
+                                                        'gasto' &&
+                                                    mov.cuentaOrigenId ===
+                                                        item.cuentaOrigenId &&
+                                                    Number(
+                                                        mov.monto
+                                                    ) ===
+                                                        monto &&
+                                                    mov.fecha ===
+                                                        item.fecha
+                                                );
 
-                            Alert.alert(
-                                'Eliminado',
-                                `El gasto fue eliminado y $${monto.toFixed(2)} fue devuelto a la cuenta de origen.`
-                            );
+                                            }
+                                        );
 
-                        } catch (
-                        error: any
-                        ) {
+                                    for (
+                                        const mov of relacionados
+                                    ) {
 
-                            Alert.alert(
-                                'Error',
-                                error?.message ||
-                                'No se pudo eliminar el gasto rápido.'
-                            );
-                        }
+                                        await remove(
+                                            ref(
+                                                db,
+                                                `parejas/${idPareja}/movimientosCuentas/${mov.id}`
+                                            )
+                                        );
+
+                                    }
+
+                                    // --------------------------------
+                                    // ELIMINAR GASTO
+                                    // --------------------------------
+
+                                    await remove(
+                                        ref(
+                                            db,
+                                            `parejas/${idPareja}/movimientos/${item.id}`
+                                        )
+                                    );
+
+                                    Alert.alert(
+                                        'Eliminado',
+                                        `El gasto fue eliminado y $${monto.toFixed(2)} fue devuelto a la cuenta de origen.`
+                                    );
+
+                                } catch (
+                                    error: any
+                                ) {
+
+                                    Alert.alert(
+                                        'Error',
+                                        error?.message ||
+                                        'No se pudo eliminar el gasto rápido.'
+                                    );
+
+                                }
+
+                            },
+
                     },
-                },
-            ]
-        );
-    };
+                ]
+            );
+
+        };
 
     // ============================================================
     // ELIMINAR MOVIMIENTO DE CUENTA
     // ============================================================
 
-    const eliminarMovimientoCuenta = (
-        item: any
-    ) => {
+    const eliminarMovimientoCuenta =
+        (
+            item: any
+        ) => {
 
-        if (!idPareja) return;
+            if (!idPareja) return;
 
-        Alert.alert(
-            'Eliminar movimiento',
-            '¿Estás seguro de eliminar este movimiento? Se revertirá el saldo afectado en la(s) cuenta(s) correspondiente(s).',
-            [
-                {
-                    text: 'Cancelar',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Eliminar',
-                    style: 'destructive',
-
-                    onPress: async () => {
-
-                        try {
-
-                            const monto =
-                                Number(
-                                    item.monto
-                                ) || 0;
-
-                            // ------------------------------------
-                            // CUENTA ORIGEN
-                            // ------------------------------------
-
-                            if (
-                                item.cuentaOrigenId
-                            ) {
-
-                                const cuentaRef =
-                                    ref(
-                                        db,
-                                        `parejas/${idPareja}/cuentas/${item.cuentaOrigenId}`
-                                    );
-
-                                const cuentaSnapshot =
-                                    await new Promise<any>(
-                                        (resolve) => {
-
-                                            onValue(
-                                                cuentaRef,
-                                                (snap) => {
-                                                    resolve(
-                                                        snap
-                                                    );
-                                                },
-                                                {
-                                                    onlyOnce:
-                                                        true,
-                                                }
-                                            );
-                                        }
-                                    );
-
-                                const data =
-                                    cuentaSnapshot.val();
-
-                                const saldoActual =
-                                    Number(
-                                        data?.saldo
-                                    ) || 0;
-
-                                await update(
-                                    cuentaRef,
-                                    {
-                                        saldo:
-                                            saldoActual +
-                                            monto,
-                                    }
-                                );
-                            }
-
-                            // ------------------------------------
-                            // CUENTA DESTINO
-                            // ------------------------------------
-
-                            if (
-                                item.cuentaDestinoId
-                            ) {
-
-                                const cuentaRef =
-                                    ref(
-                                        db,
-                                        `parejas/${idPareja}/cuentas/${item.cuentaDestinoId}`
-                                    );
-
-                                const cuentaSnapshot =
-                                    await new Promise<any>(
-                                        (resolve) => {
-
-                                            onValue(
-                                                cuentaRef,
-                                                (snap) => {
-                                                    resolve(
-                                                        snap
-                                                    );
-                                                },
-                                                {
-                                                    onlyOnce:
-                                                        true,
-                                                }
-                                            );
-                                        }
-                                    );
-
-                                const data =
-                                    cuentaSnapshot.val();
-
-                                const saldoActual =
-                                    Number(
-                                        data?.saldo
-                                    ) || 0;
-
-                                await update(
-                                    cuentaRef,
-                                    {
-                                        saldo:
-                                            saldoActual -
-                                            monto,
-                                    }
-                                );
-                            }
-
-                            await remove(
-                                ref(
-                                    db,
-                                    `parejas/${idPareja}/movimientosCuentas/${item.id}`
-                                )
-                            );
-
-                            Alert.alert(
-                                'Eliminado',
-                                'El movimiento fue eliminado y el saldo fue revertido.'
-                            );
-
-                        } catch (
-                        error: any
-                        ) {
-
-                            Alert.alert(
-                                'Error',
-                                error?.message ||
-                                'No se pudo eliminar el movimiento.'
-                            );
-                        }
+            Alert.alert(
+                'Eliminar movimiento',
+                '¿Estás seguro de eliminar este movimiento? Se revertirá el saldo afectado en la(s) cuenta(s) correspondiente(s).',
+                [
+                    {
+                        text: 'Cancelar',
+                        style: 'cancel',
                     },
-                },
-            ]
-        );
-    };
+                    {
+                        text: 'Eliminar',
+                        style: 'destructive',
+
+                        onPress:
+                            async () => {
+
+                                try {
+
+                                    const monto =
+                                        Number(
+                                            item.monto
+                                        ) || 0;
+
+                                    // --------------------------------
+                                    // CUENTA ORIGEN
+                                    // --------------------------------
+
+                                    if (
+                                        item.cuentaOrigenId
+                                    ) {
+
+                                        const cuentaRef =
+                                            ref(
+                                                db,
+                                                `parejas/${idPareja}/cuentas/${item.cuentaOrigenId}`
+                                            );
+
+                                        const cuentaSnapshot =
+                                            await new Promise<any>(
+                                                (
+                                                    resolve
+                                                ) => {
+
+                                                    onValue(
+                                                        cuentaRef,
+                                                        (
+                                                            snap
+                                                        ) => {
+                                                            resolve(
+                                                                snap
+                                                            );
+                                                        },
+                                                        {
+                                                            onlyOnce:
+                                                                true,
+                                                        }
+                                                    );
+
+                                                }
+                                            );
+
+                                        const data =
+                                            cuentaSnapshot.val();
+
+                                        const saldoActual =
+                                            Number(
+                                                data?.saldo
+                                            ) || 0;
+
+                                        await update(
+                                            cuentaRef,
+                                            {
+                                                saldo:
+                                                    saldoActual +
+                                                    monto,
+                                            }
+                                        );
+
+                                    }
+
+                                    // --------------------------------
+                                    // CUENTA DESTINO
+                                    // --------------------------------
+
+                                    if (
+                                        item.cuentaDestinoId
+                                    ) {
+
+                                        const cuentaRef =
+                                            ref(
+                                                db,
+                                                `parejas/${idPareja}/cuentas/${item.cuentaDestinoId}`
+                                            );
+
+                                        const cuentaSnapshot =
+                                            await new Promise<any>(
+                                                (
+                                                    resolve
+                                                ) => {
+
+                                                    onValue(
+                                                        cuentaRef,
+                                                        (
+                                                            snap
+                                                        ) => {
+                                                            resolve(
+                                                                snap
+                                                            );
+                                                        },
+                                                        {
+                                                            onlyOnce:
+                                                                true,
+                                                        }
+                                                    );
+
+                                                }
+                                            );
+
+                                        const data =
+                                            cuentaSnapshot.val();
+
+                                        const saldoActual =
+                                            Number(
+                                                data?.saldo
+                                            ) || 0;
+
+                                        await update(
+                                            cuentaRef,
+                                            {
+                                                saldo:
+                                                    saldoActual -
+                                                    monto,
+                                            }
+                                        );
+
+                                    }
+
+                                    await remove(
+                                        ref(
+                                            db,
+                                            `parejas/${idPareja}/movimientosCuentas/${item.id}`
+                                        )
+                                    );
+
+                                    Alert.alert(
+                                        'Eliminado',
+                                        'El movimiento fue eliminado y el saldo fue revertido.'
+                                    );
+
+                                } catch (
+                                    error: any
+                                ) {
+
+                                    Alert.alert(
+                                        'Error',
+                                        error?.message ||
+                                        'No se pudo eliminar el movimiento.'
+                                    );
+
+                                }
+
+                            },
+
+                    },
+                ]
+            );
+
+        };
 
     // ============================================================
     // ICONOS MOVIMIENTOS CUENTAS
     // ============================================================
 
-    const iconoMovimientoCuenta = (
-        tipo: string
-    ) => {
+    const iconoMovimientoCuenta =
+        (
+            tipo: string
+        ) => {
 
-        if (
-            tipo === 'deposito'
-        ) {
-            return 'arrow-down-circle-outline';
-        }
+            if (
+                tipo ===
+                'deposito'
+            ) {
+                return 'arrow-down-circle-outline';
+            }
 
-        if (
-            tipo === 'retiro_cajero'
-        ) {
-            return 'arrow-up-circle-outline';
-        }
+            if (
+                tipo ===
+                'retiro_cajero'
+            ) {
+                return 'arrow-up-circle-outline';
+            }
 
-        if (
-            tipo === 'pago_deuda'
-        ) {
-            return 'card-outline';
-        }
+            if (
+                tipo ===
+                'pago_deuda'
+            ) {
+                return 'card-outline';
+            }
 
-        if (
-            tipo === 'gasto'
-        ) {
-            return 'cart-outline';
-        }
+            if (
+                tipo ===
+                'gasto'
+            ) {
+                return 'cart-outline';
+            }
 
-        return 'swap-horizontal-outline';
-    };
+            return 'swap-horizontal-outline';
 
-    const tituloMovimientoCuenta = (
-        tipo: string
-    ) => {
+        };
 
-        if (
-            tipo === 'deposito'
-        ) {
-            return 'Depósito a Banco';
-        }
+    const tituloMovimientoCuenta =
+        (
+            tipo: string
+        ) => {
 
-        if (
-            tipo === 'retiro_cajero'
-        ) {
-            return 'Retiro a Efectivo';
-        }
+            if (
+                tipo ===
+                'deposito'
+            ) {
+                return 'Depósito a Banco';
+            }
 
-        if (
-            tipo === 'pago_deuda'
-        ) {
-            return 'Pago de Deuda';
-        }
+            if (
+                tipo ===
+                'retiro_cajero'
+            ) {
+                return 'Retiro a Efectivo';
+            }
 
-        if (
-            tipo === 'transferencia'
-        ) {
-            return 'Transferencia';
-        }
+            if (
+                tipo ===
+                'pago_deuda'
+            ) {
+                return 'Pago de Deuda';
+            }
 
-        if (
-            tipo === 'gasto'
-        ) {
-            return 'Gasto';
-        }
+            if (
+                tipo ===
+                'transferencia'
+            ) {
+                return 'Transferencia';
+            }
 
-        return 'Movimiento';
-    };
+            if (
+                tipo ===
+                'gasto'
+            ) {
+                return 'Gasto';
+            }
+
+            return 'Movimiento';
+
+        };
 
     // ============================================================
     // RENDER CUENTAS
     // ============================================================
 
-    const renderItemCuenta = ({
-        item,
-    }: {
-        item: any;
-    }) => (
-
-        <View style={styles.cardDeuda}>
-
-            <View style={styles.cardHeaderRow}>
-
-                <View style={styles.badgeCategoria}>
-
-                    <Ionicons
-                        name={
-                            iconoMovimientoCuenta(
-                                item.tipo
-                            ) as any
-                        }
-                        size={12}
-                        color="#059669"
-                        style={{
-                            marginRight: 4,
-                        }}
-                    />
-
-                    <Text
-                        style={
-                            styles.badgeText
-                        }
-                    >
-                        {
-                            tituloMovimientoCuenta(
-                                item.tipo
-                            )
-                        }
-                    </Text>
-
-                </View>
-
-                <View
-                    style={
-                        styles.cardActions
-                    }
-                >
-
-                    <TouchableOpacity
-                        style={[
-                            styles.actionIconBtn,
-                            {
-                                backgroundColor:
-                                    'rgba(239, 68, 68, 0.08)',
-                                borderColor:
-                                    'rgba(239, 68, 68, 0.2)',
-                            },
-                        ]}
-                        onPress={() =>
-                            eliminarMovimientoCuenta(
-                                item
-                            )
-                        }
-                    >
-                        <Ionicons
-                            name="trash-outline"
-                            size={13}
-                            color="#EF4444"
-                        />
-                    </TouchableOpacity>
-
-                </View>
-
-            </View>
-
-            <Text
-                style={
-                    styles.cardEntidad
-                }
-            >
-                {
-                    item.descripcion ||
-                    tituloMovimientoCuenta(
-                        item.tipo
-                    )
-                }
-            </Text>
-
-            <View
-                style={
-                    styles.gridInfo
-                }
-            >
-
-                <View
-                    style={
-                        styles.infoBox
-                    }
-                >
-                    <Text
-                        style={
-                            styles.infoLabel
-                        }
-                    >
-                        Monto
-                    </Text>
-
-                    <Text
-                        style={
-                            styles.infoValue
-                        }
-                    >
-                        $
-                        {Number(
-                            item.monto ||
-                            0
-                        ).toFixed(2)}
-                    </Text>
-                </View>
-
-                <View
-                    style={
-                        styles.infoBox
-                    }
-                >
-                    <Text
-                        style={
-                            styles.infoLabel
-                        }
-                    >
-                        Fecha
-                    </Text>
-
-                    <Text
-                        style={[
-                            styles.infoValue,
-                            {
-                                fontSize: 11,
-                            },
-                        ]}
-                    >
-                        {item.fecha
-                            ? new Date(
-                                item.fecha
-                            ).toLocaleDateString()
-                            : 'N/A'}
-                    </Text>
-                </View>
-
-            </View>
-
-            {
-                (
-                    item.cuentaOrigenNombre ||
-                    item.cuentaDestinoNombre
-                ) && (
-
-                    <Text
-                        style={
-                            styles.cardAutor
-                        }
-                    >
-                        {
-                            item.cuentaOrigenNombre
-                                ? `Desde: ${item.cuentaOrigenNombre}`
-                                : ''
-                        }
-
-                        {
-                            item.cuentaOrigenNombre &&
-                                item.cuentaDestinoNombre
-                                ? '  →  '
-                                : ''
-                        }
-
-                        {
-                            item.cuentaDestinoNombre
-                                ? `Hacia: ${item.cuentaDestinoNombre}`
-                                : ''
-                        }
-                    </Text>
-                )
-            }
-
-            {
-                item.autor && (
-
-                    <Text
-                        style={
-                            styles.cardAutor
-                        }
-                    >
-                        Registrado por: {
-                            item.autor
-                        }
-                    </Text>
-                )
-            }
-
-        </View>
-    );
-
-    // ============================================================
-    // RENDER GASTO RÁPIDO
-    // ============================================================
-
-    const renderItemRapido = ({
-        item,
-    }: {
-        item: any;
-    }) => {
-
-        return (
+    const renderItemCuenta =
+        ({
+            item,
+        }: {
+            item: any;
+        }) => (
 
             <View
                 style={
@@ -1923,9 +2020,15 @@ export default function ReporteDeudasRegistradas({
                     >
 
                         <Ionicons
-                            name="flash-outline"
+                            name={
+                                iconoMovimientoCuenta(
+                                    item.tipo
+                                ) as any
+                            }
                             size={12}
-                            color="#059669"
+                            color={
+                                colors.primary
+                            }
                             style={{
                                 marginRight: 4,
                             }}
@@ -1936,8 +2039,11 @@ export default function ReporteDeudasRegistradas({
                                 styles.badgeText
                             }
                         >
-                            {item.categoria ||
-                                'Gasto Rápido'}
+                            {
+                                tituloMovimientoCuenta(
+                                    item.tipo
+                                )
+                            }
                         </Text>
 
                     </View>
@@ -1947,23 +2053,6 @@ export default function ReporteDeudasRegistradas({
                             styles.cardActions
                         }
                     >
-
-                        <TouchableOpacity
-                            style={
-                                styles.actionIconBtn
-                            }
-                            onPress={() =>
-                                abrirEdicion(
-                                    item
-                                )
-                            }
-                        >
-                            <Ionicons
-                                name="pencil"
-                                size={13}
-                                color="#059669"
-                            />
-                        </TouchableOpacity>
 
                         <TouchableOpacity
                             style={[
@@ -1976,16 +2065,18 @@ export default function ReporteDeudasRegistradas({
                                 },
                             ]}
                             onPress={() =>
-                                eliminarGastoRapido(
+                                eliminarMovimientoCuenta(
                                     item
                                 )
                             }
                         >
+
                             <Ionicons
                                 name="trash-outline"
                                 size={13}
                                 color="#EF4444"
                             />
+
                         </TouchableOpacity>
 
                     </View>
@@ -1999,13 +2090,15 @@ export default function ReporteDeudasRegistradas({
                 >
                     {
                         item.descripcion ||
-                        'Gasto rápido'
+                        tituloMovimientoCuenta(
+                            item.tipo
+                        )
                     }
                 </Text>
 
                 <View
                     style={
-                        styles.gridInfoSimple
+                        styles.gridInfo
                     }
                 >
 
@@ -2024,14 +2117,9 @@ export default function ReporteDeudasRegistradas({
                         </Text>
 
                         <Text
-                            style={[
-                                styles.infoValue,
-                                {
-                                    color:
-                                        '#EF4444',
-                                    fontSize: 13,
-                                },
-                            ]}
+                            style={
+                                styles.infoValue
+                            }
                         >
                             $
                             {Number(
@@ -2060,7 +2148,7 @@ export default function ReporteDeudasRegistradas({
                             style={[
                                 styles.infoValue,
                                 {
-                                    fontSize: 10,
+                                    fontSize: 11,
                                 },
                             ]}
                         >
@@ -2073,37 +2161,43 @@ export default function ReporteDeudasRegistradas({
 
                     </View>
 
-                    <View
-                        style={
-                            styles.infoBox
-                        }
-                    >
+                </View>
+
+                {
+                    (
+                        item.cuentaOrigenNombre ||
+                        item.cuentaDestinoNombre
+                    ) && (
 
                         <Text
                             style={
-                                styles.infoLabel
+                                styles.cardAutor
                             }
                         >
-                            Cuenta
-                        </Text>
 
-                        <Text
-                            style={[
-                                styles.infoValue,
-                                {
-                                    fontSize: 10,
-                                },
-                            ]}
-                        >
                             {
-                                item.cuentaOrigenNombre ||
-                                'N/A'
+                                item.cuentaOrigenNombre
+                                    ? `Desde: ${item.cuentaOrigenNombre}`
+                                    : ''
                             }
+
+                            {
+                                item.cuentaOrigenNombre &&
+                                    item.cuentaDestinoNombre
+                                    ? '  →  '
+                                    : ''
+                            }
+
+                            {
+                                item.cuentaDestinoNombre
+                                    ? `Hacia: ${item.cuentaDestinoNombre}`
+                                    : ''
+                            }
+
                         </Text>
 
-                    </View>
-
-                </View>
+                    )
+                }
 
                 {
                     item.autor && (
@@ -2113,793 +2207,1072 @@ export default function ReporteDeudasRegistradas({
                                 styles.cardAutor
                             }
                         >
-                            Registrado por: {
-                                item.autor
-                            }
+                            Registrado por:{' '}
+                            {item.autor}
                         </Text>
+
                     )
                 }
 
             </View>
+
         );
-    };
+
+    // ============================================================
+    // RENDER GASTO RÁPIDO
+    // ============================================================
+
+    const renderItemRapido =
+        ({
+            item,
+        }: {
+            item: any;
+        }) => {
+
+            return (
+
+                <View
+                    style={
+                        styles.cardDeuda
+                    }
+                >
+
+                    <View
+                        style={
+                            styles.cardHeaderRow
+                        }
+                    >
+
+                        <View
+                            style={
+                                styles.badgeCategoria
+                            }
+                        >
+
+                            <Ionicons
+                                name="flash-outline"
+                                size={12}
+                                color={
+                                    colors.primary
+                                }
+                                style={{
+                                    marginRight: 4,
+                                }}
+                            />
+
+                            <Text
+                                style={
+                                    styles.badgeText
+                                }
+                            >
+                                {
+                                    item.categoria ||
+                                    'Gasto Rápido'
+                                }
+                            </Text>
+
+                        </View>
+
+                        <View
+                            style={
+                                styles.cardActions
+                            }
+                        >
+
+                            <TouchableOpacity
+                                style={
+                                    styles.actionIconBtn
+                                }
+                                onPress={() =>
+                                    abrirEdicion(
+                                        item
+                                    )
+                                }
+                            >
+
+                                <Ionicons
+                                    name="pencil"
+                                    size={13}
+                                    color={
+                                        colors.primary
+                                    }
+                                />
+
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.actionIconBtn,
+                                    {
+                                        backgroundColor:
+                                            'rgba(239, 68, 68, 0.08)',
+                                        borderColor:
+                                            'rgba(239, 68, 68, 0.2)',
+                                    },
+                                ]}
+                                onPress={() =>
+                                    eliminarGastoRapido(
+                                        item
+                                    )
+                                }
+                            >
+
+                                <Ionicons
+                                    name="trash-outline"
+                                    size={13}
+                                    color="#EF4444"
+                                />
+
+                            </TouchableOpacity>
+
+                        </View>
+
+                    </View>
+
+                    <Text
+                        style={
+                            styles.cardEntidad
+                        }
+                    >
+                        {
+                            item.descripcion ||
+                            'Gasto rápido'
+                        }
+                    </Text>
+
+                    <View
+                        style={
+                            styles.gridInfoSimple
+                        }
+                    >
+
+                        <View
+                            style={
+                                styles.infoBox
+                            }
+                        >
+
+                            <Text
+                                style={
+                                    styles.infoLabel
+                                }
+                            >
+                                Monto
+                            </Text>
+
+                            <Text
+                                style={[
+                                    styles.infoValue,
+                                    {
+                                        color:
+                                            '#EF4444',
+                                        fontSize: 13,
+                                    },
+                                ]}
+                            >
+                                $
+                                {Number(
+                                    item.monto ||
+                                    0
+                                ).toFixed(2)}
+                            </Text>
+
+                        </View>
+
+                        <View
+                            style={
+                                styles.infoBox
+                            }
+                        >
+
+                            <Text
+                                style={
+                                    styles.infoLabel
+                                }
+                            >
+                                Fecha
+                            </Text>
+
+                            <Text
+                                style={[
+                                    styles.infoValue,
+                                    {
+                                        fontSize: 10,
+                                    },
+                                ]}
+                            >
+                                {item.fecha
+                                    ? new Date(
+                                        item.fecha
+                                    ).toLocaleDateString()
+                                    : 'N/A'}
+                            </Text>
+
+                        </View>
+
+                        <View
+                            style={
+                                styles.infoBox
+                            }
+                        >
+
+                            <Text
+                                style={
+                                    styles.infoLabel
+                                }
+                            >
+                                Cuenta
+                            </Text>
+
+                            <Text
+                                style={[
+                                    styles.infoValue,
+                                    {
+                                        fontSize: 10,
+                                    },
+                                ]}
+                            >
+                                {
+                                    item.cuentaOrigenNombre ||
+                                    'N/A'
+                                }
+                            </Text>
+
+                        </View>
+
+                    </View>
+
+                    {
+                        item.autor && (
+
+                            <Text
+                                style={
+                                    styles.cardAutor
+                                }
+                            >
+                                Registrado por:{' '}
+                                {item.autor}
+                            </Text>
+
+                        )
+                    }
+
+                </View>
+
+            );
+
+        };
 
     // ============================================================
     // RENDER GENERAL
     // ============================================================
 
-    const renderItem = ({
-        item,
-    }: {
-        item: any;
-    }) => {
+    const renderItem =
+        ({
+            item,
+        }: {
+            item: any;
+        }) => {
 
-        if (
-            tipoVista ===
-            'cuentas'
-        ) {
-            return renderItemCuenta({
-                item,
-            });
-        }
+            if (
+                tipoVista ===
+                'cuentas'
+            ) {
 
-        if (
-            tipoVista ===
-            'rapidos'
-        ) {
-            return renderItemRapido({
-                item,
-            });
-        }
+                return renderItemCuenta({
+                    item,
+                });
 
-        const nombreEntidad =
-            tipoVista ===
-                'deudas'
-                ? item.tipo ===
-                    'tarjeta'
-                    ? `${item.entidad || 'Banco'} ${item.marcaTarjeta
-                        ? `(${item.marcaTarjeta})`
-                        : ''
-                    }`
-                    : item.tipo ===
-                        'consumoTarjeta'
-                        ? `${item.tarjetaBanco ||
-                        'Tarjeta'
-                        } ${item.tarjetaMarca
-                            ? `(${item.tarjetaMarca})`
+            }
+
+            if (
+                tipoVista ===
+                'rapidos'
+            ) {
+
+                return renderItemRapido({
+                    item,
+                });
+
+            }
+
+            const nombreEntidad =
+                tipoVista ===
+                    'deudas'
+                    ? item.tipo ===
+                        'tarjeta'
+                        ? `${item.entidad || 'Banco'} ${item.marcaTarjeta
+                            ? `(${item.marcaTarjeta})`
                             : ''
                         }`
-                        : `${item.entidad ||
-                        'Deuda'
-                        }`
-                : item.nombre ||
-                'Gasto Fijo';
+                        : item.tipo ===
+                            'consumoTarjeta'
+                            ? `${item.tarjetaBanco ||
+                            'Tarjeta'
+                            } ${item.tarjetaMarca
+                                ? `(${item.tarjetaMarca})`
+                                : ''
+                            }`
+                            : `${item.entidad ||
+                            'Deuda'
+                            }`
+                    : item.nombre ||
+                    'Gasto Fijo';
 
-        return (
-
-            <View
-                style={
-                    styles.cardDeuda
-                }
-            >
+            return (
 
                 <View
                     style={
-                        styles.cardHeaderRow
+                        styles.cardDeuda
                     }
                 >
 
                     <View
                         style={
-                            styles.badgeCategoria
+                            styles.cardHeaderRow
                         }
                     >
 
-                        <Text
+                        <View
                             style={
-                                styles.badgeText
+                                styles.badgeCategoria
                             }
                         >
-                            {
-                                item.categoria ||
-                                'General'
-                            }
-                        </Text>
 
-                    </View>
-
-                    <View
-                        style={
-                            styles.cardActions
-                        }
-                    >
-
-                        <TouchableOpacity
-                            style={
-                                styles.actionIconBtn
-                            }
-                            onPress={() =>
-                                abrirEdicion(
-                                    item
-                                )
-                            }
-                        >
-                            <Ionicons
-                                name="pencil"
-                                size={13}
-                                color="#059669"
-                            />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[
-                                styles.actionIconBtn,
+                            <Text
+                                style={
+                                    styles.badgeText
+                                }
+                            >
                                 {
-                                    backgroundColor:
-                                        'rgba(239, 68, 68, 0.08)',
-                                    borderColor:
-                                        'rgba(239, 68, 68, 0.2)',
-                                },
-                            ]}
-                            onPress={() =>
-                                eliminarItem(
-                                    item.id,
-                                    nombreEntidad
-                                )
+                                    item.categoria ||
+                                    'General'
+                                }
+                            </Text>
+
+                        </View>
+
+                        <View
+                            style={
+                                styles.cardActions
                             }
                         >
-                            <Ionicons
-                                name="trash-outline"
-                                size={13}
-                                color="#EF4444"
-                            />
-                        </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={
+                                    styles.actionIconBtn
+                                }
+                                onPress={() =>
+                                    abrirEdicion(
+                                        item
+                                    )
+                                }
+                            >
+
+                                <Ionicons
+                                    name="pencil"
+                                    size={13}
+                                    color={
+                                        colors.primary
+                                    }
+                                />
+
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.actionIconBtn,
+                                    {
+                                        backgroundColor:
+                                            'rgba(239, 68, 68, 0.08)',
+                                        borderColor:
+                                            'rgba(239, 68, 68, 0.2)',
+                                    },
+                                ]}
+                                onPress={() =>
+                                    eliminarItem(
+                                        item.id,
+                                        nombreEntidad
+                                    )
+                                }
+                            >
+
+                                <Ionicons
+                                    name="trash-outline"
+                                    size={13}
+                                    color="#EF4444"
+                                />
+
+                            </TouchableOpacity>
+
+                        </View>
 
                     </View>
+
+                    <Text
+                        style={
+                            styles.cardEntidad
+                        }
+                    >
+                        {nombreEntidad}
+                    </Text>
+
+                    {
+                        tipoVista ===
+                            'deudas' &&
+                            item.tipo ===
+                            'tarjeta' ? (
+
+                            <View
+                                style={
+                                    styles.gridInfo
+                                }
+                            >
+
+                                <View
+                                    style={
+                                        styles.infoBox
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.infoLabel
+                                        }
+                                    >
+                                        Cupo Total
+                                    </Text>
+
+                                    <Text
+                                        style={
+                                            styles.infoValue
+                                        }
+                                    >
+                                        $
+                                        {Number(
+                                            item.cupoTotal ||
+                                            0
+                                        ).toFixed(2)}
+                                    </Text>
+
+                                </View>
+
+                                <View
+                                    style={
+                                        styles.infoBox
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.infoLabel
+                                        }
+                                    >
+                                        Consumido
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.infoValue,
+                                            {
+                                                color:
+                                                    '#EF4444',
+                                            },
+                                        ]}
+                                    >
+                                        $
+                                        {Number(
+                                            item.totalConsumido ||
+                                            0
+                                        ).toFixed(2)}
+                                    </Text>
+
+                                </View>
+
+                                <View
+                                    style={
+                                        styles.infoBox
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.infoLabel
+                                        }
+                                    >
+                                        Pagado
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.infoValue,
+                                            {
+                                                color:
+                                                    colors.primary,
+                                            },
+                                        ]}
+                                    >
+                                        $
+                                        {Number(
+                                            item.totalPagado ||
+                                            0
+                                        ).toFixed(2)}
+                                    </Text>
+
+                                </View>
+
+                                <View
+                                    style={
+                                        styles.infoBox
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.infoLabel
+                                        }
+                                    >
+                                        Disponible
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.infoValue,
+                                            {
+                                                color:
+                                                    colors.primary,
+                                            },
+                                        ]}
+                                    >
+                                        $
+                                        {Number(
+                                            item.cupoDisponible ||
+                                            0
+                                        ).toFixed(2)}
+                                    </Text>
+
+                                </View>
+
+                            </View>
+
+                        ) : (
+
+                            <View
+                                style={
+                                    styles.gridInfoSimple
+                                }
+                            >
+
+                                <View
+                                    style={
+                                        styles.infoBox
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.infoLabel
+                                        }
+                                    >
+                                        Monto / Pendiente
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.infoValue,
+                                            {
+                                                color:
+                                                    '#EF4444',
+                                            },
+                                        ]}
+                                    >
+                                        $
+                                        {Number(
+                                            item.montoRestante !==
+                                                undefined
+                                                ? item.montoRestante
+                                                : item.monto ||
+                                                0
+                                        ).toFixed(2)}
+                                    </Text>
+
+                                </View>
+
+                                {
+                                    item.cuotaPagar ? (
+
+                                        <View
+                                            style={
+                                                styles.infoBox
+                                            }
+                                        >
+
+                                            <Text
+                                                style={
+                                                    styles.infoLabel
+                                                }
+                                            >
+                                                Cuota
+                                            </Text>
+
+                                            <Text
+                                                style={
+                                                    styles.infoValue
+                                                }
+                                            >
+                                                $
+                                                {Number(
+                                                    item.cuotaPagar
+                                                ).toFixed(2)}
+                                            </Text>
+
+                                        </View>
+
+                                    ) : null
+                                }
+
+                                <View
+                                    style={
+                                        styles.infoBox
+                                    }
+                                >
+
+                                    <Text
+                                        style={
+                                            styles.infoLabel
+                                        }
+                                    >
+                                        Vencimiento
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            styles.infoValue,
+                                            {
+                                                fontSize:
+                                                    11,
+                                            },
+                                        ]}
+                                    >
+                                        {
+                                            item.fechaMaxPago ||
+                                            item.fechaCaducidad ||
+                                            'N/A'
+                                        }
+                                    </Text>
+
+                                </View>
+
+                                {
+                                    tipoVista ===
+                                        'deudas' && (
+
+                                        <View
+                                            style={
+                                                styles.infoBox
+                                            }
+                                        >
+
+                                            <Text
+                                                style={
+                                                    styles.infoLabel
+                                                }
+                                            >
+                                                Fecha
+                                            </Text>
+
+                                            <Text
+                                                style={[
+                                                    styles.infoValue,
+                                                    {
+                                                        fontSize:
+                                                            11,
+                                                    },
+                                                ]}
+                                            >
+                                                {
+                                                    item.fechaRegistro
+                                                        ? new Date(
+                                                            item.fechaRegistro
+                                                        ).toLocaleDateString()
+                                                        : 'N/A'
+                                                }
+                                            </Text>
+
+                                        </View>
+
+                                    )
+                                }
+
+                            </View>
+
+                        )
+                    }
+
+                    {
+                        item.autor && (
+
+                            <Text
+                                style={
+                                    styles.cardAutor
+                                }
+                            >
+                                Registrado por:{' '}
+                                {item.autor}
+                            </Text>
+
+                        )
+                    }
 
                 </View>
 
-                <Text
-                    style={
-                        styles.cardEntidad
-                    }
-                >
-                    {nombreEntidad}
-                </Text>
+            );
 
-                {
-                    tipoVista ===
-                        'deudas' &&
-                        item.tipo ===
-                        'tarjeta' ? (
-
-                        <View
-                            style={
-                                styles.gridInfo
-                            }
-                        >
-
-                            <View
-                                style={
-                                    styles.infoBox
-                                }
-                            >
-                                <Text
-                                    style={
-                                        styles.infoLabel
-                                    }
-                                >
-                                    Cupo Total
-                                </Text>
-
-                                <Text
-                                    style={
-                                        styles.infoValue
-                                    }
-                                >
-                                    $
-                                    {Number(
-                                        item.cupoTotal ||
-                                        0
-                                    ).toFixed(2)}
-                                </Text>
-                            </View>
-
-                            <View
-                                style={
-                                    styles.infoBox
-                                }
-                            >
-                                <Text style={styles.infoLabel}>
-                                    Consumido
-                                </Text>
-
-
-
-                                <Text
-                                    style={[
-                                        styles.infoValue,
-                                        {
-                                            color:
-                                                '#EF4444',
-                                        },
-                                    ]}
-                                >
-                                    $
-                                    {Number(
-                                        item.totalConsumido ||
-                                        0
-                                    ).toFixed(2)}
-                                </Text>
-                            </View>
-
-                            <View
-                                style={
-                                    styles.infoBox
-                                }
-                            >
-                                <Text
-                                    style={
-                                        styles.infoLabel
-                                    }
-                                >
-                                    Pagado
-                                </Text>
-
-                                <Text
-                                    style={[
-                                        styles.infoValue,
-                                        {
-                                            color:
-                                                '#059669',
-                                        },
-                                    ]}
-                                >
-                                    $
-                                    {Number(
-                                        item.totalPagado ||
-                                        0
-                                    ).toFixed(2)}
-                                </Text>
-                            </View>
-
-                            <View
-                                style={
-                                    styles.infoBox
-                                }
-                            >
-                                <Text
-                                    style={
-                                        styles.infoLabel
-                                    }
-                                >
-                                    Disponible
-                                </Text>
-
-                                <Text
-                                    style={[
-                                        styles.infoValue,
-                                        {
-                                            color:
-                                                '#059669',
-                                        },
-                                    ]}
-                                >
-                                    $
-                                    {Number(
-                                        item.cupoDisponible ||
-                                        0
-                                    ).toFixed(2)}
-                                </Text>
-                            </View>
-
-                        </View>
-
-                    ) : (
-
-                        <View
-                            style={
-                                styles.gridInfoSimple
-                            }
-                        >
-
-                            <View
-                                style={
-                                    styles.infoBox
-                                }
-                            >
-
-                                <Text
-                                    style={
-                                        styles.infoLabel
-                                    }
-                                >
-                                    Monto / Pendiente
-                                </Text>
-
-                                <Text
-                                    style={[
-                                        styles.infoValue,
-                                        {
-                                            color:
-                                                '#EF4444',
-                                        },
-                                    ]}
-                                >
-                                    $
-                                    {Number(
-                                        item.montoRestante !==
-                                            undefined
-                                            ? item.montoRestante
-                                            : item.monto ||
-                                            0
-                                    ).toFixed(2)}
-                                </Text>
-
-                            </View>
-
-                            {
-                                item.cuotaPagar ? (
-
-                                    <View
-                                        style={
-                                            styles.infoBox
-                                        }
-                                    >
-
-                                        <Text
-                                            style={
-                                                styles.infoLabel
-                                            }
-                                        >
-                                            Cuota
-                                        </Text>
-
-                                        <Text
-                                            style={
-                                                styles.infoValue
-                                            }
-                                        >
-                                            $
-                                            {Number(
-                                                item.cuotaPagar
-                                            ).toFixed(2)}
-                                        </Text>
-
-                                    </View>
-
-                                ) : null
-                            }
-
-                            <View
-                                style={
-                                    styles.infoBox
-                                }
-                            >
-
-                                <Text
-                                    style={
-                                        styles.infoLabel
-                                    }
-                                >
-                                    Vencimiento
-                                </Text>
-
-                                <Text
-                                    style={[
-                                        styles.infoValue,
-                                        {
-                                            fontSize:
-                                                11,
-                                        },
-                                    ]}
-                                >
-                                    {
-                                        item.fechaMaxPago ||
-                                        item.fechaCaducidad ||
-                                        'N/A'
-                                    }
-                                </Text>
-
-                            </View>
-
-                            {
-                                tipoVista === 'deudas' && (
-
-                                    <View
-                                        style={
-                                            styles.infoBox
-                                        }
-                                    >
-
-                                        <Text
-                                            style={
-                                                styles.infoLabel
-                                            }
-                                        >
-                                            Fecha
-                                        </Text>
-
-                                        <Text
-                                            style={[
-                                                styles.infoValue,
-                                                {
-                                                    fontSize: 11,
-                                                },
-                                            ]}
-                                        >
-                                            {
-                                                item.fechaRegistro
-                                                    ? new Date(
-                                                        item.fechaRegistro
-                                                    ).toLocaleDateString()
-                                                    : 'N/A'
-                                            }
-                                        </Text>
-
-                                    </View>
-                                )
-                            }
-
-                        </View>
-                    )
-                }
-
-                {
-                    item.autor && (
-
-                        <Text
-                            style={
-                                styles.cardAutor
-                            }
-                        >
-                            Registrado por: {
-                                item.autor
-                            }
-                        </Text>
-                    )
-                }
-
-            </View>
-        );
-    };
+        };
 
     // ============================================================
     // HEADER
     // ============================================================
 
-    const renderHeader = () => (
+    const renderHeader =
+        () => (
 
-        <View>
+            <View>
 
-            <Text
-                style={
-                    styles.titulo
-                }
-            >
-                Reporte General
-            </Text>
+                <Text
+                    style={
+                        styles.titulo
+                    }
+                >
+                    Reporte General
+                </Text>
 
-            <Text
-                style={
-                    styles.subtitulo
-                }
-            >
-                Consulta y administra tus compromisos financieros
-            </Text>
+                <Text
+                    style={
+                        styles.subtitulo
+                    }
+                >
+                    Consulta y administra tus compromisos financieros
+                </Text>
 
-            {/* ==================================================
-                SELECTOR DE VISTA
-            ================================================== */}
+                {/* ==================================================
+                    SELECTOR DE VISTA
+                ================================================== */}
 
-            <View
-                style={
-                    styles.tipoVistaContainer
-                }
-            >
-
-                {/* DEUDAS */}
-
-                <TouchableOpacity
-                    style={[
-                        styles.tipoVistaBtn,
-                        tipoVista ===
-                        'deudas' &&
-                        styles.tipoVistaBtnActive,
-                    ]}
-                    onPress={() => {
-
-                        setTipoVista(
-                            'deudas'
-                        );
-
-                        setCategoriaFiltro(
-                            'Todas'
-                        );
-                    }}
+                <View
+                    style={
+                        styles.tipoVistaContainer
+                    }
                 >
 
-                    <Ionicons
-                        name="card-outline"
-                        size={15}
-                        color={
-                            tipoVista ===
-                                'deudas'
-                                ? '#FFFFFF'
-                                : '#64748B'
-                        }
-                        style={{
-                            marginRight: 6,
-                        }}
-                    />
-
-                    <Text
-                        style={[
-                            styles.tipoVistaText,
-                            tipoVista ===
-                            'deudas' &&
-                            styles.tipoVistaTextActive,
-                        ]}
-                    >
-                        Deudas
-                    </Text>
-
-                </TouchableOpacity>
-
-                {/* GASTOS FIJOS */}
-
-                <TouchableOpacity
-                    style={[
-                        styles.tipoVistaBtn,
-                        tipoVista ===
-                        'fijos' &&
-                        styles.tipoVistaBtnActive,
-                    ]}
-                    onPress={() => {
-
-                        setTipoVista(
-                            'fijos'
-                        );
-
-                        setCategoriaFiltro(
-                            'Todas'
-                        );
-                    }}
-                >
-
-                    <Ionicons
-                        name="flash-outline"
-                        size={15}
-                        color={
-                            tipoVista ===
-                                'fijos'
-                                ? '#FFFFFF'
-                                : '#64748B'
-                        }
-                        style={{
-                            marginRight: 6,
-                        }}
-                    />
-
-                    <Text
-                        style={[
-                            styles.tipoVistaText,
-                            tipoVista ===
-                            'fijos' &&
-                            styles.tipoVistaTextActive,
-                        ]}
-                    >
-                        Gastos Fijos
-                    </Text>
-
-                </TouchableOpacity>
-
-                {/* CUENTAS */}
-
-                <TouchableOpacity
-                    style={[
-                        styles.tipoVistaBtn,
-                        tipoVista ===
-                        'cuentas' &&
-                        styles.tipoVistaBtnActive,
-                    ]}
-                    onPress={() => {
-
-                        setTipoVista(
-                            'cuentas'
-                        );
-
-                        setCategoriaFiltro(
-                            'Todas'
-                        );
-                    }}
-                >
-
-                    <Ionicons
-                        name="swap-horizontal-outline"
-                        size={15}
-                        color={
-                            tipoVista ===
-                                'cuentas'
-                                ? '#FFFFFF'
-                                : '#64748B'
-                        }
-                        style={{
-                            marginRight: 6,
-                        }}
-                    />
-
-                    <Text
-                        style={[
-                            styles.tipoVistaText,
-                            tipoVista ===
-                            'cuentas' &&
-                            styles.tipoVistaTextActive,
-                        ]}
-                    >
-                        Cuentas
-                    </Text>
-
-                </TouchableOpacity>
-
-                {/* GASTOS RÁPIDOS */}
-
-                <TouchableOpacity
-                    style={[
-                        styles.tipoVistaBtn,
-                        tipoVista ===
-                        'rapidos' &&
-                        styles.tipoVistaBtnActive,
-                    ]}
-                    onPress={() => {
-
-                        setTipoVista(
-                            'rapidos'
-                        );
-
-                        setCategoriaFiltro(
-                            'Todas'
-                        );
-                    }}
-                >
-
-                    <Ionicons
-                        name="flash"
-                        size={15}
-                        color={
-                            tipoVista ===
-                                'rapidos'
-                                ? '#FFFFFF'
-                                : '#64748B'
-                        }
-                        style={{
-                            marginRight: 6,
-                        }}
-                    />
-
-                    <Text
-                        style={[
-                            styles.tipoVistaText,
-                            tipoVista ===
-                            'rapidos' &&
-                            styles.tipoVistaTextActive,
-                        ]}
-                    >
-                        Gastos Rápidos
-                    </Text>
-
-                </TouchableOpacity>
-
-            </View>
-
-            {/* ==================================================
-                FILTROS
-            ================================================== */}
-
-            <FlatList
-                horizontal
-                showsHorizontalScrollIndicator={
-                    false
-                }
-                data={
-                    categoriasDisponibles
-                }
-                keyExtractor={(
-                    item
-                ) => item}
-                contentContainerStyle={
-                    styles.filterScroll
-                }
-                renderItem={({
-                    item: cat,
-                }) => (
+                    {/* DEUDAS */}
 
                     <TouchableOpacity
                         style={[
-                            styles.filterChip,
-                            categoriaFiltro ===
-                            cat &&
-                            styles.filterChipSelected,
+                            styles.tipoVistaBtn,
+                            tipoVista ===
+                                'deudas' &&
+                            styles.tipoVistaBtnActive,
                         ]}
-                        onPress={() =>
+                        onPress={() => {
+
+                            setTipoVista(
+                                'deudas'
+                            );
+
                             setCategoriaFiltro(
-                                cat
-                            )
-                        }
+                                'Todas'
+                            );
+
+                        }}
                     >
+
+                        <Ionicons
+                            name="card-outline"
+                            size={15}
+                            color={
+                                tipoVista ===
+                                    'deudas'
+                                    ? '#FFFFFF'
+                                    : colors.primary
+                            }
+                            style={{
+                                marginRight: 6,
+                            }}
+                        />
 
                         <Text
                             style={[
-                                styles.filterText,
-                                categoriaFiltro ===
-                                cat &&
-                                styles.filterTextSelected,
+                                styles.tipoVistaText,
+                                tipoVista ===
+                                    'deudas' &&
+                                styles.tipoVistaTextActive,
                             ]}
                         >
-                            {cat}
+                            Deudas
                         </Text>
 
                     </TouchableOpacity>
-                )}
-            />
 
-            {/* ==================================================
-                RESUMEN
-            ================================================== */}
+                    {/* GASTOS FIJOS */}
 
-            <View
-                style={
-                    styles.resumenCard
-                }
-            >
+                    <TouchableOpacity
+                        style={[
+                            styles.tipoVistaBtn,
+                            tipoVista ===
+                                'fijos' &&
+                            styles.tipoVistaBtnActive,
+                        ]}
+                        onPress={() => {
 
-                <Text
-                    style={
-                        styles.resumenTitle
-                    }
-                >
-                    {
-                        tipoVista ===
-                            'cuentas'
-                            ? 'Total Movido en Cuentas'
-                            : tipoVista ===
+                            setTipoVista(
+                                'fijos'
+                            );
+
+                            setCategoriaFiltro(
+                                'Todas'
+                            );
+
+                        }}
+                    >
+
+                        <Ionicons
+                            name="flash-outline"
+                            size={15}
+                            color={
+                                tipoVista ===
+                                    'fijos'
+                                    ? '#FFFFFF'
+                                    : colors.primary
+                            }
+                            style={{
+                                marginRight: 6,
+                            }}
+                        />
+
+                        <Text
+                            style={[
+                                styles.tipoVistaText,
+                                tipoVista ===
+                                    'fijos' &&
+                                styles.tipoVistaTextActive,
+                            ]}
+                        >
+                            Gastos Fijos
+                        </Text>
+
+                    </TouchableOpacity>
+
+                    {/* CUENTAS */}
+
+                    <TouchableOpacity
+                        style={[
+                            styles.tipoVistaBtn,
+                            tipoVista ===
+                                'cuentas' &&
+                            styles.tipoVistaBtnActive,
+                        ]}
+                        onPress={() => {
+
+                            setTipoVista(
+                                'cuentas'
+                            );
+
+                            setCategoriaFiltro(
+                                'Todas'
+                            );
+
+                        }}
+                    >
+
+                        <Ionicons
+                            name="swap-horizontal-outline"
+                            size={15}
+                            color={
+                                tipoVista ===
+                                    'cuentas'
+                                    ? '#FFFFFF'
+                                    : colors.primary
+                            }
+                            style={{
+                                marginRight: 6,
+                            }}
+                        />
+
+                        <Text
+                            style={[
+                                styles.tipoVistaText,
+                                tipoVista ===
+                                    'cuentas' &&
+                                styles.tipoVistaTextActive,
+                            ]}
+                        >
+                            Cuentas
+                        </Text>
+
+                    </TouchableOpacity>
+
+                    {/* GASTOS RÁPIDOS */}
+
+                    <TouchableOpacity
+                        style={[
+                            styles.tipoVistaBtn,
+                            tipoVista ===
+                                'rapidos' &&
+                            styles.tipoVistaBtnActive,
+                        ]}
+                        onPress={() => {
+
+                            setTipoVista(
                                 'rapidos'
-                                ? `Total Gastos Rápidos: ${categoriaFiltro}`
-                                : `Total Pendiente: ${categoriaFiltro}`
-                    }
-                </Text>
+                            );
 
-                <Text
-                    style={
-                        styles.resumenAmount
+                            setCategoriaFiltro(
+                                'Todas'
+                            );
+
+                        }}
+                    >
+
+                        <Ionicons
+                            name="flash"
+                            size={15}
+                            color={
+                                tipoVista ===
+                                    'rapidos'
+                                    ? '#FFFFFF'
+                                    : colors.primary
+                            }
+                            style={{
+                                marginRight: 6,
+                            }}
+                        />
+
+                        <Text
+                            style={[
+                                styles.tipoVistaText,
+                                tipoVista ===
+                                    'rapidos' &&
+                                styles.tipoVistaTextActive,
+                            ]}
+                        >
+                            Gastos Rápidos
+                        </Text>
+
+                    </TouchableOpacity>
+
+                </View>
+
+                {/* ==================================================
+                    FILTROS
+                ================================================== */}
+
+                <FlatList
+                    horizontal
+                    showsHorizontalScrollIndicator={
+                        false
                     }
-                >
-                    $
-                    {totalFiltrado.toFixed(
-                        2
+                    data={
+                        categoriasDisponibles
+                    }
+                    keyExtractor={(
+                        item
+                    ) => item}
+                    contentContainerStyle={
+                        styles.filterScroll
+                    }
+                    renderItem={({
+                        item: cat,
+                    }) => (
+
+                        <TouchableOpacity
+                            style={[
+                                styles.filterChip,
+                                categoriaFiltro ===
+                                    cat &&
+                                styles.filterChipSelected,
+                            ]}
+                            onPress={() =>
+                                setCategoriaFiltro(
+                                    cat
+                                )
+                            }
+                        >
+
+                            <Text
+                                style={[
+                                    styles.filterText,
+                                    categoriaFiltro ===
+                                        cat &&
+                                    styles.filterTextSelected,
+                                ]}
+                            >
+                                {cat}
+                            </Text>
+
+                        </TouchableOpacity>
+
                     )}
-                </Text>
+                />
 
-                <Text
+                {/* ==================================================
+                    RESUMEN
+                ================================================== */}
+
+                <View
                     style={
-                        styles.resumenSub
+                        styles.resumenCard
                     }
                 >
-                    {
-                        itemsFiltrados.length
-                    }{' '}
-                    {
-                        itemsFiltrados.length ===
-                            1
-                            ? 'registro encontrado'
-                            : 'registros encontrados'
-                    }
-                </Text>
+
+                    <Text
+                        style={
+                            styles.resumenTitle
+                        }
+                    >
+                        {
+                            tipoVista ===
+                                'cuentas'
+                                ? 'Total Movido en Cuentas'
+                                : tipoVista ===
+                                    'rapidos'
+                                    ? `Total Gastos Rápidos: ${categoriaFiltro}`
+                                    : `Total Pendiente: ${categoriaFiltro}`
+                        }
+                    </Text>
+
+                    <Text
+                        style={
+                            styles.resumenAmount
+                        }
+                    >
+                        $
+                        {totalFiltrado.toFixed(
+                            2
+                        )}
+                    </Text>
+
+                    <Text
+                        style={
+                            styles.resumenSub
+                        }
+                    >
+                        {
+                            itemsFiltrados.length
+                        }{' '}
+                        {
+                            itemsFiltrados.length ===
+                                1
+                                ? 'registro encontrado'
+                                : 'registros encontrados'
+                        }
+                    </Text>
+
+                </View>
 
             </View>
 
-        </View>
-    );
+        );
 
     // ============================================================
     // INTERFAZ
@@ -2953,6 +3326,7 @@ export default function ReporteDeudasRegistradas({
                         >
                             No hay registros en esta categoría.
                         </Text>
+
                     )
                 }
             />
@@ -3055,7 +3429,7 @@ export default function ReporteDeudasRegistradas({
                                                         style={[
                                                             styles.modalCategoriaBtn,
                                                             nuevaCategoria ===
-                                                            cat.id &&
+                                                                cat.id &&
                                                             styles.modalCategoriaActive,
                                                         ]}
                                                         onPress={() =>
@@ -3076,7 +3450,7 @@ export default function ReporteDeudasRegistradas({
                                                                 nuevaCategoria ===
                                                                     cat.id
                                                                     ? '#FFFFFF'
-                                                                    : '#059669'
+                                                                    : colors.primary
                                                             }
                                                         />
 
@@ -3084,7 +3458,7 @@ export default function ReporteDeudasRegistradas({
                                                             style={[
                                                                 styles.modalCategoriaText,
                                                                 nuevaCategoria ===
-                                                                cat.id &&
+                                                                    cat.id &&
                                                                 styles.modalCategoriaTextActive,
                                                             ]}
                                                         >
@@ -3094,6 +3468,7 @@ export default function ReporteDeudasRegistradas({
                                                         </Text>
 
                                                     </TouchableOpacity>
+
                                                 )
                                             )
                                         }
@@ -3150,11 +3525,13 @@ export default function ReporteDeudasRegistradas({
                             ) : (
 
                                 <>
+
                                     {
                                         tipoVista ===
-                                        'fijos' && (
+                                            'fijos' && (
 
                                             <>
+
                                                 <Text
                                                     style={
                                                         styles.modalLabel
@@ -3175,7 +3552,9 @@ export default function ReporteDeudasRegistradas({
                                                     }
                                                     placeholderTextColor="#94A3B8"
                                                 />
+
                                             </>
+
                                         )
                                     }
 
@@ -3211,9 +3590,9 @@ export default function ReporteDeudasRegistradas({
 
                                     {
                                         tipoVista ===
-                                        'deudas' &&
-                                        itemSeleccionado?.tipo !==
-                                        'tarjeta' && (
+                                            'deudas' &&
+                                            itemSeleccionado?.tipo !==
+                                            'tarjeta' && (
 
                                             <>
 
@@ -3263,10 +3642,12 @@ export default function ReporteDeudasRegistradas({
                                                 />
 
                                             </>
+
                                         )
                                     }
 
                                 </>
+
                             )
                         }
 
@@ -3293,6 +3674,7 @@ export default function ReporteDeudasRegistradas({
                                     setItemSeleccionado(
                                         null
                                     );
+
                                 }}
                             >
 
@@ -3334,14 +3716,27 @@ export default function ReporteDeudasRegistradas({
             </Modal>
 
         </View>
+
     );
+
 }
 
 // ============================================================
-// ESTILOS
+// ESTILOS DINÁMICOS
 // ============================================================
 
-const styles = StyleSheet.create({
+const crearEstilos = (
+    colors: {
+        primary: string;
+        dark: string;
+        light: string;
+        veryLight: string;
+    }
+) => StyleSheet.create({
+
+    // ==========================================================
+    // CONTENEDOR
+    // ==========================================================
 
     rootContainer: {
         flex: 1,
@@ -3355,7 +3750,7 @@ const styles = StyleSheet.create({
     },
 
     titulo: {
-        color: '#1E293B',
+        color: colors.dark,
         fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 2,
@@ -3399,7 +3794,7 @@ const styles = StyleSheet.create({
     },
 
     tipoVistaBtnActive: {
-        backgroundColor: '#059669',
+        backgroundColor: colors.primary,
     },
 
     tipoVistaText: {
@@ -3433,8 +3828,8 @@ const styles = StyleSheet.create({
     },
 
     filterChipSelected: {
-        backgroundColor: '#059669',
-        borderColor: '#059669',
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
 
     filterText: {
@@ -3453,10 +3848,10 @@ const styles = StyleSheet.create({
     // ==========================================================
 
     resumenCard: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: colors.veryLight,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: colors.light,
         padding: 14,
         marginBottom: 14,
         shadowColor: '#000',
@@ -3476,7 +3871,7 @@ const styles = StyleSheet.create({
     },
 
     resumenAmount: {
-        color: '#059669',
+        color: colors.primary,
         fontSize: 22,
         fontWeight: 'bold',
         marginBottom: 2,
@@ -3516,18 +3911,18 @@ const styles = StyleSheet.create({
     },
 
     badgeCategoria: {
-        backgroundColor: '#ECFDF5',
+        backgroundColor: colors.veryLight,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 6,
         borderWidth: 1,
-        borderColor: '#A7F3D0',
+        borderColor: colors.light,
         flexDirection: 'row',
         alignItems: 'center',
     },
 
     badgeText: {
-        color: '#059669',
+        color: colors.primary,
         fontSize: 10,
         fontWeight: '600',
     },
@@ -3540,16 +3935,16 @@ const styles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 6,
-        backgroundColor: '#F1F5F9',
+        backgroundColor: colors.veryLight,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: colors.light,
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 6,
     },
 
     cardEntidad: {
-        color: '#1E293B',
+        color: colors.dark,
         fontSize: 14,
         fontWeight: 'bold',
         marginBottom: 8,
@@ -3586,7 +3981,7 @@ const styles = StyleSheet.create({
     },
 
     infoValue: {
-        color: '#1E293B',
+        color: colors.dark,
         fontSize: 11,
         fontWeight: 'bold',
     },
@@ -3621,11 +4016,11 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 20,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: colors.light,
     },
 
     modalTitle: {
-        color: '#1E293B',
+        color: colors.dark,
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 12,
@@ -3638,15 +4033,15 @@ const styles = StyleSheet.create({
     },
 
     modalInput: {
-        backgroundColor: '#F8FAFC',
+        backgroundColor: colors.veryLight,
         borderRadius: 8,
         paddingHorizontal: 10,
         paddingVertical: 9,
-        color: '#1E293B',
+        color: colors.dark,
         fontSize: 12,
         marginBottom: 10,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: colors.light,
     },
 
     // ==========================================================
@@ -3667,14 +4062,14 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: colors.light,
         marginRight: 5,
         marginBottom: 5,
     },
 
     modalCategoriaActive: {
-        backgroundColor: '#059669',
-        borderColor: '#059669',
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
 
     modalCategoriaText: {
@@ -3716,7 +4111,7 @@ const styles = StyleSheet.create({
         paddingVertical: 9,
         paddingHorizontal: 14,
         borderRadius: 8,
-        backgroundColor: '#059669',
+        backgroundColor: colors.primary,
     },
 
     modalBtnSaveText: {
@@ -3724,4 +4119,5 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
     },
-});
+
+}); //cambiado color

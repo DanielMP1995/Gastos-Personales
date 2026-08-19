@@ -25,7 +25,25 @@ import {
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function RegistroIngresosScreen({ navigation }: any) {
+// ============================================================
+// TEMA
+// ============================================================
+
+import { useTheme } from '../../context/ThemeContext';
+
+// ============================================================
+// PANTALLA
+// ============================================================
+
+export default function RegistroIngresosScreen({
+    navigation,
+}: any) {
+
+    // ============================================================
+    // TEMA
+    // ============================================================
+
+    const { colors } = useTheme();
 
     // ============================================================
     // SAFE AREA
@@ -140,7 +158,9 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                             ? lista[0].id
                             : null;
                     });
+
                 });
+
             });
 
     }, []);
@@ -374,6 +394,7 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                         setCategoriaIngreso('Salario');
 
                         navigation.goBack();
+
                     })
                     .catch((error) => {
 
@@ -381,7 +402,9 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                             'Error al guardar',
                             error.message
                         );
+
                     });
+
             })
             .catch((error) => {
 
@@ -390,6 +413,7 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     'Hubo un problema al obtener tu información: ' +
                     error.message
                 );
+
             });
     }
 
@@ -399,19 +423,23 @@ export default function RegistroIngresosScreen({ navigation }: any) {
 
     return (
 
-        <View style={styles.rootContainer}>
+        <View
+            style={[
+                styles.rootContainer,
+                {
+                    backgroundColor:
+                        colors.veryLight,
+                },
+            ]}
+        >
 
             <ScrollView
+
                 style={styles.scrollView}
 
                 contentContainerStyle={[
                     styles.container,
-
                     {
-                        // ==========================================
-                        // ESPACIO PARA CÁMARA / NOTCH / STATUS BAR
-                        // ==========================================
-
                         paddingTop:
                             insets.top + 20,
                     },
@@ -429,7 +457,13 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                 <View style={styles.topHeader}>
 
                     <TouchableOpacity
-                        style={styles.backButtonTop}
+                        style={[
+                            styles.backButtonTop,
+                            {
+                                borderColor:
+                                    colors.light,
+                            },
+                        ]}
                         onPress={() =>
                             navigation.goBack()
                         }
@@ -437,9 +471,13 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     >
 
                         <Text
-                            style={
-                                styles.backButtonTopText
-                            }
+                            style={[
+                                styles.backButtonTopText,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
                         >
                             ←
                         </Text>
@@ -447,7 +485,13 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     </TouchableOpacity>
 
                     <Text
-                        style={styles.topHeaderTitle}
+                        style={[
+                            styles.topHeaderTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
                     >
                         Registro de Ingresos
                     </Text>
@@ -462,18 +506,32 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                 {/* HERO */}
                 {/* ================================================= */}
 
-                <View style={styles.heroCard}>
+                <View
+                    style={[
+                        styles.heroCard,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
                     <View
-                        style={
-                            styles.heroIconContainer
-                        }
+                        style={[
+                            styles.heroIconContainer,
+                            {
+                                backgroundColor:
+                                    colors.veryLight,
+                                borderColor:
+                                    colors.light,
+                            },
+                        ]}
                     >
 
                         <Ionicons
                             name="trending-up-outline"
                             size={24}
-                            color="#047857"
+                            color={colors.primary}
                         />
 
                     </View>
@@ -485,19 +543,37 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     >
 
                         <Text
-                            style={styles.smallTitle}
+                            style={[
+                                styles.smallTitle,
+                                {
+                                    color:
+                                        colors.primary,
+                                },
+                            ]}
                         >
                             MOVIMIENTO FINANCIERO
                         </Text>
 
                         <Text
-                            style={styles.titulo}
+                            style={[
+                                styles.titulo,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
                         >
                             Nuevo Ingreso
                         </Text>
 
                         <Text
-                            style={styles.subtitulo}
+                            style={[
+                                styles.subtitulo,
+                                {
+                                    color:
+                                        '#64748B',
+                                },
+                            ]}
                         >
                             Añade fondos al balance
                             compartido con tu pareja
@@ -513,7 +589,15 @@ export default function RegistroIngresosScreen({ navigation }: any) {
 
                 <View style={styles.sectionHeader}>
 
-                    <View style={styles.stepBadge}>
+                    <View
+                        style={[
+                            styles.stepBadge,
+                            {
+                                backgroundColor:
+                                    colors.primary,
+                            },
+                        ]}
+                    >
 
                         <Text
                             style={
@@ -526,7 +610,13 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     </View>
 
                     <Text
-                        style={styles.sectionTitle}
+                        style={[
+                            styles.sectionTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
                     >
                         Categoría de Ingreso
                     </Text>
@@ -554,8 +644,17 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                                     key={cat}
                                     style={[
                                         styles.catBtn,
-                                        isSelected &&
-                                        styles.catBtnActive,
+                                        {
+                                            borderColor:
+                                                isSelected
+                                                    ? colors.primary
+                                                    : colors.light,
+
+                                            backgroundColor:
+                                                isSelected
+                                                    ? colors.veryLight
+                                                    : '#FFFFFF',
+                                        },
                                     ]}
                                     onPress={() =>
                                         setCategoriaIngreso(
@@ -568,6 +667,12 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                                     <Text
                                         style={[
                                             styles.catText,
+                                            {
+                                                color:
+                                                    isSelected
+                                                        ? colors.dark
+                                                        : '#64748B',
+                                            },
                                             isSelected &&
                                             styles.catTextActive,
                                         ]}
@@ -589,7 +694,15 @@ export default function RegistroIngresosScreen({ navigation }: any) {
 
                 <View style={styles.sectionHeader}>
 
-                    <View style={styles.stepBadge}>
+                    <View
+                        style={[
+                            styles.stepBadge,
+                            {
+                                backgroundColor:
+                                    colors.primary,
+                            },
+                        ]}
+                    >
 
                         <Text
                             style={
@@ -602,7 +715,13 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     </View>
 
                     <Text
-                        style={styles.sectionTitle}
+                        style={[
+                            styles.sectionTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
                     >
                         Detalles del Monto
                     </Text>
@@ -613,28 +732,50 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                 {/* FORMULARIO */}
                 {/* ================================================= */}
 
-                <View style={styles.formCard}>
+                <View
+                    style={[
+                        styles.formCard,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
                     <Text style={styles.label}>
                         Monto del Ingreso ($)
                     </Text>
 
                     <View
-                        style={
-                            styles.inputWrapper
-                        }
+                        style={[
+                            styles.inputWrapper,
+                            {
+                                borderColor:
+                                    colors.light,
+                            },
+                        ]}
                     >
 
                         <Text
-                            style={styles.currency}
+                            style={[
+                                styles.currency,
+                                {
+                                    color:
+                                        colors.primary,
+                                },
+                            ]}
                         >
                             $
                         </Text>
 
                         <TextInput
-                            style={
-                                styles.inputMonto
-                            }
+                            style={[
+                                styles.inputMonto,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
                             placeholder="0.00"
                             placeholderTextColor="#94A3B8"
                             keyboardType="numeric"
@@ -649,7 +790,15 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     </Text>
 
                     <TextInput
-                        style={styles.input}
+                        style={[
+                            styles.input,
+                            {
+                                borderColor:
+                                    colors.light,
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
                         placeholder="Ej. Pago de quincena, Venta, etc."
                         placeholderTextColor="#94A3B8"
                         value={descripcion}
@@ -723,8 +872,17 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                                             }
                                             style={[
                                                 styles.catBtn,
-                                                isSelected &&
-                                                styles.catBtnActive,
+                                                {
+                                                    borderColor:
+                                                        isSelected
+                                                            ? colors.primary
+                                                            : colors.light,
+
+                                                    backgroundColor:
+                                                        isSelected
+                                                            ? colors.veryLight
+                                                            : '#FFFFFF',
+                                                },
                                             ]}
                                             onPress={() =>
                                                 setCuentaDestinoId(
@@ -746,7 +904,7 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                                                 size={13}
                                                 color={
                                                     isSelected
-                                                        ? '#047857'
+                                                        ? colors.dark
                                                         : '#64748B'
                                                 }
                                                 style={{
@@ -757,6 +915,12 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                                             <Text
                                                 style={[
                                                     styles.catText,
+                                                    {
+                                                        color:
+                                                            isSelected
+                                                                ? colors.dark
+                                                                : '#64748B',
+                                                    },
                                                     isSelected &&
                                                     styles.catTextActive,
                                                 ]}
@@ -774,6 +938,7 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                                         </TouchableOpacity>
 
                                     );
+
                                 }
                             )}
 
@@ -785,19 +950,35 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     {/* INFORMACIÓN */}
                     {/* ================================================= */}
 
-                    <View style={styles.infoBox}>
+                    <View
+                        style={[
+                            styles.infoBox,
+                            {
+                                backgroundColor:
+                                    colors.veryLight,
+                                borderColor:
+                                    colors.light,
+                            },
+                        ]}
+                    >
 
                         <Ionicons
                             name="information-circle-outline"
                             size={18}
-                            color="#059669"
+                            color={colors.primary}
                             style={{
                                 marginRight: 8,
                             }}
                         />
 
                         <Text
-                            style={styles.infoText}
+                            style={[
+                                styles.infoText,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
                         >
                             Este ingreso será compartido
                             automáticamente con tu pareja.
@@ -810,9 +991,16 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                     {/* ================================================= */}
 
                     <TouchableOpacity
-                        style={
-                            styles.primaryButton
-                        }
+                        style={[
+                            styles.primaryButton,
+                            {
+                                backgroundColor:
+                                    colors.primary,
+
+                                shadowColor:
+                                    colors.primary,
+                            },
+                        ]}
                         onPress={guardarIngreso}
                         activeOpacity={0.85}
                     >
@@ -843,9 +1031,13 @@ export default function RegistroIngresosScreen({ navigation }: any) {
                 {/* ================================================= */}
 
                 <TouchableOpacity
-                    style={
-                        styles.secondaryButton
-                    }
+                    style={[
+                        styles.secondaryButton,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
                     onPress={() =>
                         navigation.goBack()
                     }
@@ -884,7 +1076,6 @@ const styles = StyleSheet.create({
 
     rootContainer: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
 
     scrollView: {
@@ -893,10 +1084,6 @@ const styles = StyleSheet.create({
 
     container: {
         paddingHorizontal: 20,
-
-        // IMPORTANTE:
-        // El paddingTop se coloca dinámicamente
-        // usando insets.top.
         paddingBottom: 40,
     },
 
@@ -919,7 +1106,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
 
         shadowColor: '#000',
         shadowOffset: {
@@ -933,13 +1119,11 @@ const styles = StyleSheet.create({
     },
 
     backButtonTopText: {
-        color: '#1E293B',
         fontSize: 18,
         fontWeight: 'bold',
     },
 
     topHeaderTitle: {
-        color: '#1E293B',
         fontSize: 16,
         fontWeight: '600',
     },
@@ -961,7 +1145,6 @@ const styles = StyleSheet.create({
         marginBottom: 20,
 
         borderWidth: 1,
-        borderColor: '#E2E8F0',
 
         shadowColor: '#000',
         shadowOffset: {
@@ -980,15 +1163,12 @@ const styles = StyleSheet.create({
 
         borderRadius: 15,
 
-        backgroundColor: '#ECFDF5',
-
         justifyContent: 'center',
         alignItems: 'center',
 
         marginRight: 15,
 
         borderWidth: 1,
-        borderColor: '#A7F3D0',
     },
 
     heroTextContainer: {
@@ -996,7 +1176,6 @@ const styles = StyleSheet.create({
     },
 
     smallTitle: {
-        color: '#059669',
         fontSize: 10,
         fontWeight: '800',
         letterSpacing: 1.5,
@@ -1004,14 +1183,12 @@ const styles = StyleSheet.create({
     },
 
     titulo: {
-        color: '#1E293B',
         fontSize: 17,
         fontWeight: 'bold',
         marginBottom: 3,
     },
 
     subtitulo: {
-        color: '#64748B',
         fontSize: 12,
         lineHeight: 16,
     },
@@ -1033,8 +1210,6 @@ const styles = StyleSheet.create({
 
         borderRadius: 8,
 
-        backgroundColor: '#059669',
-
         justifyContent: 'center',
         alignItems: 'center',
 
@@ -1048,7 +1223,6 @@ const styles = StyleSheet.create({
     },
 
     sectionTitle: {
-        color: '#1E293B',
         fontSize: 15,
         fontWeight: '600',
     },
@@ -1069,30 +1243,20 @@ const styles = StyleSheet.create({
 
         borderRadius: 12,
 
-        backgroundColor: '#FFFFFF',
-
         marginRight: 8,
 
         borderWidth: 1,
-        borderColor: '#E2E8F0',
 
         flexDirection: 'row',
         alignItems: 'center',
     },
 
-    catBtnActive: {
-        backgroundColor: '#ECFDF5',
-        borderColor: '#059669',
-    },
-
     catText: {
-        color: '#64748B',
         fontSize: 12,
         fontWeight: '500',
     },
 
     catTextActive: {
-        color: '#047857',
         fontWeight: 'bold',
         fontSize: 12,
     },
@@ -1109,7 +1273,6 @@ const styles = StyleSheet.create({
         padding: 20,
 
         borderWidth: 1,
-        borderColor: '#E2E8F0',
 
         marginBottom: 16,
 
@@ -1140,7 +1303,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
 
         borderWidth: 1,
-        borderColor: '#E2E8F0',
 
         borderRadius: 12,
 
@@ -1148,7 +1310,6 @@ const styles = StyleSheet.create({
     },
 
     currency: {
-        color: '#059669',
         fontSize: 20,
         fontWeight: 'bold',
         marginRight: 8,
@@ -1156,8 +1317,6 @@ const styles = StyleSheet.create({
 
     inputMonto: {
         flex: 1,
-
-        color: '#1E293B',
 
         fontSize: 18,
         fontWeight: 'bold',
@@ -1169,14 +1328,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
 
         borderWidth: 1,
-        borderColor: '#E2E8F0',
 
         borderRadius: 12,
 
         paddingHorizontal: 14,
         paddingVertical: 12,
-
-        color: '#1E293B',
 
         fontSize: 13,
 
@@ -1227,12 +1383,9 @@ const styles = StyleSheet.create({
     // ============================================================
 
     infoBox: {
-        backgroundColor: '#ECFDF5',
-
         borderRadius: 12,
 
         borderWidth: 1,
-        borderColor: '#A7F3D0',
 
         padding: 12,
 
@@ -1244,10 +1397,7 @@ const styles = StyleSheet.create({
     },
 
     infoText: {
-        color: '#065F46',
-
         fontSize: 11,
-
         lineHeight: 16,
 
         flex: 1,
@@ -1260,8 +1410,6 @@ const styles = StyleSheet.create({
     // ============================================================
 
     primaryButton: {
-        backgroundColor: '#059669',
-
         marginTop: 16,
 
         borderRadius: 14,
@@ -1273,15 +1421,12 @@ const styles = StyleSheet.create({
 
         flexDirection: 'row',
 
-        shadowColor: '#059669',
-
         shadowOffset: {
             width: 0,
             height: 4,
         },
 
         shadowOpacity: 0.25,
-
         shadowRadius: 6,
 
         elevation: 3,
@@ -1309,7 +1454,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
 
         borderWidth: 1,
-        borderColor: '#E2E8F0',
 
         marginBottom: 20,
     },
@@ -1335,4 +1479,5 @@ const styles = StyleSheet.create({
 
         marginTop: 10,
     },
+
 });

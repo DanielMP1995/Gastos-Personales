@@ -24,7 +24,10 @@ import {
     ref,
     set,
     update,
+    remove,
 } from 'firebase/database';
+
+import { useTheme } from '../../context/ThemeContext';
 
 
 // ============================================================
@@ -60,14 +63,11 @@ interface MovimientoCuenta {
 
 // ============================================================
 // COLORES
-// MISMA PALETA DE TU PROYECTO
+// Los colores de marca (PRINCIPAL, OSCURO, VERDE, SUAVE,
+// MUY_SUAVE) ahora salen del ThemeContext y cambian según
+// el color que el usuario elija en "Personalizar aplicación".
+// Los siguientes son neutrales/semánticos y no cambian con el tema.
 // ============================================================
-
-const COLOR_PRINCIPAL = '#176B63';
-const COLOR_OSCURO = '#124C47';
-const COLOR_VERDE = '#2E7D6E';
-const COLOR_SUAVE = '#DCEAE7';
-const COLOR_MUY_SUAVE = '#F3F7F6';
 
 const COLOR_ROJO = '#B85C5C';
 
@@ -85,6 +85,26 @@ export default function CuentasYEfectivoScreen({
 }: any) {
 
     const usuarioActual = auth.currentUser;
+
+    // ========================================================
+    // TEMA ACTIVO
+    // Estos colores cambian automáticamente cuando el usuario
+    // elige otro color en la pantalla "Personalizar aplicación".
+    // ========================================================
+
+    const { colors: temaActivo } = useTheme();
+
+    const COLOR_PRINCIPAL = temaActivo.primary;
+    const COLOR_OSCURO = temaActivo.dark;
+    const COLOR_VERDE = temaActivo.dark;
+    const COLOR_SUAVE = temaActivo.light;
+    const COLOR_MUY_SUAVE = temaActivo.veryLight;
+
+    const styles = getStyles(
+        COLOR_PRINCIPAL,
+        COLOR_OSCURO,
+        COLOR_MUY_SUAVE
+    );
 
     // ========================================================
     // ESTADOS
@@ -423,6 +443,9 @@ export default function CuentasYEfectivoScreen({
     };
 
 
+
+
+
     // ========================================================
     // CREAR CUENTA
     // ========================================================
@@ -654,7 +677,7 @@ export default function CuentasYEfectivoScreen({
             if (
                 cuentaOriginal &&
                 Number(cuentaOriginal.saldo) !==
-                    nuevoSaldo
+                nuevoSaldo
             ) {
 
                 const diferencia =
@@ -722,6 +745,62 @@ export default function CuentasYEfectivoScreen({
 
     };
 
+    // ========================================================
+    // ELIMINAR CUENTA
+    // Recibe la cuenta directamente (no depende de que el
+    // modal de edición esté abierto), así el botón funciona
+    // desde la lista de cuentas, al lado del lápiz.
+    // ========================================================
+
+const eliminarCuenta = async (cuenta: Cuenta) => {
+
+    if (!idPareja) {
+        Alert.alert('Error', 'No se encontró la pareja.');
+        return;
+    }
+
+    const saldo = Number(cuenta.saldo || 0);
+
+    if (Math.abs(saldo) > 0.001) {
+        Alert.alert(
+            'No se puede eliminar',
+            `La cuenta ${cuenta.nombre} todavía tiene ${dinero(saldo)}. Primero debes dejar su saldo en $0.00.`
+        );
+        return;
+    }
+
+    const confirmar = Platform.OS === 'web'
+        ? window.confirm(`¿Seguro que deseas eliminar la cuenta "${cuenta.nombre}"?`)
+        : await new Promise<boolean>((resolve) => {
+            Alert.alert(
+                'Eliminar cuenta',
+                `¿Seguro que deseas eliminar la cuenta "${cuenta.nombre}"?`,
+                [
+                    { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+                    { text: 'Eliminar', style: 'destructive', onPress: () => resolve(true) },
+                ]
+            );
+        });
+
+    if (!confirmar) {
+        return;
+    }
+
+    try {
+        await remove(
+            ref(db, `parejas/${idPareja}/cuentas/${cuenta.id}`)
+        );
+
+        if (Platform.OS === 'web') {
+            window.alert('Cuenta eliminada correctamente.');
+        } else {
+            Alert.alert('Cuenta eliminada', 'La cuenta se eliminó correctamente.');
+        }
+    } catch (error) {
+        console.error('ERROR AL ELIMINAR CUENTA:', error);
+        Alert.alert('Error', 'No se pudo eliminar la cuenta. Verifica tu conexión a internet.');
+    }
+};
 
     // ========================================================
     // TRANSFERENCIA ENTRE CUENTAS
@@ -801,12 +880,18 @@ export default function CuentasYEfectivoScreen({
         }
 
 
-        if (origen.saldo < monto) {
+        const saldoOrigen =
+            Math.round(Number(origen.saldo) * 100) / 100;
+
+        const montoRedondeado =
+            Math.round(monto * 100) / 100;
+
+        if (saldoOrigen < montoRedondeado) {
 
             Alert.alert(
                 'Saldo insuficiente',
                 `La cuenta ${origen.nombre} tiene ${dinero(
-                    origen.saldo
+                    saldoOrigen
                 )}.`
             );
 
@@ -817,10 +902,12 @@ export default function CuentasYEfectivoScreen({
         try {
 
             const origenNuevo =
-                origen.saldo - monto;
+                saldoOrigen - montoRedondeado;
 
             const destinoNuevo =
-                destino.saldo + monto;
+                Math.round(
+                    (Number(destino.saldo) + montoRedondeado) * 100
+                ) / 100;
 
 
             const cuentasBase =
@@ -1803,7 +1890,7 @@ export default function CuentasYEfectivoScreen({
                                     size={22}
                                     color={
                                         cuenta.tipo ===
-                                        'efectivo'
+                                            'efectivo'
                                             ? COLOR_VERDE
                                             : COLOR_PRINCIPAL
                                     }
@@ -1903,6 +1990,32 @@ export default function CuentasYEfectivoScreen({
 
                             </TouchableOpacity>
 
+
+                            <TouchableOpacity
+                                style={
+                                    styles.accountDeleteButton
+                                }
+                                onPress={() =>
+                                    eliminarCuenta(
+                                        cuenta
+                                    )
+                                }
+                                hitSlop={{
+                                    top: 8,
+                                    bottom: 8,
+                                    left: 8,
+                                    right: 8,
+                                }}
+                            >
+
+                                <Ionicons
+                                    name="trash-outline"
+                                    size={16}
+                                    color={COLOR_ROJO}
+                                />
+
+                            </TouchableOpacity>
+
                         </View>
 
                     ))
@@ -1994,23 +2107,23 @@ export default function CuentasYEfectivoScreen({
                                             esRetiro
                                                 ? styles.movementIconRetiro
                                                 : esDeposito
-                                                ? styles.movementIconDeposito
-                                                : styles.movementIconTransferencia,
+                                                    ? styles.movementIconDeposito
+                                                    : styles.movementIconTransferencia,
                                         ]}
                                     >
 
                                         <Ionicons
                                             name={
                                                 movimiento.tipo ===
-                                                'ajuste_saldo'
+                                                    'ajuste_saldo'
                                                     ? 'create-outline'
                                                     : esSaldoInicial
-                                                    ? 'add-circle-outline'
-                                                    : esRetiro
-                                                    ? 'arrow-down'
-                                                    : esDeposito
-                                                    ? 'arrow-up'
-                                                    : 'swap-horizontal'
+                                                        ? 'add-circle-outline'
+                                                        : esRetiro
+                                                            ? 'arrow-down'
+                                                            : esDeposito
+                                                                ? 'arrow-up'
+                                                                : 'swap-horizontal'
                                             }
                                             size={18}
                                             color={
@@ -2100,10 +2213,10 @@ export default function CuentasYEfectivoScreen({
                                         >
                                             {movimiento.fecha
                                                 ? new Date(
-                                                      movimiento.fecha
-                                                  ).toLocaleDateString(
-                                                      'es-EC'
-                                                  )
+                                                    movimiento.fecha
+                                                ).toLocaleDateString(
+                                                    'es-EC'
+                                                )
                                                 : ''}
                                         </Text>
 
@@ -2270,8 +2383,8 @@ export default function CuentasYEfectivoScreen({
                                     style={[
                                         styles.typeButton,
                                         tipoCuenta ===
-                                            'banco' &&
-                                            styles.typeButtonActive,
+                                        'banco' &&
+                                        styles.typeButtonActive,
                                     ]}
                                     onPress={() =>
                                         setTipoCuenta(
@@ -2285,7 +2398,7 @@ export default function CuentasYEfectivoScreen({
                                         size={19}
                                         color={
                                             tipoCuenta ===
-                                            'banco'
+                                                'banco'
                                                 ? COLOR_PRINCIPAL
                                                 : COLOR_GRIS
                                         }
@@ -2295,8 +2408,8 @@ export default function CuentasYEfectivoScreen({
                                         style={[
                                             styles.typeButtonText,
                                             tipoCuenta ===
-                                                'banco' &&
-                                                styles.typeButtonTextActive,
+                                            'banco' &&
+                                            styles.typeButtonTextActive,
                                         ]}
                                     >
                                         Banco
@@ -2309,8 +2422,8 @@ export default function CuentasYEfectivoScreen({
                                     style={[
                                         styles.typeButton,
                                         tipoCuenta ===
-                                            'efectivo' &&
-                                            styles.typeButtonActive,
+                                        'efectivo' &&
+                                        styles.typeButtonActive,
                                     ]}
                                     onPress={() =>
                                         setTipoCuenta(
@@ -2324,7 +2437,7 @@ export default function CuentasYEfectivoScreen({
                                         size={19}
                                         color={
                                             tipoCuenta ===
-                                            'efectivo'
+                                                'efectivo'
                                                 ? COLOR_VERDE
                                                 : COLOR_GRIS
                                         }
@@ -2334,8 +2447,8 @@ export default function CuentasYEfectivoScreen({
                                         style={[
                                             styles.typeButtonText,
                                             tipoCuenta ===
-                                                'efectivo' &&
-                                                styles.typeButtonTextActive,
+                                            'efectivo' &&
+                                            styles.typeButtonTextActive,
                                         ]}
                                     >
                                         Efectivo
@@ -2348,8 +2461,8 @@ export default function CuentasYEfectivoScreen({
                                     style={[
                                         styles.typeButton,
                                         tipoCuenta ===
-                                            'otra' &&
-                                            styles.typeButtonActive,
+                                        'otra' &&
+                                        styles.typeButtonActive,
                                     ]}
                                     onPress={() =>
                                         setTipoCuenta(
@@ -2363,7 +2476,7 @@ export default function CuentasYEfectivoScreen({
                                         size={19}
                                         color={
                                             tipoCuenta ===
-                                            'otra'
+                                                'otra'
                                                 ? COLOR_PRINCIPAL
                                                 : COLOR_GRIS
                                         }
@@ -2373,8 +2486,8 @@ export default function CuentasYEfectivoScreen({
                                         style={[
                                             styles.typeButtonText,
                                             tipoCuenta ===
-                                                'otra' &&
-                                                styles.typeButtonTextActive,
+                                            'otra' &&
+                                            styles.typeButtonTextActive,
                                         ]}
                                     >
                                         Otra
@@ -2393,7 +2506,7 @@ export default function CuentasYEfectivoScreen({
                                 style={styles.input}
                                 placeholder={
                                     tipoCuenta ===
-                                    'efectivo'
+                                        'efectivo'
                                         ? 'Ej: Efectivo'
                                         : 'Ej: Banco Pichincha'
                                 }
@@ -2511,6 +2624,7 @@ export default function CuentasYEfectivoScreen({
 
                             </TouchableOpacity>
 
+
                         </ScrollView>
 
                     </View>
@@ -2561,230 +2675,236 @@ export default function CuentasYEfectivoScreen({
                             }
                         >
 
-                        <View style={styles.modalHeader}>
+                            <View style={styles.modalHeader}>
 
-                            <View>
+                                <View>
 
-                                <Text
+                                    <Text
+                                        style={
+                                            styles.modalTitle
+                                        }
+                                    >
+                                        Transferir dinero
+                                    </Text>
+
+                                    <Text
+                                        style={
+                                            styles.modalSubtitle
+                                        }
+                                    >
+                                        Mueve dinero entre tus cuentas
+                                    </Text>
+
+                                </View>
+
+
+                                <TouchableOpacity
+                                    onPress={() =>
+                                        limpiarFormularioTransferencia()
+                                    }
                                     style={
-                                        styles.modalTitle
+                                        styles.modalClose
                                     }
                                 >
-                                    Transferir dinero
-                                </Text>
 
-                                <Text
-                                    style={
-                                        styles.modalSubtitle
-                                    }
-                                >
-                                    Mueve dinero entre tus cuentas
-                                </Text>
+                                    <Ionicons
+                                        name="close"
+                                        size={22}
+                                        color="#555"
+                                    />
+
+                                </TouchableOpacity>
 
                             </View>
 
 
-                            <TouchableOpacity
-                                onPress={() =>
-                                    limpiarFormularioTransferencia()
+                            <Text style={styles.inputLabel}>
+                                Desde
+                            </Text>
+
+
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={
+                                    false
                                 }
+                                style={styles.selectionScroll}
+                            >
+
+                                {cuentas.map((cuenta) => (
+
+                                    <TouchableOpacity
+                                        key={cuenta.id}
+                                        style={[
+                                            styles.selectionChip,
+                                            cuentaOrigenId ===
+                                            cuenta.id &&
+                                            styles.selectionChipActive,
+                                        ]}
+                                        onPress={() =>
+                                            setCuentaOrigenId(
+                                                cuenta.id
+                                            )
+                                        }
+                                    >
+
+                                        <Ionicons
+                                            name={obtenerIconoCuenta(
+                                                cuenta.tipo
+                                            )}
+                                            size={17}
+                                            color={
+                                                cuentaOrigenId ===
+                                                    cuenta.id
+                                                    ? COLOR_PRINCIPAL
+                                                    : COLOR_GRIS
+                                            }
+                                        />
+
+                                        <Text
+                                            style={[
+                                                styles.selectionText,
+                                                cuentaOrigenId ===
+                                                cuenta.id &&
+                                                styles.selectionTextActive,
+                                            ]}
+                                        >
+                                            {cuenta.nombre}
+                                        </Text>
+
+                                    </TouchableOpacity>
+
+                                ))}
+
+                            </ScrollView>
+
+
+                            <Text style={styles.inputLabel}>
+                                Hacia
+                            </Text>
+
+
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={
+                                    false
+                                }
+                                style={styles.selectionScroll}
+                            >
+
+                                {cuentas
+                                    .filter(
+                                        cuenta =>
+                                            cuenta.id !==
+                                            cuentaOrigenId
+                                    )
+                                    .map((cuenta) => (
+
+                                        <TouchableOpacity
+                                            key={cuenta.id}
+                                            style={[
+                                                styles.selectionChip,
+                                                cuentaDestinoId ===
+                                                cuenta.id &&
+                                                styles.selectionChipActive,
+                                            ]}
+                                            onPress={() =>
+                                                setCuentaDestinoId(
+                                                    cuenta.id
+                                                )
+                                            }
+                                        >
+
+                                            <Ionicons
+                                                name={obtenerIconoCuenta(
+                                                    cuenta.tipo
+                                                )}
+                                                size={17}
+                                                color={
+                                                    cuentaDestinoId ===
+                                                        cuenta.id
+                                                        ? COLOR_PRINCIPAL
+                                                        : COLOR_GRIS
+                                                }
+                                            />
+
+                                            <Text
+                                                style={[
+                                                    styles.selectionText,
+                                                    cuentaDestinoId ===
+                                                    cuenta.id &&
+                                                    styles.selectionTextActive,
+                                                ]}
+                                            >
+                                                {cuenta.nombre}
+                                            </Text>
+
+                                        </TouchableOpacity>
+
+                                    ))}
+
+                            </ScrollView>
+
+
+                            <Text style={styles.inputLabel}>
+                                Monto
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="$ 0.00"
+                                placeholderTextColor="#A0A6A3"
+                                value={
+                                    montoTransferencia
+                                }
+                                onChangeText={
+                                    setMontoTransferencia
+                                }
+                                keyboardType="decimal-pad"
+                            />
+
+
+                            <Text style={styles.inputLabel}>
+                                Descripción
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ej: Pasar dinero a mi cuenta de ahorros"
+                                placeholderTextColor="#A0A6A3"
+                                value={
+                                    descripcionTransferencia
+                                }
+                                onChangeText={
+                                    setDescripcionTransferencia
+                                }
+                            />
+
+
+                            <TouchableOpacity
                                 style={
-                                    styles.modalClose
+                                    styles.primaryButton
+                                }
+                                onPress={
+                                    realizarTransferencia
                                 }
                             >
 
                                 <Ionicons
-                                    name="close"
-                                    size={22}
-                                    color="#555"
+                                    name="swap-horizontal"
+                                    size={20}
+                                    color="#FFFFFF"
                                 />
 
+                                <Text
+                                    style={
+                                        styles.primaryButtonText
+                                    }
+                                >
+                                    Realizar transferencia
+                                </Text>
+
                             </TouchableOpacity>
-
-                        </View>
-
-
-                        <Text style={styles.inputLabel}>
-                            Desde
-                        </Text>
-
-
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={
-                                false
-                            }
-                            style={styles.selectionScroll}
-                        >
-
-                            {cuentas.map((cuenta) => (
-
-                                <TouchableOpacity
-                                    key={cuenta.id}
-                                    style={[
-                                        styles.selectionChip,
-                                        cuentaOrigenId ===
-                                            cuenta.id &&
-                                            styles.selectionChipActive,
-                                    ]}
-                                    onPress={() =>
-                                        setCuentaOrigenId(
-                                            cuenta.id
-                                        )
-                                    }
-                                >
-
-                                    <Ionicons
-                                        name={obtenerIconoCuenta(
-                                            cuenta.tipo
-                                        )}
-                                        size={17}
-                                        color={
-                                            cuentaOrigenId ===
-                                            cuenta.id
-                                                ? COLOR_PRINCIPAL
-                                                : COLOR_GRIS
-                                        }
-                                    />
-
-                                    <Text
-                                        style={[
-                                            styles.selectionText,
-                                            cuentaOrigenId ===
-                                                cuenta.id &&
-                                                styles.selectionTextActive,
-                                        ]}
-                                    >
-                                        {cuenta.nombre}
-                                    </Text>
-
-                                </TouchableOpacity>
-
-                            ))}
-
-                        </ScrollView>
-
-
-                        <Text style={styles.inputLabel}>
-                            Hacia
-                        </Text>
-
-
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={
-                                false
-                            }
-                            style={styles.selectionScroll}
-                        >
-
-                            {cuentas.map((cuenta) => (
-
-                                <TouchableOpacity
-                                    key={cuenta.id}
-                                    style={[
-                                        styles.selectionChip,
-                                        cuentaDestinoId ===
-                                            cuenta.id &&
-                                            styles.selectionChipActive,
-                                    ]}
-                                    onPress={() =>
-                                        setCuentaDestinoId(
-                                            cuenta.id
-                                        )
-                                    }
-                                >
-
-                                    <Ionicons
-                                        name={obtenerIconoCuenta(
-                                            cuenta.tipo
-                                        )}
-                                        size={17}
-                                        color={
-                                            cuentaDestinoId ===
-                                            cuenta.id
-                                                ? COLOR_PRINCIPAL
-                                                : COLOR_GRIS
-                                        }
-                                    />
-
-                                    <Text
-                                        style={[
-                                            styles.selectionText,
-                                            cuentaDestinoId ===
-                                                cuenta.id &&
-                                                styles.selectionTextActive,
-                                        ]}
-                                    >
-                                        {cuenta.nombre}
-                                    </Text>
-
-                                </TouchableOpacity>
-
-                            ))}
-
-                        </ScrollView>
-
-
-                        <Text style={styles.inputLabel}>
-                            Monto
-                        </Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="$ 0.00"
-                            placeholderTextColor="#A0A6A3"
-                            value={
-                                montoTransferencia
-                            }
-                            onChangeText={
-                                setMontoTransferencia
-                            }
-                            keyboardType="decimal-pad"
-                        />
-
-
-                        <Text style={styles.inputLabel}>
-                            Descripción
-                        </Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ej: Pasar dinero a mi cuenta de ahorros"
-                            placeholderTextColor="#A0A6A3"
-                            value={
-                                descripcionTransferencia
-                            }
-                            onChangeText={
-                                setDescripcionTransferencia
-                            }
-                        />
-
-
-                        <TouchableOpacity
-                            style={
-                                styles.primaryButton
-                            }
-                            onPress={
-                                realizarTransferencia
-                            }
-                        >
-
-                            <Ionicons
-                                name="swap-horizontal"
-                                size={20}
-                                color="#FFFFFF"
-                            />
-
-                            <Text
-                                style={
-                                    styles.primaryButtonText
-                                }
-                            >
-                                Realizar transferencia
-                            </Text>
-
-                        </TouchableOpacity>
 
                         </ScrollView>
 
@@ -2838,183 +2958,183 @@ export default function CuentasYEfectivoScreen({
                             }
                         >
 
-                        <View style={styles.modalHeader}>
+                            <View style={styles.modalHeader}>
 
-                            <View>
+                                <View>
+
+                                    <Text
+                                        style={
+                                            styles.modalTitle
+                                        }
+                                    >
+                                        Retiro de cajero
+                                    </Text>
+
+                                    <Text
+                                        style={
+                                            styles.modalSubtitle
+                                        }
+                                    >
+                                        Banco → Efectivo
+                                    </Text>
+
+                                </View>
+
+
+                                <TouchableOpacity
+                                    onPress={() => {
+
+                                        setModalRetiroVisible(
+                                            false
+                                        );
+
+                                        setMontoRetiro('');
+                                        setCuentaRetiroId('');
+
+                                    }}
+                                    style={
+                                        styles.modalClose
+                                    }
+                                >
+
+                                    <Ionicons
+                                        name="close"
+                                        size={22}
+                                        color="#555"
+                                    />
+
+                                </TouchableOpacity>
+
+                            </View>
+
+
+                            <View style={styles.explanationCard}>
+
+                                <Ionicons
+                                    name="information-circle-outline"
+                                    size={20}
+                                    color={COLOR_PRINCIPAL}
+                                />
 
                                 <Text
                                     style={
-                                        styles.modalTitle
+                                        styles.explanationText
                                     }
                                 >
-                                    Retiro de cajero
-                                </Text>
-
-                                <Text
-                                    style={
-                                        styles.modalSubtitle
-                                    }
-                                >
-                                    Banco → Efectivo
+                                    Este retiro no se registrará
+                                    como gasto. El dinero solamente
+                                    pasará de tu banco a efectivo.
                                 </Text>
 
                             </View>
 
 
+                            <Text style={styles.inputLabel}>
+                                Banco
+                            </Text>
+
+
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={
+                                    false
+                                }
+                            >
+
+                                {cuentas
+                                    .filter(
+                                        cuenta =>
+                                            cuenta.tipo ===
+                                            'banco'
+                                    )
+                                    .map((cuenta) => (
+
+                                        <TouchableOpacity
+                                            key={
+                                                cuenta.id
+                                            }
+                                            style={[
+                                                styles.selectionChip,
+                                                cuentaRetiroId ===
+                                                cuenta.id &&
+                                                styles.selectionChipActive,
+                                            ]}
+                                            onPress={() =>
+                                                setCuentaRetiroId(
+                                                    cuenta.id
+                                                )
+                                            }
+                                        >
+
+                                            <Ionicons
+                                                name="business-outline"
+                                                size={17}
+                                                color={
+                                                    cuentaRetiroId ===
+                                                        cuenta.id
+                                                        ? COLOR_PRINCIPAL
+                                                        : COLOR_GRIS
+                                                }
+                                            />
+
+                                            <Text
+                                                style={[
+                                                    styles.selectionText,
+                                                    cuentaRetiroId ===
+                                                    cuenta.id &&
+                                                    styles.selectionTextActive,
+                                                ]}
+                                            >
+                                                {cuenta.nombre}
+                                            </Text>
+
+                                        </TouchableOpacity>
+
+                                    ))}
+
+                            </ScrollView>
+
+
+                            <Text style={styles.inputLabel}>
+                                Monto a retirar
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="$ 0.00"
+                                placeholderTextColor="#A0A6A3"
+                                value={montoRetiro}
+                                onChangeText={
+                                    setMontoRetiro
+                                }
+                                keyboardType="decimal-pad"
+                            />
+
+
                             <TouchableOpacity
-                                onPress={() => {
-
-                                    setModalRetiroVisible(
-                                        false
-                                    );
-
-                                    setMontoRetiro('');
-                                    setCuentaRetiroId('');
-
-                                }}
                                 style={
-                                    styles.modalClose
+                                    styles.primaryButton
+                                }
+                                onPress={
+                                    realizarRetiro
                                 }
                             >
 
                                 <Ionicons
-                                    name="close"
-                                    size={22}
-                                    color="#555"
+                                    name="cash-outline"
+                                    size={20}
+                                    color="#FFFFFF"
                                 />
 
+                                <Text
+                                    style={
+                                        styles.primaryButtonText
+                                    }
+                                >
+                                    Registrar retiro
+                                </Text>
+
                             </TouchableOpacity>
-
-                        </View>
-
-
-                        <View style={styles.explanationCard}>
-
-                            <Ionicons
-                                name="information-circle-outline"
-                                size={20}
-                                color={COLOR_PRINCIPAL}
-                            />
-
-                            <Text
-                                style={
-                                    styles.explanationText
-                                }
-                            >
-                                Este retiro no se registrará
-                                como gasto. El dinero solamente
-                                pasará de tu banco a efectivo.
-                            </Text>
-
-                        </View>
-
-
-                        <Text style={styles.inputLabel}>
-                            Banco
-                        </Text>
-
-
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={
-                                false
-                            }
-                        >
-
-                            {cuentas
-                                .filter(
-                                    cuenta =>
-                                        cuenta.tipo ===
-                                        'banco'
-                                )
-                                .map((cuenta) => (
-
-                                    <TouchableOpacity
-                                        key={
-                                            cuenta.id
-                                        }
-                                        style={[
-                                            styles.selectionChip,
-                                            cuentaRetiroId ===
-                                                cuenta.id &&
-                                                styles.selectionChipActive,
-                                        ]}
-                                        onPress={() =>
-                                            setCuentaRetiroId(
-                                                cuenta.id
-                                            )
-                                        }
-                                    >
-
-                                        <Ionicons
-                                            name="business-outline"
-                                            size={17}
-                                            color={
-                                                cuentaRetiroId ===
-                                                cuenta.id
-                                                    ? COLOR_PRINCIPAL
-                                                    : COLOR_GRIS
-                                            }
-                                        />
-
-                                        <Text
-                                            style={[
-                                                styles.selectionText,
-                                                cuentaRetiroId ===
-                                                    cuenta.id &&
-                                                    styles.selectionTextActive,
-                                            ]}
-                                        >
-                                            {cuenta.nombre}
-                                        </Text>
-
-                                    </TouchableOpacity>
-
-                                ))}
-
-                        </ScrollView>
-
-
-                        <Text style={styles.inputLabel}>
-                            Monto a retirar
-                        </Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="$ 0.00"
-                            placeholderTextColor="#A0A6A3"
-                            value={montoRetiro}
-                            onChangeText={
-                                setMontoRetiro
-                            }
-                            keyboardType="decimal-pad"
-                        />
-
-
-                        <TouchableOpacity
-                            style={
-                                styles.primaryButton
-                            }
-                            onPress={
-                                realizarRetiro
-                            }
-                        >
-
-                            <Ionicons
-                                name="cash-outline"
-                                size={20}
-                                color="#FFFFFF"
-                            />
-
-                            <Text
-                                style={
-                                    styles.primaryButtonText
-                                }
-                            >
-                                Registrar retiro
-                            </Text>
-
-                        </TouchableOpacity>
 
                         </ScrollView>
 
@@ -3070,184 +3190,184 @@ export default function CuentasYEfectivoScreen({
                             }
                         >
 
-                        <View style={styles.modalHeader}>
+                            <View style={styles.modalHeader}>
 
-                            <View>
+                                <View>
+
+                                    <Text
+                                        style={
+                                            styles.modalTitle
+                                        }
+                                    >
+                                        Depositar efectivo
+                                    </Text>
+
+                                    <Text
+                                        style={
+                                            styles.modalSubtitle
+                                        }
+                                    >
+                                        Efectivo → Banco
+                                    </Text>
+
+                                </View>
+
+
+                                <TouchableOpacity
+                                    onPress={() => {
+
+                                        setModalDepositoVisible(
+                                            false
+                                        );
+
+                                        setMontoDeposito('');
+                                        setCuentaDepositoId('');
+
+                                    }}
+                                    style={
+                                        styles.modalClose
+                                    }
+                                >
+
+                                    <Ionicons
+                                        name="close"
+                                        size={22}
+                                        color="#555"
+                                    />
+
+                                </TouchableOpacity>
+
+                            </View>
+
+
+                            <View style={styles.explanationCard}>
+
+                                <Ionicons
+                                    name="information-circle-outline"
+                                    size={20}
+                                    color={COLOR_PRINCIPAL}
+                                />
 
                                 <Text
                                     style={
-                                        styles.modalTitle
+                                        styles.explanationText
                                     }
                                 >
-                                    Depositar efectivo
-                                </Text>
-
-                                <Text
-                                    style={
-                                        styles.modalSubtitle
-                                    }
-                                >
-                                    Efectivo → Banco
+                                    El efectivo disminuirá y el
+                                    saldo del banco aumentará.
                                 </Text>
 
                             </View>
 
 
+                            <Text style={styles.inputLabel}>
+                                Banco
+                            </Text>
+
+
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={
+                                    false
+                                }
+                            >
+
+                                {cuentas
+                                    .filter(
+                                        cuenta =>
+                                            cuenta.tipo ===
+                                            'banco'
+                                    )
+                                    .map((cuenta) => (
+
+                                        <TouchableOpacity
+                                            key={
+                                                cuenta.id
+                                            }
+                                            style={[
+                                                styles.selectionChip,
+                                                cuentaDepositoId ===
+                                                cuenta.id &&
+                                                styles.selectionChipActive,
+                                            ]}
+                                            onPress={() =>
+                                                setCuentaDepositoId(
+                                                    cuenta.id
+                                                )
+                                            }
+                                        >
+
+                                            <Ionicons
+                                                name="business-outline"
+                                                size={17}
+                                                color={
+                                                    cuentaDepositoId ===
+                                                        cuenta.id
+                                                        ? COLOR_PRINCIPAL
+                                                        : COLOR_GRIS
+                                                }
+                                            />
+
+                                            <Text
+                                                style={[
+                                                    styles.selectionText,
+                                                    cuentaDepositoId ===
+                                                    cuenta.id &&
+                                                    styles.selectionTextActive,
+                                                ]}
+                                            >
+                                                {cuenta.nombre}
+                                            </Text>
+
+                                        </TouchableOpacity>
+
+                                    ))}
+
+                            </ScrollView>
+
+
+                            <Text style={styles.inputLabel}>
+                                Monto a depositar
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="$ 0.00"
+                                placeholderTextColor="#A0A6A3"
+                                value={
+                                    montoDeposito
+                                }
+                                onChangeText={
+                                    setMontoDeposito
+                                }
+                                keyboardType="decimal-pad"
+                            />
+
+
                             <TouchableOpacity
-                                onPress={() => {
-
-                                    setModalDepositoVisible(
-                                        false
-                                    );
-
-                                    setMontoDeposito('');
-                                    setCuentaDepositoId('');
-
-                                }}
                                 style={
-                                    styles.modalClose
+                                    styles.primaryButton
+                                }
+                                onPress={
+                                    realizarDeposito
                                 }
                             >
 
                                 <Ionicons
-                                    name="close"
-                                    size={22}
-                                    color="#555"
+                                    name="arrow-up-circle-outline"
+                                    size={20}
+                                    color="#FFFFFF"
                                 />
 
+                                <Text
+                                    style={
+                                        styles.primaryButtonText
+                                    }
+                                >
+                                    Registrar depósito
+                                </Text>
+
                             </TouchableOpacity>
-
-                        </View>
-
-
-                        <View style={styles.explanationCard}>
-
-                            <Ionicons
-                                name="information-circle-outline"
-                                size={20}
-                                color={COLOR_PRINCIPAL}
-                            />
-
-                            <Text
-                                style={
-                                    styles.explanationText
-                                }
-                            >
-                                El efectivo disminuirá y el
-                                saldo del banco aumentará.
-                            </Text>
-
-                        </View>
-
-
-                        <Text style={styles.inputLabel}>
-                            Banco
-                        </Text>
-
-
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={
-                                false
-                            }
-                        >
-
-                            {cuentas
-                                .filter(
-                                    cuenta =>
-                                        cuenta.tipo ===
-                                        'banco'
-                                )
-                                .map((cuenta) => (
-
-                                    <TouchableOpacity
-                                        key={
-                                            cuenta.id
-                                        }
-                                        style={[
-                                            styles.selectionChip,
-                                            cuentaDepositoId ===
-                                                cuenta.id &&
-                                                styles.selectionChipActive,
-                                        ]}
-                                        onPress={() =>
-                                            setCuentaDepositoId(
-                                                cuenta.id
-                                            )
-                                        }
-                                    >
-
-                                        <Ionicons
-                                            name="business-outline"
-                                            size={17}
-                                            color={
-                                                cuentaDepositoId ===
-                                                cuenta.id
-                                                    ? COLOR_PRINCIPAL
-                                                    : COLOR_GRIS
-                                            }
-                                        />
-
-                                        <Text
-                                            style={[
-                                                styles.selectionText,
-                                                cuentaDepositoId ===
-                                                    cuenta.id &&
-                                                    styles.selectionTextActive,
-                                            ]}
-                                        >
-                                            {cuenta.nombre}
-                                        </Text>
-
-                                    </TouchableOpacity>
-
-                                ))}
-
-                        </ScrollView>
-
-
-                        <Text style={styles.inputLabel}>
-                            Monto a depositar
-                        </Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="$ 0.00"
-                            placeholderTextColor="#A0A6A3"
-                            value={
-                                montoDeposito
-                            }
-                            onChangeText={
-                                setMontoDeposito
-                            }
-                            keyboardType="decimal-pad"
-                        />
-
-
-                        <TouchableOpacity
-                            style={
-                                styles.primaryButton
-                            }
-                            onPress={
-                                realizarDeposito
-                            }
-                        >
-
-                            <Ionicons
-                                name="arrow-up-circle-outline"
-                                size={20}
-                                color="#FFFFFF"
-                            />
-
-                            <Text
-                                style={
-                                    styles.primaryButtonText
-                                }
-                            >
-                                Registrar depósito
-                            </Text>
-
-                        </TouchableOpacity>
 
                         </ScrollView>
 
@@ -3264,9 +3384,16 @@ export default function CuentasYEfectivoScreen({
 
 // ============================================================
 // ESTILOS
+// Es una función porque los colores de marca (PRINCIPAL,
+// OSCURO, MUY_SUAVE) dependen del tema elegido por el usuario
+// y pueden cambiar en cualquier momento.
 // ============================================================
 
-const styles = StyleSheet.create({
+const getStyles = (
+    COLOR_PRINCIPAL: string,
+    COLOR_OSCURO: string,
+    COLOR_MUY_SUAVE: string
+) => StyleSheet.create({
 
     root: {
         flex: 1,
@@ -3583,6 +3710,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 
+    accountDeleteButton: {
+        width: 30,
+        height: 30,
+        borderRadius: 9,
+        backgroundColor: '#FBEDED',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 6,
+    },
+
 
     // ========================================================
     // EMPTY
@@ -3808,12 +3945,8 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 24,
         paddingHorizontal: 20,
         paddingTop: 20,
-        // Deja siempre un espacio libre arriba (notch / status bar)
-        // para que el modal nunca quede pegado al filo de la pantalla.
         marginTop: 70,
         maxHeight: '82%',
-        // El propio contenido interno hace scroll, así el
-        // modal se ajusta y no lo tapa el teclado.
     },
 
     modalScrollContent: {
@@ -4002,6 +4135,24 @@ const styles = StyleSheet.create({
         fontSize: 10,
         lineHeight: 15,
         marginLeft: 8,
+    },
+    deleteButton: {
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: '#E8CACA',
+        backgroundColor: '#FFF7F7',
+        borderRadius: 12,
+        minHeight: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 8,
+    },
+
+    deleteButtonText: {
+        color: COLOR_ROJO,
+        fontSize: 14,
+        fontWeight: '700',
     },
 
 });

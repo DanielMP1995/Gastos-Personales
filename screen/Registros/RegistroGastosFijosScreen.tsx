@@ -26,6 +26,8 @@ import {
     remove,
 } from 'firebase/database';
 
+import { useTheme } from '../../context/ThemeContext';
+
 
 // ============================================================
 // TIPO DE GASTO
@@ -61,12 +63,23 @@ export default function RegistroGastosFijosScreen({
 }: any) {
 
     // ========================================================
+    // TEMA
+    // ========================================================
+
+    const {
+        colors,
+    } = useTheme();
+
+
+    // ========================================================
     // ESTADOS
     // ========================================================
 
-    const [nombreGasto, setNombreGasto] = useState('');
+    const [nombreGasto, setNombreGasto] =
+        useState('');
 
-    const [montoFijo, setMontoFijo] = useState('');
+    const [montoFijo, setMontoFijo] =
+        useState('');
 
     const [categoriaServicio, setCategoriaServicio] =
         useState('Luz');
@@ -105,24 +118,28 @@ export default function RegistroGastosFijosScreen({
     // CAMBIAR CATEGORÍA
     // ========================================================
 
-    function seleccionarCategoria(categoria: string) {
+    function seleccionarCategoria(
+        categoria: string
+    ) {
 
         setCategoriaServicio(categoria);
 
-        // Luz y agua normalmente son variables
         if (
             categoria === 'Luz' ||
             categoria === 'Agua'
         ) {
+
             setTipoMonto('variable');
+
         }
 
-        // Internet y alquiler normalmente son fijos
         if (
             categoria === 'Internet / Teléfono' ||
             categoria === 'Alquiler'
         ) {
+
             setTipoMonto('fijo');
+
         }
     }
 
@@ -142,80 +159,100 @@ export default function RegistroGastosFijosScreen({
             `usuarios/${usuarioActual.uid}`
         );
 
-        let unsubscribeGastos: (() => void) | undefined;
+        let unsubscribeGastos:
+            (() => void) | undefined;
 
-        const cargarGastosFijos = async () => {
 
-            try {
+        const cargarGastosFijos =
+            async () => {
 
-                const snapshot =
-                    await get(usuarioRef);
+                try {
 
-                if (!snapshot.exists()) {
-                    return;
-                }
+                    const snapshot =
+                        await get(usuarioRef);
 
-                const userData =
-                    snapshot.val();
-
-                const idPareja =
-                    userData.idPareja;
-
-                if (!idPareja) {
-                    return;
-                }
-
-                const fijosRef = ref(
-                    db,
-                    `parejas/${idPareja}/gastosFijos`
-                );
-
-                unsubscribeGastos = onValue(
-                    fijosRef,
-                    (snap) => {
-
-                        const data =
-                            snap.val();
-
-                        if (!data) {
-
-                            setGastosFijosRegistrados([]);
-
-                            return;
-                        }
-
-                        const lista: GastoFijo[] =
-                            Object.keys(data).map(
-                                (key) => ({
-                                    id: key,
-                                    ...data[key],
-                                    tipoMonto:
-                                        data[key]?.tipoMonto ||
-                                        (
-                                            data[key]?.categoria === 'Luz' ||
-                                            data[key]?.categoria === 'Agua'
-                                                ? 'variable'
-                                                : 'fijo'
-                                        ),
-                                })
-                            );
-
-                        setGastosFijosRegistrados(
-                            lista
-                        );
+                    if (!snapshot.exists()) {
+                        return;
                     }
-                );
 
-            } catch (error) {
+                    const userData =
+                        snapshot.val();
 
-                console.log(
-                    'Error cargando gastos fijos:',
-                    error
-                );
-            }
-        };
+                    const idPareja =
+                        userData.idPareja;
+
+                    if (!idPareja) {
+                        return;
+                    }
+
+
+                    const fijosRef =
+                        ref(
+                            db,
+                            `parejas/${idPareja}/gastosFijos`
+                        );
+
+
+                    unsubscribeGastos =
+                        onValue(
+                            fijosRef,
+                            (snap) => {
+
+                                const data =
+                                    snap.val();
+
+                                if (!data) {
+
+                                    setGastosFijosRegistrados(
+                                        []
+                                    );
+
+                                    return;
+                                }
+
+
+                                const lista:
+                                    GastoFijo[] =
+                                    Object.keys(data).map(
+                                        (key) => ({
+                                            id: key,
+                                            ...data[key],
+
+                                            tipoMonto:
+                                                data[key]
+                                                    ?.tipoMonto ||
+                                                (
+                                                    data[key]
+                                                        ?.categoria ===
+                                                        'Luz' ||
+                                                    data[key]
+                                                        ?.categoria ===
+                                                        'Agua'
+                                                        ? 'variable'
+                                                        : 'fijo'
+                                                ),
+                                        })
+                                    );
+
+
+                                setGastosFijosRegistrados(
+                                    lista
+                                );
+                            }
+                        );
+
+                } catch (error) {
+
+                    console.log(
+                        'Error cargando gastos fijos:',
+                        error
+                    );
+                }
+            };
+
 
         cargarGastosFijos();
+
 
         return () => {
 
@@ -277,10 +314,8 @@ export default function RegistroGastosFijosScreen({
 
 
         // ----------------------------------------------------
-        // VALIDAR MONTO
+        // VALIDAR MONTO FIJO
         // ----------------------------------------------------
-        // Para variables es opcional.
-        // Para fijos es obligatorio.
 
         if (
             tipoMonto === 'fijo' &&
@@ -300,7 +335,7 @@ export default function RegistroGastosFijosScreen({
 
 
         // ----------------------------------------------------
-        // SI ES VARIABLE Y NO HAY ESTIMADO
+        // VALIDAR MONTO VARIABLE
         // ----------------------------------------------------
 
         if (
@@ -338,13 +373,16 @@ export default function RegistroGastosFijosScreen({
 
         try {
 
-            const usuarioRef = ref(
-                db,
-                `usuarios/${usuarioActual.uid}`
-            );
+            const usuarioRef =
+                ref(
+                    db,
+                    `usuarios/${usuarioActual.uid}`
+                );
+
 
             const snapshot =
                 await get(usuarioRef);
+
 
             if (!snapshot.exists()) {
 
@@ -356,11 +394,14 @@ export default function RegistroGastosFijosScreen({
                 return;
             }
 
+
             const userData =
                 snapshot.val();
 
+
             const idPareja =
                 userData.idPareja;
+
 
             if (!idPareja) {
 
@@ -379,15 +420,19 @@ export default function RegistroGastosFijosScreen({
 
             if (editandoId) {
 
-                const gastoRef = ref(
-                    db,
-                    `parejas/${idPareja}/gastosFijos/${editandoId}`
-                );
+                const gastoRef =
+                    ref(
+                        db,
+                        `parejas/${idPareja}/gastosFijos/${editandoId}`
+                    );
+
 
                 await update(
                     gastoRef,
                     {
+
                         nombre,
+
                         categoria:
                             categoriaServicio,
 
@@ -398,7 +443,8 @@ export default function RegistroGastosFijosScreen({
 
                         tipoMonto,
 
-                        activo: true,
+                        activo:
+                            true,
 
                         fechaActualizacion:
                             new Date().toISOString(),
@@ -413,10 +459,12 @@ export default function RegistroGastosFijosScreen({
                     }
                 );
 
+
                 Alert.alert(
                     '¡Actualizado!',
                     'El gasto fue actualizado correctamente.'
                 );
+
 
                 limpiarFormulario();
 
@@ -428,10 +476,12 @@ export default function RegistroGastosFijosScreen({
             // NUEVO GASTO
             // =================================================
 
-            const fijosRef = ref(
-                db,
-                `parejas/${idPareja}/gastosFijos`
-            );
+            const fijosRef =
+                ref(
+                    db,
+                    `parejas/${idPareja}/gastosFijos`
+                );
+
 
             const nuevoFijoRef =
                 push(fijosRef);
@@ -483,6 +533,7 @@ export default function RegistroGastosFijosScreen({
                     : 'Gasto fijo configurado correctamente.'
             );
 
+
             limpiarFormulario();
 
         } catch (error: any) {
@@ -500,13 +551,19 @@ export default function RegistroGastosFijosScreen({
     // EDITAR
     // ========================================================
 
-    function editarGasto(gasto: GastoFijo) {
+    function editarGasto(
+        gasto: GastoFijo
+    ) {
 
-        setEditandoId(gasto.id);
+        setEditandoId(
+            gasto.id
+        );
+
 
         setNombreGasto(
             gasto.nombre || ''
         );
+
 
         setMontoFijo(
             gasto.monto
@@ -514,9 +571,11 @@ export default function RegistroGastosFijosScreen({
                 : ''
         );
 
+
         setCategoriaServicio(
             gasto.categoria || 'Otro'
         );
+
 
         setTipoMonto(
             gasto.tipoMonto ||
@@ -528,7 +587,7 @@ export default function RegistroGastosFijosScreen({
             )
         );
 
-        // Subir nuevamente al formulario
+
         setTimeout(() => {
 
             Alert.alert(
@@ -544,7 +603,9 @@ export default function RegistroGastosFijosScreen({
     // ELIMINAR
     // ========================================================
 
-    function eliminarGasto(gasto: GastoFijo) {
+    function eliminarGasto(
+        gasto: GastoFijo
+    ) {
 
         Alert.alert(
             'Eliminar gasto',
@@ -554,62 +615,83 @@ export default function RegistroGastosFijosScreen({
                     text: 'Cancelar',
                     style: 'cancel',
                 },
+
                 {
                     text: 'Eliminar',
                     style: 'destructive',
 
-                    onPress: async () => {
+                    onPress:
+                        async () => {
 
-                        if (!usuarioActual) {
-                            return;
-                        }
-
-                        try {
-
-                            const usuarioRef =
-                                ref(
-                                    db,
-                                    `usuarios/${usuarioActual.uid}`
-                                );
-
-                            const snapshot =
-                                await get(usuarioRef);
-
-                            if (!snapshot.exists()) {
+                            if (!usuarioActual) {
                                 return;
                             }
 
-                            const idPareja =
-                                snapshot.val()?.idPareja;
 
-                            if (!idPareja) {
-                                return;
-                            }
+                            try {
 
-                            const gastoRef =
-                                ref(
-                                    db,
-                                    `parejas/${idPareja}/gastosFijos/${gasto.id}`
+                                const usuarioRef =
+                                    ref(
+                                        db,
+                                        `usuarios/${usuarioActual.uid}`
+                                    );
+
+
+                                const snapshot =
+                                    await get(
+                                        usuarioRef
+                                    );
+
+
+                                if (
+                                    !snapshot.exists()
+                                ) {
+                                    return;
+                                }
+
+
+                                const idPareja =
+                                    snapshot.val()
+                                        ?.idPareja;
+
+
+                                if (!idPareja) {
+                                    return;
+                                }
+
+
+                                const gastoRef =
+                                    ref(
+                                        db,
+                                        `parejas/${idPareja}/gastosFijos/${gasto.id}`
+                                    );
+
+
+                                await remove(
+                                    gastoRef
                                 );
 
-                            await remove(gastoRef);
 
-                            if (
-                                editandoId ===
-                                gasto.id
+                                if (
+                                    editandoId ===
+                                    gasto.id
+                                ) {
+
+                                    limpiarFormulario();
+
+                                }
+
+                            } catch (
+                                error: any
                             ) {
-                                limpiarFormulario();
+
+                                Alert.alert(
+                                    'Error',
+                                    error?.message ||
+                                    'No se pudo eliminar el gasto.'
+                                );
                             }
-
-                        } catch (error: any) {
-
-                            Alert.alert(
-                                'Error',
-                                error?.message ||
-                                'No se pudo eliminar el gasto.'
-                            );
-                        }
-                    },
+                        },
                 },
             ]
         );
@@ -633,7 +715,13 @@ export default function RegistroGastosFijosScreen({
     return (
 
         <KeyboardAvoidingView
-            style={styles.rootContainer}
+            style={[
+                styles.rootContainer,
+                {
+                    backgroundColor:
+                        colors.veryLight,
+                },
+            ]}
             behavior={
                 Platform.OS === 'ios'
                     ? 'padding'
@@ -643,42 +731,69 @@ export default function RegistroGastosFijosScreen({
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.container}
-                showsVerticalScrollIndicator={false}
+                contentContainerStyle={
+                    styles.container
+                }
+                showsVerticalScrollIndicator={
+                    false
+                }
                 keyboardShouldPersistTaps="handled"
             >
+
 
                 {/* ================================================= */}
                 {/* CABECERA */}
                 {/* ================================================= */}
 
-                <View style={styles.topHeader}>
+                <View
+                    style={[
+                        styles.topHeader,
+                        {
+                            backgroundColor:
+                                colors.primary,
+                        },
+                    ]}
+                >
 
                     <TouchableOpacity
-                        style={styles.backButton}
+                        style={[
+                            styles.backButton,
+                            {
+                                backgroundColor:
+                                    'rgba(255,255,255,0.15)',
+
+                                borderColor:
+                                    'rgba(255,255,255,0.20)',
+                            },
+                        ]}
                         onPress={() =>
                             navigation.goBack()
                         }
+                        activeOpacity={0.8}
                     >
 
-                        <Text
-                            style={styles.backButtonText}
-                        >
-                            ←
-                        </Text>
+                        <Ionicons
+                            name="arrow-back"
+                            size={22}
+                            color="#FFFFFF"
+                        />
 
                     </TouchableOpacity>
 
 
                     <Text
-                        style={styles.topHeaderTitle}
+                        style={
+                            styles.topHeaderTitle
+                        }
                     >
                         Gastos Recurrentes
                     </Text>
 
 
                     <View
-                        style={{ width: 40 }}
+                        style={{
+                            width: 40,
+                        }}
                     />
 
                 </View>
@@ -688,14 +803,30 @@ export default function RegistroGastosFijosScreen({
                 {/* HERO */}
                 {/* ================================================= */}
 
-                <View style={styles.heroCard}>
+                <View
+                    style={[
+                        styles.heroCard,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
                     <View
-                        style={styles.heroIconContainer}
+                        style={[
+                            styles.heroIconContainer,
+                            {
+                                backgroundColor:
+                                    colors.veryLight,
+                            },
+                        ]}
                     >
 
                         <Text
-                            style={styles.heroEmoji}
+                            style={
+                                styles.heroEmoji
+                            }
                         >
                             🔄
                         </Text>
@@ -704,17 +835,28 @@ export default function RegistroGastosFijosScreen({
 
 
                     <View
-                        style={styles.heroTextContainer}
+                        style={
+                            styles.heroTextContainer
+                        }
                     >
 
                         <Text
-                            style={styles.heroTitle}
+                            style={[
+                                styles.heroTitle,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
                         >
                             Gastos Recurrentes
                         </Text>
 
+
                         <Text
-                            style={styles.heroSubtitle}
+                            style={
+                                styles.heroSubtitle
+                            }
                         >
                             Administra servicios fijos y variables de cada mes
                         </Text>
@@ -728,20 +870,41 @@ export default function RegistroGastosFijosScreen({
                 {/* TIPO DE SERVICIO */}
                 {/* ================================================= */}
 
-                <View style={styles.sectionHeader}>
+                <View
+                    style={
+                        styles.sectionHeader
+                    }
+                >
 
-                    <View style={styles.stepBadge}>
+                    <View
+                        style={[
+                            styles.stepBadge,
+                            {
+                                backgroundColor:
+                                    colors.primary,
+                            },
+                        ]}
+                    >
 
                         <Text
-                            style={styles.stepBadgeText}
+                            style={
+                                styles.stepBadgeText
+                            }
                         >
                             01
                         </Text>
 
                     </View>
 
+
                     <Text
-                        style={styles.sectionTitle}
+                        style={[
+                            styles.sectionTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
                     >
                         Tipo de Servicio
                     </Text>
@@ -751,7 +914,9 @@ export default function RegistroGastosFijosScreen({
 
                 <ScrollView
                     horizontal
-                    showsHorizontalScrollIndicator={false}
+                    showsHorizontalScrollIndicator={
+                        false
+                    }
                     contentContainerStyle={
                         styles.rowCat
                     }
@@ -764,14 +929,21 @@ export default function RegistroGastosFijosScreen({
                                 categoriaServicio ===
                                 cat;
 
+
                             return (
 
                                 <TouchableOpacity
                                     key={cat}
                                     style={[
                                         styles.catBtn,
-                                        isSelected &&
-                                            styles.catBtnActive,
+
+                                        isSelected && {
+                                            backgroundColor:
+                                                colors.veryLight,
+
+                                            borderColor:
+                                                colors.primary,
+                                        },
                                     ]}
                                     onPress={() =>
                                         seleccionarCategoria(
@@ -784,14 +956,21 @@ export default function RegistroGastosFijosScreen({
                                     <Text
                                         style={[
                                             styles.catText,
-                                            isSelected &&
-                                                styles.catTextActive,
+
+                                            isSelected && {
+                                                color:
+                                                    colors.primary,
+
+                                                fontWeight:
+                                                    'bold',
+                                            },
                                         ]}
                                     >
                                         {cat}
                                     </Text>
 
                                 </TouchableOpacity>
+
                             );
                         }
                     )}
@@ -803,20 +982,41 @@ export default function RegistroGastosFijosScreen({
                 {/* TIPO DE MONTO */}
                 {/* ================================================= */}
 
-                <View style={styles.sectionHeader}>
+                <View
+                    style={
+                        styles.sectionHeader
+                    }
+                >
 
-                    <View style={styles.stepBadge}>
+                    <View
+                        style={[
+                            styles.stepBadge,
+                            {
+                                backgroundColor:
+                                    colors.primary,
+                            },
+                        ]}
+                    >
 
                         <Text
-                            style={styles.stepBadgeText}
+                            style={
+                                styles.stepBadgeText
+                            }
                         >
                             02
                         </Text>
 
                     </View>
 
+
                     <Text
-                        style={styles.sectionTitle}
+                        style={[
+                            styles.sectionTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
                     >
                         Tipo de Monto
                     </Text>
@@ -824,15 +1024,27 @@ export default function RegistroGastosFijosScreen({
                 </View>
 
 
-                <View style={styles.typeRow}>
+                <View
+                    style={
+                        styles.typeRow
+                    }
+                >
 
+                    {/* ================================================= */}
                     {/* FIJO */}
+                    {/* ================================================= */}
 
                     <TouchableOpacity
                         style={[
                             styles.typeCard,
-                            tipoMonto === 'fijo' &&
-                                styles.typeCardSelected,
+
+                            tipoMonto === 'fijo' && {
+                                backgroundColor:
+                                    colors.veryLight,
+
+                                borderColor:
+                                    colors.primary,
+                            },
                         ]}
                         onPress={() =>
                             setTipoMonto('fijo')
@@ -841,27 +1053,38 @@ export default function RegistroGastosFijosScreen({
                     >
 
                         <Text
-                            style={styles.typeEmoji}
+                            style={
+                                styles.typeEmoji
+                            }
                         >
                             📌
                         </Text>
 
+
                         <View
-                            style={styles.typeInfo}
+                            style={
+                                styles.typeInfo
+                            }
                         >
 
                             <Text
                                 style={[
                                     styles.typeTitle,
-                                    tipoMonto === 'fijo' &&
-                                        styles.typeTitleSelected,
+
+                                    tipoMonto === 'fijo' && {
+                                        color:
+                                            colors.primary,
+                                    },
                                 ]}
                             >
                                 Monto Fijo
                             </Text>
 
+
                             <Text
-                                style={styles.typeDescription}
+                                style={
+                                    styles.typeDescription
+                                }
                             >
                                 El valor normalmente no cambia
                             </Text>
@@ -871,13 +1094,21 @@ export default function RegistroGastosFijosScreen({
                     </TouchableOpacity>
 
 
+                    {/* ================================================= */}
                     {/* VARIABLE */}
+                    {/* ================================================= */}
 
                     <TouchableOpacity
                         style={[
                             styles.typeCard,
-                            tipoMonto === 'variable' &&
-                                styles.typeCardSelected,
+
+                            tipoMonto === 'variable' && {
+                                backgroundColor:
+                                    colors.veryLight,
+
+                                borderColor:
+                                    colors.primary,
+                            },
                         ]}
                         onPress={() =>
                             setTipoMonto('variable')
@@ -886,27 +1117,38 @@ export default function RegistroGastosFijosScreen({
                     >
 
                         <Text
-                            style={styles.typeEmoji}
+                            style={
+                                styles.typeEmoji
+                            }
                         >
                             📊
                         </Text>
 
+
                         <View
-                            style={styles.typeInfo}
+                            style={
+                                styles.typeInfo
+                            }
                         >
 
                             <Text
                                 style={[
                                     styles.typeTitle,
-                                    tipoMonto === 'variable' &&
-                                        styles.typeTitleSelected,
+
+                                    tipoMonto === 'variable' && {
+                                        color:
+                                            colors.primary,
+                                    },
                                 ]}
                             >
                                 Monto Variable
                             </Text>
 
+
                             <Text
-                                style={styles.typeDescription}
+                                style={
+                                    styles.typeDescription
+                                }
                             >
                                 Cambia según el consumo
                             </Text>
@@ -922,20 +1164,41 @@ export default function RegistroGastosFijosScreen({
                 {/* FORMULARIO */}
                 {/* ================================================= */}
 
-                <View style={styles.sectionHeader}>
+                <View
+                    style={
+                        styles.sectionHeader
+                    }
+                >
 
-                    <View style={styles.stepBadge}>
+                    <View
+                        style={[
+                            styles.stepBadge,
+                            {
+                                backgroundColor:
+                                    colors.primary,
+                            },
+                        ]}
+                    >
 
                         <Text
-                            style={styles.stepBadgeText}
+                            style={
+                                styles.stepBadgeText
+                            }
                         >
                             03
                         </Text>
 
                     </View>
 
+
                     <Text
-                        style={styles.sectionTitle}
+                        style={[
+                            styles.sectionTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
                     >
                         Detalles del Gasto
                     </Text>
@@ -943,22 +1206,45 @@ export default function RegistroGastosFijosScreen({
                 </View>
 
 
-                <View style={styles.formCard}>
+                <View
+                    style={[
+                        styles.formCard,
+                        {
+                            borderColor:
+                                colors.light,
+                        },
+                    ]}
+                >
 
-                    <Text style={styles.label}>
+                    <Text
+                        style={
+                            styles.label
+                        }
+                    >
                         Nombre / Identificador
                     </Text>
 
+
                     <TextInput
-                        style={styles.input}
+                        style={
+                            styles.input
+                        }
                         placeholder="Ej. Luz de casa / Plan de Claro"
                         placeholderTextColor="#94A3B8"
-                        value={nombreGasto}
-                        onChangeText={setNombreGasto}
+                        value={
+                            nombreGasto
+                        }
+                        onChangeText={
+                            setNombreGasto
+                        }
                     />
 
 
-                    <Text style={styles.label}>
+                    <Text
+                        style={
+                            styles.label
+                        }
+                    >
 
                         {tipoMonto === 'variable'
                             ? 'Monto Estimado Mensual ($) — Opcional'
@@ -968,23 +1254,33 @@ export default function RegistroGastosFijosScreen({
 
 
                     <TextInput
-                        style={styles.input}
-                        placeholder={
-                            tipoMonto === 'variable'
-                                ? 'Ej. 35.00'
-                                : 'Ej. 35.00'
+                        style={
+                            styles.input
                         }
+                        placeholder="Ej. 35.00"
                         placeholderTextColor="#94A3B8"
                         keyboardType="numeric"
-                        value={montoFijo}
-                        onChangeText={setMontoFijo}
+                        value={
+                            montoFijo
+                        }
+                        onChangeText={
+                            setMontoFijo
+                        }
                     />
 
 
+                    {/* ================================================= */}
                     {/* EXPLICACIÓN */}
+                    {/* ================================================= */}
 
                     <View
-                        style={styles.infoBox}
+                        style={[
+                            styles.infoBox,
+                            {
+                                backgroundColor:
+                                    colors.veryLight,
+                            },
+                        ]}
                     >
 
                         <Ionicons
@@ -994,11 +1290,20 @@ export default function RegistroGastosFijosScreen({
                                     : 'checkmark-circle-outline'
                             }
                             size={19}
-                            color="#059669"
+                            color={
+                                colors.primary
+                            }
                         />
 
+
                         <Text
-                            style={styles.infoText}
+                            style={[
+                                styles.infoText,
+                                {
+                                    color:
+                                        colors.dark,
+                                },
+                            ]}
                         >
 
                             {tipoMonto === 'variable'
@@ -1010,10 +1315,21 @@ export default function RegistroGastosFijosScreen({
                     </View>
 
 
-                    {/* BOTÓN */}
+                    {/* ================================================= */}
+                    {/* BOTÓN GUARDAR */}
+                    {/* ================================================= */}
 
                     <TouchableOpacity
-                        style={styles.btnGuardar}
+                        style={[
+                            styles.btnGuardar,
+                            {
+                                backgroundColor:
+                                    colors.primary,
+
+                                shadowColor:
+                                    colors.primary,
+                            },
+                        ]}
                         onPress={
                             guardarGastoFijo
                         }
@@ -1027,11 +1343,12 @@ export default function RegistroGastosFijosScreen({
                                     : 'add-circle-outline'
                             }
                             size={18}
-                            color="white"
+                            color="#FFFFFF"
                             style={{
                                 marginRight: 6,
                             }}
                         />
+
 
                         <Text
                             style={
@@ -1048,7 +1365,9 @@ export default function RegistroGastosFijosScreen({
                     </TouchableOpacity>
 
 
+                    {/* ================================================= */}
                     {/* CANCELAR */}
+                    {/* ================================================= */}
 
                     {editandoId && (
 
@@ -1080,20 +1399,41 @@ export default function RegistroGastosFijosScreen({
                 {/* LISTA */}
                 {/* ================================================= */}
 
-                <View style={styles.sectionHeader}>
+                <View
+                    style={
+                        styles.sectionHeader
+                    }
+                >
 
-                    <View style={styles.stepBadge}>
+                    <View
+                        style={[
+                            styles.stepBadge,
+                            {
+                                backgroundColor:
+                                    colors.primary,
+                            },
+                        ]}
+                    >
 
                         <Text
-                            style={styles.stepBadgeText}
+                            style={
+                                styles.stepBadgeText
+                            }
                         >
                             04
                         </Text>
 
                     </View>
 
+
                     <Text
-                        style={styles.sectionTitle}
+                        style={[
+                            styles.sectionTitle,
+                            {
+                                color:
+                                    colors.dark,
+                            },
+                        ]}
                     >
                         Gastos Registrados
                     </Text>
@@ -1104,17 +1444,28 @@ export default function RegistroGastosFijosScreen({
                 {gastosFijosRegistrados.length === 0 ? (
 
                     <View
-                        style={styles.vacioCard}
+                        style={[
+                            styles.vacioCard,
+                            {
+                                borderColor:
+                                    colors.light,
+                            },
+                        ]}
                     >
 
                         <Ionicons
                             name="information-circle-outline"
                             size={22}
-                            color="#059669"
+                            color={
+                                colors.primary
+                            }
                         />
 
+
                         <Text
-                            style={styles.vacioTexto}
+                            style={
+                                styles.vacioTexto
+                            }
                         >
                             Aún no hay gastos recurrentes configurados.
                         </Text>
@@ -1135,9 +1486,13 @@ export default function RegistroGastosFijosScreen({
 
                                 <View
                                     key={item.id}
-                                    style={
-                                        styles.itemCard
-                                    }
+                                    style={[
+                                        styles.itemCard,
+                                        {
+                                            borderColor:
+                                                colors.light,
+                                        },
+                                    ]}
                                 >
 
                                     <View
@@ -1153,17 +1508,23 @@ export default function RegistroGastosFijosScreen({
                                         >
 
                                             <Text
-                                                style={
-                                                    styles.itemNombre
-                                                }
+                                                style={[
+                                                    styles.itemNombre,
+                                                    {
+                                                        color:
+                                                            colors.dark,
+                                                    },
+                                                ]}
                                             >
                                                 {item.nombre ||
                                                     'Servicio sin nombre'}
                                             </Text>
 
+
                                             <View
                                                 style={[
                                                     styles.tipoBadge,
+
                                                     esVariable &&
                                                         styles.tipoBadgeVariable,
                                                 ]}
@@ -1195,9 +1556,13 @@ export default function RegistroGastosFijosScreen({
 
 
                                         <Text
-                                            style={
-                                                styles.itemEstado
-                                            }
+                                            style={[
+                                                styles.itemEstado,
+                                                {
+                                                    color:
+                                                        colors.primary,
+                                                },
+                                            ]}
                                         >
                                             {item.activo === false
                                                 ? 'Inactivo'
@@ -1214,9 +1579,13 @@ export default function RegistroGastosFijosScreen({
                                     >
 
                                         <Text
-                                            style={
-                                                styles.itemMonto
-                                            }
+                                            style={[
+                                                styles.itemMonto,
+                                                {
+                                                    color:
+                                                        colors.primary,
+                                                },
+                                            ]}
                                         >
 
                                             {esVariable &&
@@ -1239,9 +1608,13 @@ export default function RegistroGastosFijosScreen({
                                             {/* EDITAR */}
 
                                             <TouchableOpacity
-                                                style={
-                                                    styles.actionButton
-                                                }
+                                                style={[
+                                                    styles.actionButton,
+                                                    {
+                                                        backgroundColor:
+                                                            colors.veryLight,
+                                                    },
+                                                ]}
                                                 onPress={() =>
                                                     editarGasto(
                                                         item
@@ -1252,7 +1625,9 @@ export default function RegistroGastosFijosScreen({
                                                 <Ionicons
                                                     name="create-outline"
                                                     size={17}
-                                                    color="#059669"
+                                                    color={
+                                                        colors.primary
+                                                    }
                                                 />
 
                                             </TouchableOpacity>
@@ -1285,15 +1660,20 @@ export default function RegistroGastosFijosScreen({
                                     </View>
 
                                 </View>
+
                             );
+
                         }
                     )
+
                 )}
 
             </ScrollView>
 
         </KeyboardAvoidingView>
+
     );
+
 }
 
 
@@ -1305,12 +1685,13 @@ const styles = StyleSheet.create({
 
     rootContainer: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
+
 
     scrollView: {
         flex: 1,
     },
+
 
     container: {
         paddingHorizontal: 20,
@@ -1331,37 +1712,26 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 16,
     },
+
 
     backButton: {
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
     },
 
-    backButtonText: {
-        color: '#1E293B',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
 
     topHeaderTitle: {
-        color: '#1E293B',
+        color: '#FFFFFF',
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
     },
 
 
@@ -1377,7 +1747,6 @@ const styles = StyleSheet.create({
         padding: 18,
         marginBottom: 24,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -1388,30 +1757,33 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
 
+
     heroIconContainer: {
         width: 50,
         height: 50,
         borderRadius: 15,
-        backgroundColor: '#ECFDF5',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
     },
 
+
     heroEmoji: {
         fontSize: 24,
     },
+
 
     heroTextContainer: {
         flex: 1,
     },
 
+
     heroTitle: {
-        color: '#1E293B',
         fontSize: 17,
         fontWeight: 'bold',
         marginBottom: 3,
     },
+
 
     heroSubtitle: {
         color: '#64748B',
@@ -1431,15 +1803,16 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
 
+
     stepBadge: {
         width: 26,
         height: 26,
         borderRadius: 8,
-        backgroundColor: '#059669',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 10,
     },
+
 
     stepBadgeText: {
         color: '#FFFFFF',
@@ -1447,8 +1820,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 
+
     sectionTitle: {
-        color: '#1E293B',
         fontSize: 15,
         fontWeight: '600',
     },
@@ -1464,6 +1837,7 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
 
+
     catBtn: {
         paddingVertical: 10,
         paddingHorizontal: 16,
@@ -1474,21 +1848,11 @@ const styles = StyleSheet.create({
         borderColor: '#E2E8F0',
     },
 
-    catBtnActive: {
-        backgroundColor: '#ECFDF5',
-        borderColor: '#059669',
-    },
 
     catText: {
         color: '#64748B',
         fontSize: 12,
         fontWeight: '500',
-    },
-
-    catTextActive: {
-        color: '#047857',
-        fontWeight: 'bold',
-        fontSize: 12,
     },
 
 
@@ -1501,6 +1865,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
 
+
     typeCard: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1511,19 +1876,17 @@ const styles = StyleSheet.create({
         borderColor: '#E2E8F0',
     },
 
-    typeCardSelected: {
-        backgroundColor: '#ECFDF5',
-        borderColor: '#059669',
-    },
 
     typeEmoji: {
         fontSize: 22,
         marginRight: 13,
     },
 
+
     typeInfo: {
         flex: 1,
     },
+
 
     typeTitle: {
         color: '#1E293B',
@@ -1532,9 +1895,6 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
 
-    typeTitleSelected: {
-        color: '#047857',
-    },
 
     typeDescription: {
         color: '#64748B',
@@ -1551,7 +1911,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 20,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
         marginBottom: 16,
         shadowColor: '#000',
         shadowOffset: {
@@ -1563,6 +1922,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
 
+
     label: {
         color: '#475569',
         fontSize: 12,
@@ -1570,6 +1930,7 @@ const styles = StyleSheet.create({
         marginBottom: 6,
         marginTop: 12,
     },
+
 
     input: {
         backgroundColor: '#F8FAFC',
@@ -1582,18 +1943,18 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
 
+
     infoBox: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        backgroundColor: '#F0FDF4',
         borderRadius: 12,
         padding: 12,
         marginTop: 14,
     },
 
+
     infoText: {
         flex: 1,
-        color: '#166534',
         fontSize: 11,
         lineHeight: 16,
         marginLeft: 8,
@@ -1605,14 +1966,12 @@ const styles = StyleSheet.create({
     // ========================================================
 
     btnGuardar: {
-        backgroundColor: '#059669',
         paddingVertical: 15,
         borderRadius: 14,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 20,
-        shadowColor: '#059669',
         shadowOffset: {
             width: 0,
             height: 4,
@@ -1622,17 +1981,20 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
 
+
     btnGuardarText: {
         color: '#FFFFFF',
         fontWeight: 'bold',
         fontSize: 14,
     },
 
+
     btnCancelar: {
         marginTop: 10,
         paddingVertical: 12,
         alignItems: 'center',
     },
+
 
     btnCancelarText: {
         color: '#64748B',
@@ -1650,7 +2012,6 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 16,
@@ -1663,6 +2024,7 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 1,
     },
+
 
     vacioTexto: {
         color: '#64748B',
@@ -1685,7 +2047,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -1696,10 +2057,12 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
 
+
     itemInfo: {
         flex: 1,
         paddingRight: 8,
     },
+
 
     itemTitleRow: {
         flexDirection: 'row',
@@ -1708,11 +2071,12 @@ const styles = StyleSheet.create({
         gap: 6,
     },
 
+
     itemNombre: {
-        color: '#1E293B',
         fontWeight: 'bold',
         fontSize: 14,
     },
+
 
     itemCategoria: {
         color: '#64748B',
@@ -1720,19 +2084,20 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
 
+
     itemEstado: {
-        color: '#059669',
         fontSize: 11,
         fontWeight: '600',
         marginTop: 3,
     },
 
+
     itemRight: {
         alignItems: 'flex-end',
     },
 
+
     itemMonto: {
-        color: '#047857',
         fontWeight: 'bold',
         fontSize: 16,
         marginBottom: 8,
@@ -1750,9 +2115,11 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
     },
 
+
     tipoBadgeVariable: {
         backgroundColor: '#FEF3C7',
     },
+
 
     tipoBadgeText: {
         color: '#047857',
@@ -1770,14 +2137,15 @@ const styles = StyleSheet.create({
         gap: 6,
     },
 
+
     actionButton: {
         width: 32,
         height: 32,
         borderRadius: 9,
-        backgroundColor: '#ECFDF5',
         justifyContent: 'center',
         alignItems: 'center',
     },
+
 
     deleteButton: {
         backgroundColor: '#FEF2F2',

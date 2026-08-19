@@ -17,27 +17,60 @@ import { ref, onValue } from 'firebase/database';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { useTheme } from '../../context/ThemeContext';
+
 export default function InicioScreen({ navigation }: any) {
+
+    // ============================================================
+    // TEMA
+    // ============================================================
+
+    const { colors } = useTheme();
+
+    const COLOR_PRINCIPAL = colors.primary;
+    const COLOR_OSCURO = colors.dark;
+    const COLOR_SUAVE = colors.light;
+    const COLOR_MUY_SUAVE = colors.veryLight;
+
+    const COLOR_VERDE = colors.primary;
+    const COLOR_ROJO = '#B85C5C';
+
+    // ============================================================
+    // USUARIO
+    // ============================================================
 
     const usuarioActual = auth.currentUser;
 
-    const [idPareja, setIdPareja] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [idPareja, setIdPareja] =
+        useState<string | null>(null);
 
-    const [totalIngresos, setTotalIngresos] = useState(0);
-    const [totalGastos, setTotalGastos] = useState(0);
-    const [totalDeudas, setTotalDeudas] = useState(0);
+    const [loading, setLoading] =
+        useState(true);
 
-    const [cuentas, setCuentas] = useState<any[]>([]);
+    const [totalIngresos, setTotalIngresos] =
+        useState(0);
 
-    const [movimientos, setMovimientos] = useState<any[]>([]);
+    const [totalGastos, setTotalGastos] =
+        useState(0);
+
+    const [totalDeudas, setTotalDeudas] =
+        useState(0);
+
+    const [cuentas, setCuentas] =
+        useState<any[]>([]);
+
+    const [movimientos, setMovimientos] =
+        useState<any[]>([]);
 
     // ============================================================
     // PERFIL
     // ============================================================
 
-    const [nombreCuenta, setNombreCuenta] = useState<string>('');
-    const [fotoCuenta, setFotoCuenta] = useState<string | null>(null);
+    const [nombreCuenta, setNombreCuenta] =
+        useState<string>('');
+
+    const [fotoCuenta, setFotoCuenta] =
+        useState<string | null>(null);
 
     // ============================================================
     // CONFIGURACIÓN HEADER
@@ -60,7 +93,9 @@ export default function InicioScreen({ navigation }: any) {
         const uid = auth.currentUser?.uid;
 
         if (!uid) {
+
             setLoading(false);
+
             return;
         }
 
@@ -102,14 +137,16 @@ export default function InicioScreen({ navigation }: any) {
                 } else {
 
                     setIdPareja(null);
-                    setLoading(false);
 
+                    setLoading(false);
                 }
             }
         );
 
         return () => {
+
             unsubscribe();
+
         };
 
     }, []);
@@ -161,15 +198,7 @@ export default function InicioScreen({ navigation }: any) {
 
         const procesarDatos = () => {
 
-            // ----------------------------------------------------
-            // LISTA GENERAL DE MOVIMIENTOS
-            // ----------------------------------------------------
-
             let listaMovimientos: any[] = [];
-
-            // ----------------------------------------------------
-            // TOTALES
-            // ----------------------------------------------------
 
             let ingresosAcc = 0;
             let gastosAcc = 0;
@@ -204,10 +233,6 @@ export default function InicioScreen({ navigation }: any) {
                         const monto =
                             Number(item?.monto) || 0;
 
-                        // ----------------------------------------
-                        // INGRESOS
-                        // ----------------------------------------
-
                         if (
                             item?.tipo === 'ingreso'
                         ) {
@@ -215,10 +240,6 @@ export default function InicioScreen({ navigation }: any) {
                             ingresosAcc += monto;
 
                         }
-
-                        // ----------------------------------------
-                        // GASTOS
-                        // ----------------------------------------
 
                         if (
                             item?.tipo === 'gasto' ||
@@ -262,17 +283,6 @@ export default function InicioScreen({ navigation }: any) {
 
                         });
 
-                /*
-                 * IMPORTANTE:
-                 *
-                 * Los ingresos de /ingresos se muestran
-                 * en actividad, pero NO se vuelven a sumar
-                 * al total si ya existen en /movimientos.
-                 *
-                 * Solo se agregan al total cuando no existe
-                 * una estructura equivalente en movimientos.
-                 */
-
                 listaIngresos.forEach(
                     (item) => {
 
@@ -284,6 +294,7 @@ export default function InicioScreen({ navigation }: any) {
                                         mov.id ===
                                         item.id
                                     ) {
+
                                         return true;
                                     }
 
@@ -292,6 +303,7 @@ export default function InicioScreen({ navigation }: any) {
                                         item.id ===
                                         `ingreso-${mov.ingresoId}`
                                     ) {
+
                                         return true;
                                     }
 
@@ -300,17 +312,13 @@ export default function InicioScreen({ navigation }: any) {
                                         mov.id ===
                                         item.idOriginal
                                     ) {
+
                                         return true;
                                     }
 
                                     return false;
                                 }
                             );
-
-                        /*
-                         * Si el ingreso NO está representado
-                         * dentro de movimientos, lo sumamos.
-                         */
 
                         if (!yaExisteEnMovimientos) {
 
@@ -368,11 +376,8 @@ export default function InicioScreen({ navigation }: any) {
                                     monto: 0,
 
                                     descripcion:
-                                        `${
-                                            deuda?.marcaTarjeta ||
-                                            'Tarjeta'
-                                        } - ${
-                                            deuda?.entidad ||
+                                        `${deuda?.marcaTarjeta ||
+                                            'Tarjeta'} - ${deuda?.entidad ||
                                             'Banco'
                                         }`,
                                 };
@@ -415,13 +420,11 @@ export default function InicioScreen({ navigation }: any) {
                                     descripcion:
                                         deuda?.descripcion &&
                                         deuda.descripcion !==
-                                            'N/A'
+                                        'N/A'
                                             ? deuda.descripcion
-                                            : `Consumo ${
-                                                deuda?.tarjetaMarca ||
+                                            : `Consumo ${deuda?.tarjetaMarca ||
                                                 'Tarjeta'
-                                            } - ${
-                                                deuda?.tarjetaBanco ||
+                                            } - ${deuda?.tarjetaBanco ||
                                                 ''
                                             }`,
                                 };
@@ -440,19 +443,14 @@ export default function InicioScreen({ navigation }: any) {
                                         deuda?.monto
                                     ) || 0;
 
-                                // --------------------------------
-                                // PAGOS RELACIONADOS
-                                // --------------------------------
-
                                 const pagosAsociados =
                                     listaMovimientos.filter(
                                         (mov) => {
 
-                                            // Pago mediante deudaId
                                             if (
                                                 mov?.deudaId &&
                                                 mov.deudaId ===
-                                                    key
+                                                key
                                             ) {
 
                                                 return true;
@@ -505,17 +503,13 @@ export default function InicioScreen({ navigation }: any) {
                                                 (
                                                     categoriaDeuda &&
                                                     categoriaMovimiento ===
-                                                        categoriaDeuda &&
+                                                    categoriaDeuda &&
                                                     esPago
                                                 )
 
                                             );
                                         }
                                     );
-
-                                // --------------------------------
-                                // TOTAL PAGADO
-                                // --------------------------------
 
                                 const totalPagado =
                                     pagosAsociados.reduce(
@@ -537,15 +531,11 @@ export default function InicioScreen({ navigation }: any) {
                                         0
                                     );
 
-                                // --------------------------------
-                                // SALDO PENDIENTE
-                                // --------------------------------
-
                                 const saldoPendiente =
                                     Math.max(
                                         0,
                                         montoOriginal -
-                                            totalPagado
+                                        totalPagado
                                     );
 
                                 deudasAcc +=
@@ -561,7 +551,8 @@ export default function InicioScreen({ navigation }: any) {
 
                                     ...deuda,
 
-                                    tipo: 'deuda',
+                                    tipo:
+                                        'deuda',
 
                                     esDeuda: true,
 
@@ -575,11 +566,9 @@ export default function InicioScreen({ navigation }: any) {
 
                                     descripcion:
                                         deuda?.descripcion ||
-                                        `${
-                                            deuda?.categoria ||
+                                        `${deuda?.categoria ||
                                             'Deuda'
-                                        } - ${
-                                            deuda?.entidad ||
+                                        } - ${deuda?.entidad ||
                                             ''
                                         }`,
                                 };
@@ -602,10 +591,6 @@ export default function InicioScreen({ navigation }: any) {
                             };
 
                         });
-
-                // ----------------------------------------------
-                // TARJETAS REGISTRADAS NO VAN A ACTIVIDAD
-                // ----------------------------------------------
 
                 const deudasParaActividad =
                     listaDeudas.filter(
@@ -665,42 +650,6 @@ export default function InicioScreen({ navigation }: any) {
             setMovimientos(
                 listaMovimientos
             );
-
-            // ====================================================
-            // DEBUG TEMPORAL
-            // ====================================================
-
-            console.log(
-                '========== INICIO =========='
-            );
-
-            console.log(
-                'Ingresos:',
-                ingresosAcc
-            );
-
-            console.log(
-                'Gastos:',
-                gastosAcc
-            );
-
-            console.log(
-                'Deudas:',
-                deudasAcc
-            );
-
-            console.log(
-                'Movimientos:',
-                listaMovimientos.length
-            );
-
-            console.log(
-                '============================='
-            );
-
-            // ====================================================
-            // LOADING
-            // ====================================================
 
             if (
                 movimientosCargados &&
@@ -804,39 +753,6 @@ export default function InicioScreen({ navigation }: any) {
 
                     procesarDatos();
 
-                    console.log(
-                        '========== CUENTAS =========='
-                    );
-
-                    lista.forEach(
-                        (cuenta) => {
-
-                            console.log(
-                                'Cuenta:',
-                                cuenta?.nombre ||
-                                cuenta?.nombreCuenta ||
-                                cuenta?.entidad ||
-                                'Sin nombre'
-                            );
-
-                            console.log(
-                                'Tipo:',
-                                cuenta?.tipo
-                            );
-
-                            console.log(
-                                'Saldo:',
-                                Number(
-                                    cuenta?.saldo
-                                ) || 0
-                            );
-
-                        }
-                    );
-
-                    console.log(
-                        '============================='
-                    );
                 }
             );
 
@@ -911,39 +827,9 @@ export default function InicioScreen({ navigation }: any) {
     // ============================================================
     // BALANCE NETO
     // ============================================================
-    //
-    // IMPORTANTE:
-    //
-    // Mis Cuentas representa el dinero disponible REAL.
-    //
-    // Por eso Balance Neto debe mostrar exactamente
-    // el mismo valor.
-    //
-    // NO hacemos:
-    //
-    // totalEnCuentas + ingresos - gastos
-    //
-    // porque eso mezclaría saldo actual con movimientos
-    // históricos.
-    //
-    // ============================================================
 
     const balanceNeto =
         totalEnCuentas;
-
-    // ============================================================
-    // DEBUG BALANCE
-    // ============================================================
-
-    console.log(
-        'BALANCE NETO:',
-        balanceNeto
-    );
-
-    console.log(
-        'TOTAL CUENTAS:',
-        totalEnCuentas
-    );
 
     // ============================================================
     // INICIALES
@@ -979,16 +865,18 @@ export default function InicioScreen({ navigation }: any) {
                 }
             >
 
-                {/* ================================================= */}
                 {/* HEADER */}
-                {/* ================================================= */}
 
                 <View style={styles.header}>
 
                     <View
-                        style={
-                            styles.avatarContainer
-                        }
+                        style={[
+                            styles.avatarContainer,
+                            {
+                                backgroundColor:
+                                    COLOR_PRINCIPAL,
+                            },
+                        ]}
                     >
 
                         {fotoCuenta ? (
@@ -1042,21 +930,33 @@ export default function InicioScreen({ navigation }: any) {
                     </View>
 
                     <View
-                        style={
-                            styles.headerSyncPill
-                        }
+                        style={[
+                            styles.headerSyncPill,
+                            {
+                                backgroundColor:
+                                    COLOR_MUY_SUAVE,
+                            },
+                        ]}
                     >
 
                         <View
-                            style={
-                                styles.onlineDot
-                            }
+                            style={[
+                                styles.onlineDot,
+                                {
+                                    backgroundColor:
+                                        COLOR_VERDE,
+                                },
+                            ]}
                         />
 
                         <Text
-                            style={
-                                styles.onlineText
-                            }
+                            style={[
+                                styles.onlineText,
+                                {
+                                    color:
+                                        COLOR_OSCURO,
+                                },
+                            ]}
                         >
                             Sincronizado
                         </Text>
@@ -1065,14 +965,16 @@ export default function InicioScreen({ navigation }: any) {
 
                 </View>
 
-                {/* ================================================= */}
                 {/* BALANCE */}
-                {/* ================================================= */}
 
                 <View
-                    style={
-                        styles.mainDashboardCard
-                    }
+                    style={[
+                        styles.mainDashboardCard,
+                        {
+                            backgroundColor:
+                                COLOR_PRINCIPAL,
+                        },
+                    ]}
                 >
 
                     <View
@@ -1239,9 +1141,7 @@ export default function InicioScreen({ navigation }: any) {
 
                 </View>
 
-                {/* ================================================= */}
                 {/* MIS CUENTAS */}
-                {/* ================================================= */}
 
                 <TouchableOpacity
                     activeOpacity={0.85}
@@ -1299,9 +1199,13 @@ export default function InicioScreen({ navigation }: any) {
                         <>
 
                             <Text
-                                style={
-                                    styles.cuentasCardTotal
-                                }
+                                style={[
+                                    styles.cuentasCardTotal,
+                                    {
+                                        color:
+                                            COLOR_PRINCIPAL,
+                                    },
+                                ]}
                             >
                                 $
                                 {totalEnCuentas.toFixed(
@@ -1324,7 +1228,9 @@ export default function InicioScreen({ navigation }: any) {
                                     <Ionicons
                                         name="card-outline"
                                         size={14}
-                                        color="#059669"
+                                        color={
+                                            COLOR_PRINCIPAL
+                                        }
                                     />
 
                                     <Text
@@ -1363,7 +1269,9 @@ export default function InicioScreen({ navigation }: any) {
                                     <Ionicons
                                         name="cash-outline"
                                         size={14}
-                                        color="#059669"
+                                        color={
+                                            COLOR_PRINCIPAL
+                                        }
                                     />
 
                                     <Text
@@ -1395,9 +1303,7 @@ export default function InicioScreen({ navigation }: any) {
 
                 </TouchableOpacity>
 
-                {/* ================================================= */}
                 {/* ACCIONES */}
-                {/* ================================================= */}
 
                 <Text
                     style={
@@ -1412,8 +1318,6 @@ export default function InicioScreen({ navigation }: any) {
                         styles.actionButtonsRow
                     }
                 >
-
-                    {/* GASTOS */}
 
                     <TouchableOpacity
                         activeOpacity={0.85}
@@ -1462,8 +1366,6 @@ export default function InicioScreen({ navigation }: any) {
                         </Text>
 
                     </TouchableOpacity>
-
-                    {/* REGISTROS */}
 
                     <TouchableOpacity
                         activeOpacity={0.85}
@@ -1515,8 +1417,6 @@ export default function InicioScreen({ navigation }: any) {
 
                     </TouchableOpacity>
 
-                    {/* DEUDAS */}
-
                     <TouchableOpacity
                         activeOpacity={0.85}
                         style={
@@ -1534,7 +1434,7 @@ export default function InicioScreen({ navigation }: any) {
                                 styles.actionIconContainer,
                                 {
                                     backgroundColor:
-                                        '#EDF5F2',
+                                        COLOR_MUY_SUAVE,
                                 },
                             ]}
                         >
@@ -1569,9 +1469,7 @@ export default function InicioScreen({ navigation }: any) {
 
                 </View>
 
-                {/* ================================================= */}
                 {/* ACTIVIDAD */}
-                {/* ================================================= */}
 
                 <View
                     style={
@@ -1605,15 +1503,23 @@ export default function InicioScreen({ navigation }: any) {
                     </View>
 
                     <View
-                        style={
-                            styles.activityCount
-                        }
+                        style={[
+                            styles.activityCount,
+                            {
+                                backgroundColor:
+                                    COLOR_MUY_SUAVE,
+                            },
+                        ]}
                     >
 
                         <Text
-                            style={
-                                styles.activityCountText
-                            }
+                            style={[
+                                styles.activityCountText,
+                                {
+                                    color:
+                                        COLOR_PRINCIPAL,
+                                },
+                            ]}
                         >
                             {movimientos.length}
                         </Text>
@@ -1622,9 +1528,7 @@ export default function InicioScreen({ navigation }: any) {
 
                 </View>
 
-                {/* ================================================= */}
                 {/* LOADING */}
-                {/* ================================================= */}
 
                 {loading ? (
 
@@ -1652,8 +1556,7 @@ export default function InicioScreen({ navigation }: any) {
 
                     </View>
 
-                ) : movimientos.length ===
-                  0 ? (
+                ) : movimientos.length === 0 ? (
 
                     <View
                         style={
@@ -1662,9 +1565,13 @@ export default function InicioScreen({ navigation }: any) {
                     >
 
                         <View
-                            style={
-                                styles.emptyIcon
-                            }
+                            style={[
+                                styles.emptyIcon,
+                                {
+                                    backgroundColor:
+                                        COLOR_MUY_SUAVE,
+                                },
+                            ]}
                         >
 
                             <Ionicons
@@ -1728,8 +1635,6 @@ export default function InicioScreen({ navigation }: any) {
                                     }
                                 >
 
-                                    {/* ICONO */}
-
                                     <View
                                         style={[
                                             styles.transactionIcon,
@@ -1762,8 +1667,6 @@ export default function InicioScreen({ navigation }: any) {
 
                                     </View>
 
-                                    {/* INFO */}
-
                                     <View
                                         style={
                                             styles.transactionInfo
@@ -1783,8 +1686,6 @@ export default function InicioScreen({ navigation }: any) {
                                                 'Movimiento'
                                             }
                                         </Text>
-
-                                        {/* TARJETA */}
 
                                         {esConsumoTarjeta && (
 
@@ -1807,11 +1708,9 @@ export default function InicioScreen({ navigation }: any) {
 
                                         )}
 
-                                        {/* DIFERIDO */}
-
                                         {esConsumoTarjeta &&
                                             item?.diferido ===
-                                                true && (
+                                            true && (
 
                                                 <Text
                                                     style={
@@ -1826,8 +1725,6 @@ export default function InicioScreen({ navigation }: any) {
                                                 </Text>
 
                                             )}
-
-                                        {/* CUOTA TARJETA */}
 
                                         {esConsumoTarjeta &&
                                             Number(
@@ -1848,8 +1745,6 @@ export default function InicioScreen({ navigation }: any) {
                                                 </Text>
 
                                             )}
-
-                                        {/* CUOTA DEUDA */}
 
                                         {item?.tipo ===
                                             'deuda' &&
@@ -1872,8 +1767,6 @@ export default function InicioScreen({ navigation }: any) {
 
                                             )}
 
-                                        {/* AUTOR */}
-
                                         <Text
                                             style={
                                                 styles.transactionAuthor
@@ -1887,8 +1780,6 @@ export default function InicioScreen({ navigation }: any) {
                                         </Text>
 
                                     </View>
-
-                                    {/* MONTO */}
 
                                     <View
                                         style={
@@ -1951,9 +1842,7 @@ export default function InicioScreen({ navigation }: any) {
 
                 )}
 
-                {/* ================================================= */}
                 {/* FOOTER */}
-                {/* ================================================= */}
 
                 <View
                     style={
@@ -2003,22 +1892,6 @@ export default function InicioScreen({ navigation }: any) {
 }
 
 // ============================================================
-// PALETA
-// ============================================================
-
-const COLOR_PRINCIPAL = '#176B63';
-
-const COLOR_OSCURO = '#124C47';
-
-const COLOR_VERDE = '#2E7D6E';
-
-const COLOR_SUAVE = '#DCEAE7';
-
-const COLOR_MUY_SUAVE = '#F3F7F6';
-
-const COLOR_ROJO = '#B85C5C';
-
-// ============================================================
 // ESTILOS
 // ============================================================
 
@@ -2043,9 +1916,7 @@ const styles = StyleSheet.create({
         paddingBottom: 45,
     },
 
-    // ============================================================
     // HEADER
-    // ============================================================
 
     header: {
         flexDirection: 'row',
@@ -2057,8 +1928,6 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor:
-            COLOR_PRINCIPAL,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
@@ -2094,8 +1963,6 @@ const styles = StyleSheet.create({
     headerSyncPill: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor:
-            COLOR_MUY_SUAVE,
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 20,
@@ -2105,24 +1972,17 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 4,
-        backgroundColor:
-            COLOR_VERDE,
         marginRight: 5,
     },
 
     onlineText: {
-        color: COLOR_OSCURO,
         fontSize: 10,
         fontWeight: '600',
     },
 
-    // ============================================================
     // BALANCE
-    // ============================================================
 
     mainDashboardCard: {
-        backgroundColor:
-            COLOR_PRINCIPAL,
         borderRadius: 18,
         padding: 22,
         marginBottom: 25,
@@ -2130,8 +1990,7 @@ const styles = StyleSheet.create({
 
     balanceTopRow: {
         flexDirection: 'row',
-        justifyContent:
-            'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
     },
 
@@ -2219,9 +2078,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
 
-    // ============================================================
     // CUENTAS
-    // ============================================================
 
     cuentasCard: {
         backgroundColor: '#FFFFFF',
@@ -2262,7 +2119,6 @@ const styles = StyleSheet.create({
     },
 
     cuentasCardTotal: {
-        color: '#059669',
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
@@ -2302,25 +2158,21 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
 
-    // ============================================================
     // TEXTOS
-    // ============================================================
 
     textRed: {
-        color: COLOR_ROJO,
+        color: '#B85C5C',
     },
 
     textGreen: {
-        color: COLOR_VERDE,
+        color: '#2E7D6E',
     },
 
     textTeal: {
-        color: COLOR_PRINCIPAL,
+        color: '#176B63',
     },
 
-    // ============================================================
     // ACCIONES
-    // ============================================================
 
     quickTitle: {
         color: '#171A19',
@@ -2368,9 +2220,7 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
 
-    // ============================================================
     // ACTIVIDAD
-    // ============================================================
 
     activityHeader: {
         flexDirection: 'row',
@@ -2400,22 +2250,17 @@ const styles = StyleSheet.create({
         minWidth: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor:
-            COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 8,
     },
 
     activityCountText: {
-        color: COLOR_PRINCIPAL,
         fontSize: 12,
         fontWeight: '700',
     },
 
-    // ============================================================
     // LOADING
-    // ============================================================
 
     loadingCard: {
         backgroundColor: '#FFFFFF',
@@ -2432,9 +2277,7 @@ const styles = StyleSheet.create({
         marginTop: 12,
     },
 
-    // ============================================================
     // EMPTY
-    // ============================================================
 
     emptyCard: {
         backgroundColor: '#FFFFFF',
@@ -2449,8 +2292,6 @@ const styles = StyleSheet.create({
         width: 54,
         height: 54,
         borderRadius: 14,
-        backgroundColor:
-            COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 12,
@@ -2470,9 +2311,7 @@ const styles = StyleSheet.create({
         lineHeight: 19,
     },
 
-    // ============================================================
     // TRANSACCIONES
-    // ============================================================
 
     transactionItem: {
         backgroundColor: '#FFFFFF',
@@ -2504,7 +2343,7 @@ const styles = StyleSheet.create({
 
     transactionDebt: {
         backgroundColor:
-            COLOR_MUY_SUAVE,
+            '#F3F7F6',
     },
 
     transactionInfo: {
@@ -2519,7 +2358,6 @@ const styles = StyleSheet.create({
     },
 
     cardDetailText: {
-        color: COLOR_PRINCIPAL,
         fontSize: 11,
         marginTop: 4,
         fontWeight: '600',
@@ -2533,7 +2371,6 @@ const styles = StyleSheet.create({
     },
 
     cuotaText: {
-        color: COLOR_VERDE,
         fontSize: 11,
         marginTop: 3,
         fontWeight: '700',
@@ -2561,9 +2398,7 @@ const styles = StyleSheet.create({
         marginTop: 3,
     },
 
-    // ============================================================
     // FOOTER
-    // ============================================================
 
     footer: {
         alignItems: 'center',
@@ -2580,7 +2415,6 @@ const styles = StyleSheet.create({
     },
 
     footerText: {
-        color: COLOR_OSCURO,
         fontSize: 12,
         fontWeight: '700',
     },

@@ -1,12 +1,12 @@
 import React from 'react';
 
 import {
-    createMaterialTopTabNavigator,
-} from '@react-navigation/material-top-tabs';
-
-import {
     NavigationContainer,
 } from '@react-navigation/native';
+
+import {
+    createMaterialTopTabNavigator,
+} from '@react-navigation/material-top-tabs';
 
 import {
     createNativeStackNavigator,
@@ -20,6 +20,17 @@ import {
     SafeAreaProvider,
     useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+
+
+// ============================================================
+// TEMA
+// ============================================================
+
+import {
+    ThemeProvider,
+    useTheme,
+} from '../context/ThemeContext';
+
 
 // ============================================================
 // PANTALLAS
@@ -67,6 +78,15 @@ import RegistroGastosDetallados
 import CuentasYEfectivoScreen
     from '../screen/Cuentas/CuentasYEfectivoScreen';
 
+
+// ============================================================
+// SELECCIONAR TEMA
+// ============================================================
+
+import SeleccionarTemaScreen
+    from '../screen/Configuracion/SeleccionarTemaScreen';
+
+
 // ============================================================
 // NAVIGATORS
 // ============================================================
@@ -77,6 +97,7 @@ const Tab =
 const Stack =
     createNativeStackNavigator();
 
+
 // ============================================================
 // TABS PRINCIPALES
 // ============================================================
@@ -86,20 +107,21 @@ function MyTabs() {
     const insets =
         useSafeAreaInsets();
 
+    const {
+        colors,
+    } = useTheme();
+
     const bottomSafeArea =
         insets.bottom > 0
             ? insets.bottom
             : 8;
+
 
     return (
 
         <Tab.Navigator
 
             initialRouteName="Inicio"
-
-            // ====================================================
-            // EL SWIPE FUNCIONA EN TODA LA PANTALLA
-            // ====================================================
 
             tabBarPosition="bottom"
 
@@ -113,8 +135,8 @@ function MyTabs() {
 
                 swipeEnabled: true,
 
-                // Animación suave al cambiar de pantalla
                 animationEnabled: true,
+
 
                 // =================================================
                 // BARRA INFERIOR
@@ -122,9 +144,11 @@ function MyTabs() {
 
                 tabBarStyle: {
 
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor:
+                        '#FFFFFF',
 
-                    borderTopColor: '#E2E8F0',
+                    borderTopColor:
+                        '#E2E8F0',
 
                     borderTopWidth: 1,
 
@@ -140,33 +164,29 @@ function MyTabs() {
                     paddingTop: 6,
                 },
 
+
                 // =================================================
-                // LÍNEA VERDE
-                // =================================================
-                //
-                // Esta es la parte importante:
-                //
-                // Al deslizar la pantalla, la línea verde
-                // también se desplaza suavemente hacia el
-                // siguiente tab.
-                //
+                // INDICADOR
                 // =================================================
 
                 tabBarIndicatorStyle: {
 
-                    backgroundColor: '#059669',
+                    backgroundColor:
+                        colors.primary,
 
                     height: 3,
 
                     borderRadius: 3,
                 },
 
+
                 // =================================================
                 // COLOR ACTIVO
                 // =================================================
 
                 tabBarActiveTintColor:
-                    '#059669',
+                    colors.primary,
+
 
                 // =================================================
                 // COLOR INACTIVO
@@ -174,6 +194,7 @@ function MyTabs() {
 
                 tabBarInactiveTintColor:
                     '#64748B',
+
 
                 // =================================================
                 // TEXTO
@@ -190,6 +211,7 @@ function MyTabs() {
                     marginTop: 0,
                 },
 
+
                 // =================================================
                 // ICONOS
                 // =================================================
@@ -202,6 +224,7 @@ function MyTabs() {
                     let iconName:
                         keyof typeof Ionicons.glyphMap =
                         'home-outline';
+
 
                     // --------------------------------------------
                     // INICIO
@@ -216,7 +239,9 @@ function MyTabs() {
                             focused
                                 ? 'home'
                                 : 'home-outline';
+
                     }
+
 
                     // --------------------------------------------
                     // REGISTROS
@@ -231,7 +256,9 @@ function MyTabs() {
                             focused
                                 ? 'add-circle'
                                 : 'add-circle-outline';
+
                     }
+
 
                     // --------------------------------------------
                     // REPORTES
@@ -246,7 +273,9 @@ function MyTabs() {
                             focused
                                 ? 'bar-chart'
                                 : 'bar-chart-outline';
+
                     }
+
 
                     // --------------------------------------------
                     // CUENTAS
@@ -261,7 +290,9 @@ function MyTabs() {
                             focused
                                 ? 'wallet'
                                 : 'wallet-outline';
+
                     }
+
 
                     // --------------------------------------------
                     // PERFIL
@@ -276,7 +307,9 @@ function MyTabs() {
                             focused
                                 ? 'person'
                                 : 'person-outline';
+
                     }
+
 
                     return (
 
@@ -287,12 +320,15 @@ function MyTabs() {
                         />
 
                     );
+
                 },
+
             })}
+
         >
 
             {/* ================================================== */}
-            {/* 1. INICIO */}
+            {/* INICIO */}
             {/* ================================================== */}
 
             <Tab.Screen
@@ -300,35 +336,45 @@ function MyTabs() {
                 component={InicioScreen}
             />
 
+
             {/* ================================================== */}
-            {/* 2. REGISTROS */}
+            {/* REGISTROS */}
             {/* ================================================== */}
 
             <Tab.Screen
                 name="Registros"
-                component={RegistroMovimientosScreen}
+                component={
+                    RegistroMovimientosScreen
+                }
             />
 
+
             {/* ================================================== */}
-            {/* 3. REPORTES */}
+            {/* REPORTES */}
             {/* ================================================== */}
 
             <Tab.Screen
                 name="Reportes"
-                component={ReporteDeudasRegistradas}
+                component={
+                    ReporteDeudasRegistradas
+                }
             />
 
+
             {/* ================================================== */}
-            {/* 4. CUENTAS */}
+            {/* CUENTAS */}
             {/* ================================================== */}
 
             <Tab.Screen
                 name="Cuentas"
-                component={CuentasYEfectivoScreen}
+                component={
+                    CuentasYEfectivoScreen
+                }
             />
 
+
             {/* ================================================== */}
-            {/* 5. PERFIL */}
+            {/* PERFIL */}
             {/* ================================================== */}
 
             <Tab.Screen
@@ -337,8 +383,11 @@ function MyTabs() {
             />
 
         </Tab.Navigator>
+
     );
+
 }
+
 
 // ============================================================
 // STACK PRINCIPAL
@@ -360,7 +409,9 @@ function MyStack() {
 
                 animation:
                     'slide_from_right',
+
             }}
+
         >
 
             {/* ================================================= */}
@@ -372,6 +423,7 @@ function MyStack() {
                 component={LoginScreen}
             />
 
+
             {/* ================================================= */}
             {/* REGISTRO */}
             {/* ================================================= */}
@@ -381,14 +433,18 @@ function MyStack() {
                 component={RegistroScreen}
             />
 
+
             {/* ================================================= */}
             {/* CONFIGURAR PAREJA */}
             {/* ================================================= */}
 
             <Stack.Screen
                 name="configurarPareja"
-                component={ConfigurarParejaScreen}
+                component={
+                    ConfigurarParejaScreen
+                }
             />
+
 
             {/* ================================================= */}
             {/* TABS */}
@@ -402,14 +458,18 @@ function MyStack() {
                 }}
             />
 
+
             {/* ================================================= */}
             {/* INGRESOS */}
             {/* ================================================= */}
 
             <Stack.Screen
                 name="ingresos"
-                component={RegistroIngresosScreen}
+                component={
+                    RegistroIngresosScreen
+                }
             />
+
 
             {/* ================================================= */}
             {/* DEUDAS */}
@@ -417,8 +477,11 @@ function MyStack() {
 
             <Stack.Screen
                 name="deudas"
-                component={RegistroDeudasScreen}
+                component={
+                    RegistroDeudasScreen
+                }
             />
+
 
             {/* ================================================= */}
             {/* GASTOS FIJOS */}
@@ -426,8 +489,11 @@ function MyStack() {
 
             <Stack.Screen
                 name="gastosfijos"
-                component={RegistroGastosFijosScreen}
+                component={
+                    RegistroGastosFijosScreen
+                }
             />
+
 
             {/* ================================================= */}
             {/* GASTOS */}
@@ -435,8 +501,11 @@ function MyStack() {
 
             <Stack.Screen
                 name="gastos"
-                component={RegistroGastosScreen}
+                component={
+                    RegistroGastosScreen
+                }
             />
+
 
             {/* ================================================= */}
             {/* GASTOS RÁPIDOS */}
@@ -444,8 +513,11 @@ function MyStack() {
 
             <Stack.Screen
                 name="gastosRapidos"
-                component={RegistroGastosRapidos}
+                component={
+                    RegistroGastosRapidos
+                }
             />
+
 
             {/* ================================================= */}
             {/* GASTOS DETALLADOS */}
@@ -453,29 +525,67 @@ function MyStack() {
 
             <Stack.Screen
                 name="gastosDetalle"
-                component={RegistroGastosDetallados}
+                component={
+                    RegistroGastosDetallados
+                }
+            />
+
+
+            {/* ================================================= */}
+            {/* SELECCIONAR TEMA */}
+            {/* ================================================= */}
+
+            <Stack.Screen
+                name="seleccionarTema"
+                component={
+                    SeleccionarTemaScreen
+                }
             />
 
         </Stack.Navigator>
+
     );
+
 }
+
 
 // ============================================================
 // NAVEGADOR PRINCIPAL
 // ============================================================
 
-export const Navegador = () => {
+function AppNavigation() {
+
+    return (
+
+        <NavigationContainer>
+
+            <MyStack />
+
+        </NavigationContainer>
+
+    );
+
+}
+
+
+// ============================================================
+// APP
+// ============================================================
+
+export default function App() {
 
     return (
 
         <SafeAreaProvider>
 
-            <NavigationContainer>
+            <ThemeProvider>
 
-                <MyStack />
+                <AppNavigation />
 
-            </NavigationContainer>
+            </ThemeProvider>
 
         </SafeAreaProvider>
+
     );
-};
+
+}

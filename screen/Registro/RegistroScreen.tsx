@@ -9,13 +9,19 @@ import {
     ScrollView,
     Switch,
 } from 'react-native';
+
 import React, { useState, useEffect } from 'react';
+
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+
 import { auth, db } from '../../firebase/FirebaseConfig';
+
 import { ref, set } from 'firebase/database';
+
 import { Ionicons } from '@expo/vector-icons';
 
 export default function RegistroScreen({ navigation }: any) {
+
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
     const [genero, setGenero] = useState('');
@@ -43,6 +49,7 @@ export default function RegistroScreen({ navigation }: any) {
     // ============================================================
 
     function registrarse() {
+
         if (
             !nombre ||
             !apellido ||
@@ -74,16 +81,8 @@ export default function RegistroScreen({ navigation }: any) {
             contrasena
         )
             .then((userCredential) => {
+
                 const user = userCredential.user;
-
-                /*
-                Si tiene código de pareja:
-                utiliza el código ingresado.
-
-                Si no tiene:
-                genera uno automáticamente
-                utilizando parte del UID.
-                */
 
                 const idParejaFinal =
                     tieneCodigoPareja
@@ -101,12 +100,16 @@ export default function RegistroScreen({ navigation }: any) {
                     ),
                     {
                         nombre: nombre.trim(),
+
                         apellido:
                             apellido.trim(),
+
                         genero: genero,
-                        correo: correo
-                            .trim()
-                            .toLowerCase(),
+
+                        correo:
+                            correo
+                                .trim()
+                                .toLowerCase(),
 
                         idPareja:
                             idParejaFinal,
@@ -116,7 +119,9 @@ export default function RegistroScreen({ navigation }: any) {
                     }
                 );
             })
+
             .then(() => {
+
                 Alert.alert(
                     '¡Cuenta creada!',
                     'Tu cuenta fue creada correctamente. Ahora puedes iniciar sesión.',
@@ -131,7 +136,9 @@ export default function RegistroScreen({ navigation }: any) {
                     ]
                 );
             })
+
             .catch((error) => {
+
                 let mensaje =
                     error.message;
 
@@ -171,6 +178,7 @@ export default function RegistroScreen({ navigation }: any) {
     // ============================================================
 
     return (
+
         <ScrollView
             style={styles.scrollView}
             contentContainerStyle={
@@ -181,21 +189,23 @@ export default function RegistroScreen({ navigation }: any) {
             }
             keyboardShouldPersistTaps="handled"
         >
-            {/* ================================================= */}
+
             {/* HEADER */}
-            {/* ================================================= */}
 
             <View style={styles.header}>
+
                 <View
                     style={
                         styles.logoWrapper
                     }
                 >
+
                     <Image
                         source={require('../../assets/img/logov2.png')}
                         style={styles.logo}
                         resizeMode="contain"
                     />
+
                 </View>
 
                 <Text
@@ -221,31 +231,39 @@ export default function RegistroScreen({ navigation }: any) {
                 >
                     Comienza a organizar tus finanzas de forma sencilla y en equipo
                 </Text>
+
             </View>
 
-            {/* ================================================= */}
             {/* FORMULARIO */}
-            {/* ================================================= */}
 
             <View style={styles.formCard}>
+
+                {/* INFORMACIÓN PERSONAL */}
+
                 <View
                     style={
                         styles.sectionHeader
                     }
                 >
+
                     <View
                         style={
                             styles.sectionIcon
                         }
                     >
+
                         <Ionicons
                             name="person-outline"
                             size={18}
-                            color={COLOR_PRINCIPAL}
+                            color={
+                                COLOR_PRINCIPAL
+                            }
                         />
+
                     </View>
 
                     <View>
+
                         <Text
                             style={
                                 styles.sectionTitle
@@ -261,7 +279,9 @@ export default function RegistroScreen({ navigation }: any) {
                         >
                             Completa tus datos básicos
                         </Text>
+
                     </View>
+
                 </View>
 
                 {/* NOMBRE */}
@@ -277,11 +297,16 @@ export default function RegistroScreen({ navigation }: any) {
                         styles.inputWrapper
                     }
                 >
+
                     <Ionicons
                         name="person-outline"
                         size={18}
-                        color={COLOR_TEXTO_SUAVE}
-                        style={styles.inputIconStyle}
+                        color={
+                            COLOR_TEXTO_SUAVE
+                        }
+                        style={
+                            styles.inputIconStyle
+                        }
                     />
 
                     <TextInput
@@ -295,6 +320,7 @@ export default function RegistroScreen({ navigation }: any) {
                             styles.input
                         }
                     />
+
                 </View>
 
                 {/* APELLIDO */}
@@ -310,11 +336,16 @@ export default function RegistroScreen({ navigation }: any) {
                         styles.inputWrapper
                     }
                 >
+
                     <Ionicons
                         name="id-card-outline"
                         size={18}
-                        color={COLOR_TEXTO_SUAVE}
-                        style={styles.inputIconStyle}
+                        color={
+                            COLOR_TEXTO_SUAVE
+                        }
+                        style={
+                            styles.inputIconStyle
+                        }
                     />
 
                     <TextInput
@@ -330,6 +361,7 @@ export default function RegistroScreen({ navigation }: any) {
                             styles.input
                         }
                     />
+
                 </View>
 
                 {/* GÉNERO */}
@@ -350,15 +382,14 @@ export default function RegistroScreen({ navigation }: any) {
                         styles.generoContainer
                     }
                 >
+
                     <TouchableOpacity
-                        activeOpacity={
-                            0.8
-                        }
+                        activeOpacity={0.8}
                         style={[
                             styles.genBtn,
                             genero ===
-                            'Masculino' &&
-                            styles.genBtnActive,
+                                'Masculino' &&
+                                styles.genBtnActive,
                         ]}
                         onPress={() =>
                             setGenero(
@@ -366,11 +397,13 @@ export default function RegistroScreen({ navigation }: any) {
                             )
                         }
                     >
+
                         <Ionicons
                             name="male"
                             size={18}
                             color={
-                                genero === 'Masculino'
+                                genero ===
+                                'Masculino'
                                     ? '#FFFFFF'
                                     : COLOR_PRINCIPAL
                             }
@@ -379,23 +412,23 @@ export default function RegistroScreen({ navigation }: any) {
                         <Text
                             style={[
                                 styles.genText,
-                                genero === 'Masculino' &&
+                                genero ===
+                                    'Masculino' &&
                                     styles.genTextActive,
                             ]}
                         >
                             Masculino
                         </Text>
+
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        activeOpacity={
-                            0.8
-                        }
+                        activeOpacity={0.8}
                         style={[
                             styles.genBtn,
                             genero ===
-                            'Femenino' &&
-                            styles.genBtnActive,
+                                'Femenino' &&
+                                styles.genBtnActive,
                         ]}
                         onPress={() =>
                             setGenero(
@@ -403,11 +436,13 @@ export default function RegistroScreen({ navigation }: any) {
                             )
                         }
                     >
+
                         <Ionicons
                             name="female"
                             size={18}
                             color={
-                                genero === 'Femenino'
+                                genero ===
+                                'Femenino'
                                     ? '#FFFFFF'
                                     : COLOR_PRINCIPAL
                             }
@@ -416,18 +451,19 @@ export default function RegistroScreen({ navigation }: any) {
                         <Text
                             style={[
                                 styles.genText,
-                                genero === 'Femenino' &&
+                                genero ===
+                                    'Femenino' &&
                                     styles.genTextActive,
                             ]}
                         >
                             Femenino
                         </Text>
+
                     </TouchableOpacity>
+
                 </View>
 
-                {/* ================================================= */}
                 {/* ACCESO */}
-                {/* ================================================= */}
 
                 <View
                     style={
@@ -440,19 +476,25 @@ export default function RegistroScreen({ navigation }: any) {
                         styles.sectionHeader
                     }
                 >
+
                     <View
                         style={
                             styles.sectionIcon
                         }
                     >
+
                         <Ionicons
                             name="lock-closed-outline"
                             size={18}
-                            color={COLOR_PRINCIPAL}
+                            color={
+                                COLOR_PRINCIPAL
+                            }
                         />
+
                     </View>
 
                     <View>
+
                         <Text
                             style={
                                 styles.sectionTitle
@@ -468,7 +510,9 @@ export default function RegistroScreen({ navigation }: any) {
                         >
                             Protege tu cuenta con credenciales seguras
                         </Text>
+
                     </View>
+
                 </View>
 
                 {/* CORREO */}
@@ -484,11 +528,16 @@ export default function RegistroScreen({ navigation }: any) {
                         styles.inputWrapper
                     }
                 >
+
                     <Ionicons
                         name="mail-outline"
                         size={18}
-                        color={COLOR_TEXTO_SUAVE}
-                        style={styles.inputIconStyle}
+                        color={
+                            COLOR_TEXTO_SUAVE
+                        }
+                        style={
+                            styles.inputIconStyle
+                        }
                     />
 
                     <TextInput
@@ -504,6 +553,7 @@ export default function RegistroScreen({ navigation }: any) {
                         autoCapitalize="none"
                         keyboardType="email-address"
                     />
+
                 </View>
 
                 {/* CONTRASEÑA */}
@@ -519,11 +569,16 @@ export default function RegistroScreen({ navigation }: any) {
                         styles.inputWrapper
                     }
                 >
+
                     <Ionicons
                         name="key-outline"
                         size={18}
-                        color={COLOR_TEXTO_SUAVE}
-                        style={styles.inputIconStyle}
+                        color={
+                            COLOR_TEXTO_SUAVE
+                        }
+                        style={
+                            styles.inputIconStyle
+                        }
                     />
 
                     <TextInput
@@ -540,11 +595,10 @@ export default function RegistroScreen({ navigation }: any) {
                             styles.input
                         }
                     />
+
                 </View>
 
-                {/* ================================================= */}
                 {/* CÓDIGO DE PAREJA */}
-                {/* ================================================= */}
 
                 <View
                     style={
@@ -557,26 +611,35 @@ export default function RegistroScreen({ navigation }: any) {
                         styles.partnerCard
                     }
                 >
+
                     <View
                         style={
                             styles.partnerTop
                         }
                     >
+
                         <View
                             style={
                                 styles.partnerIcon
                             }
                         >
+
                             <Ionicons
                                 name="heart-outline"
                                 size={18}
-                                color={COLOR_PRINCIPAL}
+                                color={
+                                    COLOR_PRINCIPAL
+                                }
                             />
+
                         </View>
 
                         <View
-                            style={{ flex: 1 }}
+                            style={{
+                                flex: 1,
+                            }}
                         >
+
                             <Text
                                 style={
                                     styles.partnerTitle
@@ -592,6 +655,7 @@ export default function RegistroScreen({ navigation }: any) {
                             >
                                 ¿Tu pareja ya tiene una cuenta?
                             </Text>
+
                         </View>
 
                         <Switch
@@ -602,8 +666,10 @@ export default function RegistroScreen({ navigation }: any) {
                                 setTieneCodigoPareja
                             }
                             trackColor={{
-                                false: COLOR_BORDE,
-                                true: COLOR_SUAVE,
+                                false:
+                                    COLOR_BORDE,
+                                true:
+                                    COLOR_SUAVE,
                             }}
                             thumbColor={
                                 tieneCodigoPareja
@@ -611,14 +677,17 @@ export default function RegistroScreen({ navigation }: any) {
                                     : '#9AA1A0'
                             }
                         />
+
                     </View>
 
                     {tieneCodigoPareja && (
+
                         <View
                             style={
                                 styles.codeContainer
                             }
                         >
+
                             <Text
                                 style={
                                     styles.codeLabel
@@ -632,11 +701,16 @@ export default function RegistroScreen({ navigation }: any) {
                                     styles.inputWrapper
                                 }
                             >
+
                                 <Ionicons
                                     name="link-outline"
                                     size={18}
-                                    color={COLOR_TEXTO_SUAVE}
-                                    style={styles.inputIconStyle}
+                                    color={
+                                        COLOR_TEXTO_SUAVE
+                                    }
+                                    style={
+                                        styles.inputIconStyle
+                                    }
                                 />
 
                                 <TextInput
@@ -653,14 +727,16 @@ export default function RegistroScreen({ navigation }: any) {
                                     }
                                     autoCapitalize="characters"
                                 />
+
                             </View>
+
                         </View>
+
                     )}
+
                 </View>
 
-                {/* ================================================= */}
                 {/* BOTÓN REGISTRARSE */}
-                {/* ================================================= */}
 
                 <TouchableOpacity
                     activeOpacity={0.85}
@@ -671,6 +747,7 @@ export default function RegistroScreen({ navigation }: any) {
                         registrarse
                     }
                 >
+
                     <Ionicons
                         name="checkmark-circle-outline"
                         size={18}
@@ -684,11 +761,10 @@ export default function RegistroScreen({ navigation }: any) {
                     >
                         Crear mi cuenta
                     </Text>
+
                 </TouchableOpacity>
 
-                {/* ================================================= */}
                 {/* LOGIN */}
-                {/* ================================================= */}
 
                 <TouchableOpacity
                     activeOpacity={0.8}
@@ -701,12 +777,14 @@ export default function RegistroScreen({ navigation }: any) {
                         )
                     }
                 >
+
                     <Text
                         style={
                             styles.secondaryButtonText
                         }
                     >
                         ¿Ya tienes una cuenta?{' '}
+
                         <Text
                             style={
                                 styles.loginText
@@ -714,8 +792,11 @@ export default function RegistroScreen({ navigation }: any) {
                         >
                             Iniciar sesión
                         </Text>
+
                     </Text>
+
                 </TouchableOpacity>
+
             </View>
 
             {/* FOOTER */}
@@ -727,13 +808,14 @@ export default function RegistroScreen({ navigation }: any) {
             >
                 Finanzas en Pareja
             </Text>
+
         </ScrollView>
     );
 }
 
-/* =====================================================
-   PALETA DE COLORES (Sobria y coherente con PerfilScreen)
-===================================================== */
+/* ============================================================
+   PALETA DE COLORES
+============================================================ */
 
 const COLOR_PRINCIPAL = '#176B63';
 const COLOR_OSCURO = '#124C47';
@@ -744,11 +826,12 @@ const COLOR_MUY_SUAVE = '#F3F7F6';
 const COLOR_BORDE = '#E4E7E6';
 const COLOR_TEXTO_SUAVE = '#7A817F';
 
-/* =====================================================
+/* ============================================================
    ESTILOS
-===================================================== */
+============================================================ */
 
 const styles = StyleSheet.create({
+
     scrollView: {
         flex: 1,
         backgroundColor: '#FFFFFF',
@@ -761,7 +844,9 @@ const styles = StyleSheet.create({
         paddingBottom: 45,
     },
 
-    /* HEADER */
+    // ============================================================
+    // HEADER
+    // ============================================================
 
     header: {
         alignItems: 'center',
@@ -772,7 +857,8 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 20,
-        backgroundColor: COLOR_MUY_SUAVE,
+        backgroundColor:
+            COLOR_MUY_SUAVE,
         borderWidth: 1,
         borderColor: COLOR_BORDE,
         alignItems: 'center',
@@ -809,7 +895,9 @@ const styles = StyleSheet.create({
         maxWidth: 280,
     },
 
-    /* FORM CARD */
+    // ============================================================
+    // FORM CARD
+    // ============================================================
 
     formCard: {
         backgroundColor: '#FFFFFF',
@@ -819,22 +907,25 @@ const styles = StyleSheet.create({
         borderColor: COLOR_BORDE,
     },
 
-    /* SECCIÓN */
+    // ============================================================
+    // SECCIÓN
+    // ============================================================
 
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 14,
-        gap: 12,
     },
 
     sectionIcon: {
         width: 38,
         height: 38,
         borderRadius: 11,
-        backgroundColor: COLOR_MUY_SUAVE,
+        backgroundColor:
+            COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
+        marginRight: 12,
     },
 
     sectionTitle: {
@@ -849,7 +940,9 @@ const styles = StyleSheet.create({
         marginTop: 1,
     },
 
-    /* LABELS & INPUTS */
+    // ============================================================
+    // LABELS & INPUTS
+    // ============================================================
 
     label: {
         color: '#171A19',
@@ -873,7 +966,8 @@ const styles = StyleSheet.create({
 
     input: {
         flex: 1,
-        backgroundColor: COLOR_MUY_SUAVE,
+        backgroundColor:
+            COLOR_MUY_SUAVE,
         borderWidth: 1,
         borderColor: COLOR_BORDE,
         borderRadius: 12,
@@ -884,11 +978,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 
-    /* GÉNERO */
+    // ============================================================
+    // GÉNERO
+    // ============================================================
 
     generoContainer: {
         flexDirection: 'row',
-        gap: 10,
     },
 
     genBtn: {
@@ -896,23 +991,27 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
         paddingVertical: 12,
         borderRadius: 12,
-        backgroundColor: COLOR_MUY_SUAVE,
+        backgroundColor:
+            COLOR_MUY_SUAVE,
         borderWidth: 1,
         borderColor: COLOR_BORDE,
+        marginHorizontal: 5,
     },
 
     genBtnActive: {
-        backgroundColor: COLOR_PRINCIPAL,
-        borderColor: COLOR_PRINCIPAL,
+        backgroundColor:
+            COLOR_PRINCIPAL,
+        borderColor:
+            COLOR_PRINCIPAL,
     },
 
     genText: {
         color: '#171A19',
         fontSize: 13,
         fontWeight: '700',
+        marginLeft: 8,
     },
 
     genTextActive: {
@@ -921,11 +1020,14 @@ const styles = StyleSheet.create({
 
     divider: {
         height: 1,
-        backgroundColor: COLOR_BORDE,
+        backgroundColor:
+            COLOR_BORDE,
         marginVertical: 18,
     },
 
-    /* PAREJA */
+    // ============================================================
+    // PAREJA
+    // ============================================================
 
     partnerCard: {
         marginBottom: 15,
@@ -934,16 +1036,17 @@ const styles = StyleSheet.create({
     partnerTop: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
     },
 
     partnerIcon: {
         width: 38,
         height: 38,
         borderRadius: 11,
-        backgroundColor: COLOR_MUY_SUAVE,
+        backgroundColor:
+            COLOR_MUY_SUAVE,
         alignItems: 'center',
         justifyContent: 'center',
+        marginRight: 12,
     },
 
     partnerTitle: {
@@ -970,16 +1073,18 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
 
-    /* BOTONES */
+    // ============================================================
+    // BOTONES
+    // ============================================================
 
     primaryButton: {
-        backgroundColor: COLOR_PRINCIPAL,
+        backgroundColor:
+            COLOR_PRINCIPAL,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 14,
         borderRadius: 12,
-        gap: 8,
         marginTop: 15,
         marginBottom: 12,
     },
@@ -988,6 +1093,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: '700',
         fontSize: 14,
+        marginLeft: 8,
     },
 
     secondaryButton: {
@@ -1012,4 +1118,5 @@ const styles = StyleSheet.create({
         marginTop: 25,
         fontWeight: '600',
     },
+
 });
